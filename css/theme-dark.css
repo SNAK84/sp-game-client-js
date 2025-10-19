@@ -1,0 +1,213 @@
+:root {
+	/* Фон */
+	--color-bg: linear-gradient(135deg, rgba(32, 40, 52, 0.95) 0%, rgba(24, 30, 40, 0.95) 100%);
+	--color-bg-ng: rgba(28, 36, 48, 1);
+	--color-bg-image: url(images/bg-dark.jpg);
+
+	/* Текст */
+	--color-text: #e8eaed;
+	--color-text-secondary: #9aa0a6;
+	--color-text-hover: #ffffff;
+	--color-text-shadow: rgba(0, 0, 0, 0.5);
+
+	/* Границы и тени */
+	--color-border: #3c4043;
+	--color-box-shadow: rgba(0, 0, 0, 0.4);
+	--color-box-shadow-inset: #2d3238;
+
+	/* Scrollbar */
+	--color-scrollbar-track-bg: rgba(32, 40, 52, 0.6);
+	--color-scrollbar-track-border: #3c4043;
+	--color-scrollbar-thumb-bg: rgba(60, 64, 67, 0.8);
+	--color-scrollbar-thumb-border: #3c4043;
+	--color-scrollbar-thumb-shadow: rgba(0, 0, 0, 0.3);
+	--color-scrollbar-thumb-hover-bg: #5f6368;
+	--color-scrollbar-thumb-hover-shadow: #3c4043;
+	--color-scrollbar-corner-bg: rgba(32, 40, 52, 0.6);
+
+	/* Disabled */
+	--color-disabled-bg: rgba(45, 50, 58, 0.6);
+	--color-disabled-border: #3c4043;
+	--color-disabled-text: #6c7075;
+
+	/* Акцентные цвета (приглушённые) */
+	--color-warning-bg: rgba(255, 193, 7, 0.25);
+	--color-warning-border: #6d4c41;
+	--color-warning-text: #ffcc02;
+	--color-warning-box-shadow: #4e342e;
+	--color-warning-box-shadow-inset: #6d4c41;
+	--color-warning-text-hover: #ffd54f;
+
+	--color-danger-bg: rgba(244, 67, 54, 0.25);
+	--color-danger-border: #6d4c41;
+	--color-danger-text: #ef5350;
+	--color-danger-box-shadow: #4e342e;
+	--color-danger-box-shadow-inset: #6d4c41;
+	--color-danger-text-hover: #e57373;
+
+	--color-info-bg: rgba(33, 150, 243, 0.25);
+	--color-info-border: #2e3a4a;
+	--color-info-text: #64b5f6;
+	--color-info-box-shadow: #1e2a3a;
+	--color-info-box-shadow-inset: #2e3a4a;
+	--color-info-text-hover: #90caf9;
+
+	--color-success-bg: rgba(76, 255, 80, 0.25);
+	--color-success-border: #2f5d32;
+	--color-success-text: #4cff50;
+	--color-success-box-shadow: #1b3d1d;
+	--color-success-box-shadow-inset: #2f5d32;
+	--color-success-text-hover: #80ff84;
+
+
+	/* Input */
+	--color-input-bg: linear-gradient(135deg, rgba(32, 40, 52, 0.8) 0%, rgba(28, 36, 48, 0.8) 100%);
+	--color-input-bg-ng: rgba(32, 40, 52, 0.8);
+	--color-input-border: #3c4043;
+	--color-input-text: #e8eaed;
+
+	/* Slider */
+	--color-slider-bg: rgba(32, 40, 52, 0.8);
+	--color-slider-thumb-bg: #9aa0a6;
+	--color-slider-thumb-checked-bg: #5a6a8a;
+
+	/* Radio */
+	--color-radio-bg: rgba(32, 40, 52, 0.8);
+	--color-radio-thumb-bg: #9aa0a6;
+	--color-radio-thumb-checked-bg: #5a6a8a;
+
+	/* Autofill */
+	--color-autofill-bg: rgba(32, 40, 52, 0.8);
+	--color-autofill-border: #5a6a8a;
+	--color-autofill-text: #e8eaed;
+
+	--color-box-bg: linear-gradient(135deg, rgba(32, 40, 52, 0.6) 0%, rgba(28, 36, 48, 0.6) 100%);
+
+	--color-table-tr-hover-bg: rgba(45, 50, 58, 0.9);
+
+	--color-table-th-bg: rgba(32, 40, 52, 0.9);
+	--color-table-th-bg-hover: #3c4043;
+	--color-table-th-border: #3c4043;
+	--color-table-td-bg: rgba(28, 36, 48, 0.9);
+	--color-table-td-bg-hover: rgba(45, 50, 58, 0.9);
+	--color-table-td-border: #3c4043;
+
+	--color-cell-success-bg: rgba(76, 175, 80, 0.15);
+	--color-cell-success-border: #2e4a3a;
+	--color-cell-success-text: #81c784;
+	--color-cell-success-bg-hover: rgba(76, 175, 80, 0.25);
+	--color-cell-success-text-hover: #a5d6a7;
+	--color-cell-success-box-shadow-inset: #2e4a3a;
+
+	--color-cell-warning-bg: rgba(255, 193, 7, 0.15);
+	--color-cell-warning-border: #6d4c41;
+	--color-cell-warning-text: #ffcc02;
+	--color-cell-warning-bg-hover: rgba(255, 193, 7, 0.25);
+	--color-cell-warning-text-hover: #ffd54f;
+	--color-cell-warning-box-shadow-inset: #6d4c41;
+
+	--color-cell-error-bg: rgba(244, 67, 54, 0.15);
+	--color-cell-error-border: #6d4c41;
+	--color-cell-error-text: #ef5350;
+	--color-cell-error-bg-hover: rgba(244, 67, 54, 0.25);
+	--color-cell-error-text-hover: #e57373;
+	--color-cell-error-box-shadow-inset: #6d4c41;
+
+	--color-cell-info-bg: rgba(33, 150, 243, 0.15);
+	--color-cell-info-border: #2e3a4a;
+	--color-cell-info-text: #64b5f6;
+	--color-cell-info-bg-hover: rgba(33, 150, 243, 0.25);
+	--color-cell-info-text-hover: #90caf9;
+	--color-cell-info-box-shadow-inset: #2e3a4a;
+
+	/* Тёмная тема – текст */
+	--color-red-text: #ff4444;
+	--color-red-text-hover: #ff6666;
+
+	--color-green-text: #77ff77;
+	--color-green-text-hover: #99ff99;
+
+	--color-blue-text: #4488ff;
+	--color-blue-text-hover: #77bbff;
+
+	--color-yellow-text: #ffff44;
+	--color-yellow-text-hover: #ffff77;
+
+	--color-orange-text: #ff8822;
+	--color-orange-text-hover: #ffaa55;
+
+	--color-cyan-text: #22ffff;
+	--color-cyan-text-hover: #55ffff;
+
+	--color-purple-text: #bb44ff;
+	--color-purple-text-hover: #dd88ff;
+
+	--color-pink-text: #ff66aa;
+	--color-pink-text-hover: #ff99cc;
+
+	--color-brown-text: #aa7755;
+	--color-brown-text-hover: #cc9966;
+
+	--color-lime-text: #33ff55;
+	--color-lime-text-hover: #55ff55;
+
+	--color-beige-text: #ffffcc;
+	--color-beige-text-hover: #ffffff;
+
+	--color-beryl-text: #33ffff;
+	--color-beryl-text-hover: #66ffff;
+
+
+
+	/* Цветные границы */
+	--color-red-border: #9a1a1a;
+	--color-green-border: #1a5a3a;
+	--color-blue-border: #223355;
+	--color-yellow-border: #9a9a1a;
+	--color-orange-border: #9a5a1a;
+	--color-cyan-border: rgba(0, 188, 212, 0.50);
+	/*#00bcd4;*/
+	--color-purple-border: #9a27b0;
+	--color-pink-border: #9a8fb1;
+	--color-brown-border: #9a5548;
+	--color-lime-border: #88ff88;
+	--color-beige-border: #f5f5dc;
+	--color-beryl-border: #00ffff;
+
+	--color-red-bg: rgba(255, 16, 16, 0.42);
+	--color-green-bg: rgba(76, 220, 120, 0.42);
+	--color-blue-bg: rgba(64, 128, 255, 0.42);
+	--color-yellow-bg: rgba(255, 255, 0, 0.42);
+	--color-orange-bg: rgba(255, 160, 0, 0.42);
+	--color-cyan-bg: rgba(0, 255, 255, 0.42);
+	--color-purple-bg: rgba(156, 39, 176, 0.42);
+	--color-pink-bg: rgba(255, 143, 177, 0.42);
+	--color-brown-bg: rgba(121, 85, 72, 0.42);
+	--color-lime-bg: rgba(0, 255, 0, 0.42);
+	/* Лайм */
+	--color-beige-bg: rgba(245, 245, 220, 0.42);
+	/* Бежевый */
+	--color-beryl-bg: rgba(0, 255, 255, 0.42);
+	/* Берюзовый */
+
+	--color-red-bg-hover: rgba(255, 16, 16, 0.52);
+	--color-green-bg-hover: rgba(76, 220, 120, 0.52);
+	--color-blue-bg-hover: rgba(64, 128, 255, 0.52);
+	--color-yellow-bg-hover: rgba(255, 214, 0, 0.55);
+	--color-orange-bg-hover: rgba(255, 160, 0, 0.53);
+	--color-cyan-bg-hover: rgba(0, 188, 212, 0.52);
+	--color-purple-bg-hover: rgba(156, 39, 176, 0.52);
+	--color-pink-bg-hover: rgba(244, 143, 177, 0.52);
+	--color-brown-bg-hover: rgba(121, 85, 72, 0.52);
+	--color-lime-bg-hover: rgba(0, 255, 0, 0.52);
+	--color-beige-bg-hover: rgba(245, 245, 220, 0.52);
+	--color-beryl-bg-hover: rgba(0, 255, 255, 0.52);
+
+	/* Overlay */
+	--color-overlay-bg: rgba(20, 25, 35, 0.7);
+	--color-dialog-overlay-bg: rgba(20, 25, 35, 0.5);
+
+	/* Ссылки */
+	--color-link: #64b5f6;
+	--color-link-hover: #90caf9;
+}

@@ -1,0 +1,2607 @@
+@import "https://fonts.fontstorage.com/import/ubuntumono.css";
+
+
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: auto;
+    font-weight: normal;
+    text-shadow: 1px 1px 1px var(--color-text-shadow);
+    font-family: Verdana, Arial, sans-serif;
+    /*font-family: 'Ubuntu Mono';*/
+    text-align: center;
+    font-size: 11px;
+    outline: none;
+}
+
+html,
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+body {
+    color: var(--color-text);
+    text-shadow: 1px 1px 1px var(--color-text-shadow);
+    background: var(--color-bg);
+    background-image: var(--color-bg-image);
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+    /*
+    width: 100%;
+    height: 100%;*/
+    /*display: flex;
+    justify-content: center;
+    align-items: center;*/
+}
+
+/* Улучшенные скроллбары */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track-bg);
+    border-radius: 5px;
+    border: 1px solid var(--color-scrollbar-track-border);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb-bg) !important;
+    border-radius: 5px;
+    border: 1px solid var(--color-scrollbar-thumb-border);
+    box-shadow: 0 0 5px var(--color-scrollbar-thumb-shadow);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-thumb-hover-bg) !important;
+    box-shadow: 0 0 8px var(--color-scrollbar-thumb-hover-shadow);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--color-scrollbar-corner-bg);
+}
+
+#ping-indicator {
+    position: fixed;
+    right: 0px;
+    top: 0;
+    font-size: 7px;
+    opacity: 0.;
+}
+
+overlay {
+    width: 100vw;
+    height: 100vh;
+
+    opacity: 0;
+    position: absolute;
+    background: url(images/loader.svg) no-repeat center var(--color-overlay-bg);
+    background-size: 64px;
+    z-index: 5000;
+    padding-top: 102px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* backdrop-filter: blur(2px); */
+}
+
+/*
+.wrapper {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: 0 2fr 0;
+    grid-template-rows: 0 auto 0;
+    justify-items: center;
+    align-items: start;
+}
+*/
+
+.accauntlayer {
+    position: absolute;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: 6px 1fr 6px;
+    grid-template-rows: 6px 1fr 12px;
+    justify-items: center;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.gamelayer {
+    margin: 0;
+    position: absolute;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: 6px 160px 1fr 6px;
+    grid-template-rows: 6px 32px 1fr 12px;
+    justify-items: center;
+    align-items: start;
+}
+
+#TopNav {
+    display: flex;
+    margin: 0 auto;
+    grid-column: 3;
+    grid-row: 2;
+    align-items: center;
+}
+
+#TopNav .ResBox {
+    font-size: 9px;
+    margin: 0 2px;
+    padding: 0 4px 0 0;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-box-bg);
+    box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
+}
+
+.ResBox {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+
+}
+
+.header {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.icon901:before {
+    width: 24px;
+    height: 24px;
+    background: url(images/game/icons/metal.png) no-repeat center;
+    background-size: contain;
+    content: "";
+}
+
+.icon902:before {
+    width: 24px;
+    height: 24px;
+    background: url(images/game/icons/crystal.png) no-repeat center;
+    background-size: contain;
+    content: "";
+}
+
+.icon903:before {
+    width: 24px;
+    height: 24px;
+    background: url(images/game/icons/deuterium.png) no-repeat center;
+    background-size: contain;
+    content: "";
+}
+
+.icon911:before {
+    width: 24px;
+    height: 24px;
+    background: url(images/game/icons/energy.png) no-repeat center;
+    background-size: contain;
+    content: "";
+}
+
+.icon921:before {
+    width: 24px;
+    height: 24px;
+    background: url(images/game/icons/credit.png) no-repeat center;
+    background-size: contain;
+    content: "";
+}
+
+.icon922:before {
+    width: 24px;
+    height: 24px;
+    background: url(images/game/icons/doubloon.png) no-repeat center;
+    background-size: contain;
+    content: "";
+}
+
+.iconMessages {
+    cursor: pointer;
+}
+
+.iconMessages:before {
+    margin: 0 4px;
+    width: 24px;
+    height: 24px;
+    background: url(images/game/icons/message.png) no-repeat center;
+    background-size: contain;
+    content: "";
+}
+
+/* Прогрессбар */
+.tooltip-progress {
+    /*width: 100%;*/
+    height: 8px;
+    background: rgba(200, 200, 200, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 4px 0;
+}
+
+.tooltip-progress-bar {
+    margin: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--color-lime-border);
+    /* можно сменить через класс */
+    transition: width 1s linear;
+}
+
+.tooltip-progress-bar.red {
+    background: var(--color-red-border);
+}
+
+.tooltip-progress-bar.yellow {
+    background: var(--color-yellow-border);
+}
+
+.tooltip-progress-bar.lime {
+    background: var(--color-lime-border);
+}
+
+.tooltip-content ul {
+    list-style: none;
+    /* убирает точки */
+    padding: 0;
+    /* убирает отступ слева */
+    margin: 4px 0;
+    /* можно оставить вертикальные отступы */
+}
+
+.tooltip-content li {
+    margin: 2px 0;
+    /* отступ между элементами */
+    padding: 0;
+    /* убираем внутренние отступы */
+}
+
+.tooltip-empty {
+    height: 6px;
+    /* высота отступа */
+    padding: 0;
+    margin: 0;
+}
+
+#Content {
+    position: relative;
+    padding: 0 0px;
+    grid-column: 3;
+    grid-row: 3;
+    width: calc(100% - 8px);
+    height: calc(100% - 8px);
+    overflow: auto;
+    min-width: 400px;
+
+    /* calc(100vw - 16px); 470px;*/
+    /*display: inline-flex;
+    justify-content: center;
+    margin: auto auto;*/
+}
+
+.PlanetsList {
+    position: relative;
+    /*grid-column: 2;
+    grid-row: 2;*/
+}
+
+.PlanetsList .ui-selectmenu-button {
+    width: 140px;
+    color: var(--color-text);
+    background: var(--color-input-bg) !important;
+    border: 1px solid var(--color-border) !important;
+    text-decoration: none;
+
+}
+
+#planets-select-menu {
+    border: 1px solid var(--color-border) !important;
+    background: var(--color-input-bg) !important;
+    margin-left: 16px !important;
+    padding: 2px;
+}
+
+
+
+
+.PlanetsList .ui-icon-triangle-1-s {
+    display: none !important;
+}
+
+/* Основной контейнер меню selectmenu с иконками */
+.ui-selectmenu-menu .ui-menu.planet-icons .ui-menu-item-wrapper {
+    margin: 2px;
+    padding: 6px 6px 6px 20px;
+    border-radius: 6px;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+    text-shadow: 0 1px 2px var(--color-shadow);
+    border: 1px solid var(--color-border);
+    /*transition: background 0.12s, color 0.12s;*/
+    cursor: pointer;
+    text-align: center;
+    line-height: 1;
+    transition: all 0.2s ease;
+    /* отступ слева для иконки */
+}
+
+.ui-selectmenu-menu .ui-menu.planet-icons .ui-menu-item-wrapper:hover {
+    margin: 2px;
+    box-shadow: 0 0 4px var(--color-info-box-shadow-inset) inset;
+    color: var(--color-text-hover) !important;
+    font-weight: bold !important;
+    transform: scale(1.05);
+}
+
+/* Иконка планеты в пункте меню */
+.ui-selectmenu-menu .ui-menu.planet-icons .planet-icon {
+    height: 20px;
+    width: 20px;
+    background-repeat: no-repeat;
+    background-size: cover;
+    margin-right: 20px;
+}
+
+/* Иконка в самом select (выбранная планета) */
+.PlanetsList .planet-icon {
+    height: 20px;
+    width: 20px;
+    background-repeat: no-repeat;
+    background-size: cover;
+    margin-right: 0.5em;
+}
+
+.planet-select {
+    color: var(--color-info-text) !important;
+    box-shadow: 0 0 4px var(--color-info-box-shadow-inset) inset !important;
+    transform: scale(0.95);
+}
+
+#LeftMenu {
+    position: relative;
+    z-index: 100;
+    background: var(--color-box-bg);
+    top: 0px;
+    left: 0px;
+    width: 160px;
+    border-radius: 5px;
+    /*box-shadow: 0 2px 12px rgba(0,0,0,0.18);*/
+    text-align: center;
+    max-height: 90vh;
+    margin: 4px auto;
+    overflow: auto;
+    padding: 4px 0;
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 6px var(--color-box-shadow);
+
+    grid-column: 2;
+    grid-row: 2 / 3;
+}
+
+#LeftMenu div#menu {
+    background: linear-gradient(90deg,
+            var(--color-left-menu-menu-bg-top) 0%,
+            var(--color-left-menu-menu-bg-bottom) 100%);
+    border-radius: 4px;
+    padding: 0;
+    width: 94%;
+    margin: 2px auto 2px auto;
+    box-shadow: 0 1px 2px var(--color-shadow) inset;
+    color: var(--color-text-hover);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    text-align: center;
+    border: none;
+    cursor: default;
+}
+
+#LeftMenu div#menu+#LeftMenu div#submenu {
+    margin-top: 0;
+}
+
+#LeftMenu div#menu:not(:first-child) {
+    margin-top: 10px;
+}
+
+#LeftMenu div#submenu {
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+}
+
+
+#LeftMenu div#submenu>div {
+    display: block;
+    width: 92%;
+    margin: 4px auto;
+    padding: 3px 0;
+    border-radius: 6px;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+    font-weight: 500;
+    text-shadow: 0 1px 2px var(--color-shadow);
+    border: 1px solid var(--color-border);
+    /*transition: background 0.12s, color 0.12s;*/
+    cursor: pointer;
+    text-align: center;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+
+#LeftMenu div#submenu>div:hover {
+    box-shadow: 0 0 4px var(--color-info-box-shadow-inset) inset;
+    color: var(--color-text-hover);
+    transform: scale(1.05);
+}
+
+#LeftMenu div#submenu>div:active {
+    box-shadow: 0 0 4px var(--color-info-box-shadow-inset) inset;
+    color: var(--color-text-hover);
+    transform: scale(0.95);
+}
+
+#LeftMenu div#submenu>div.open {
+    border: 1px solid var(--color-info-border);
+    color: var(--color-info-text);
+    transform: scale(0.95);
+}
+
+/* Bottom Panel */
+#bottom_panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    padding: 2px;
+    background: var(--color-bg) !important;
+    border-top: 1px solid var(--color-border) !important;
+    box-shadow: 0 -4px 20px var(--color-box-shadow) !important;
+    text-align: center;
+    font-size: 7px;
+    color: var(--color-text-hover);
+    z-index: 100;
+}
+
+#bottom_panel #copyright {
+    text-shadow: 1px 1px 1px var(--color-text-shadow);
+    font-size: 7px;
+}
+
+/* Input и Select */
+label {
+    /*height: 16px;
+    line-height: 16px;*/
+    cursor: pointer
+}
+
+button,
+select,
+input,
+.btn {
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-input-border);
+    border-radius: 5px;
+    color: var(--color-text);
+    text-shadow: 1px 1px 1px var(--color-text-shadow);
+    box-shadow: none;
+    padding: 4px;
+    margin: 4px;
+}
+
+
+input:-webkit-autofill {
+    color: var(--color-text) !important;
+    box-shadow: 0 0 0 1000px var(--color-autofill-bg) inset !important;
+    -webkit-text-fill-color: var(--color-text) !important;
+    caret-color: var(--color-text-hover) !important;
+}
+
+input:autofill {
+    background: var(--color-autofill-bg) !important;
+    color: var(--color-text) !important;
+}
+
+input:autofill:hover,
+input:-webkit-autofill:active,
+input:-webkit-autofill:focus {
+    color: var(--color-text) !important;
+    box-shadow: 0 0 0 1000px var(--color-autofill-bg) inset !important;
+    -webkit-text-fill-color: var(--color-text) !important;
+}
+
+button,
+input[type=submit],
+input[type=button],
+.btn {
+    position: relative;
+    overflow: hidden;
+    padding: 0px 10px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.5px;
+    min-height: 24px;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    user-select: none;
+}
+
+button:hover,
+select:hover,
+input[type=submit]:hover,
+input[type=button]:hover,
+.btn:hover {
+    box-shadow:
+        1px 1px 2px var(--color-box-shadow),
+        1px 1px 2px var(--color-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-box-shadow-inset) inset;
+    transform: translateY(-0.5px) translateX(-0.5px);
+    color: var(--color-text-hover);
+}
+
+button:active,
+select:active,
+input[type=submit]:active,
+input[type=button]:active,
+.btn:active {
+    box-shadow:
+        0 0 2px var(--color-box-shadow-inset) inset,
+        -0 -0 2px var(--color-box-shadow-inset) inset;
+    transform: translateY(0.5px) translateX(0.5px);
+    transition: all 0.1s ease;
+}
+
+button:disabled,
+input[type=submit]:disabled,
+input[type=button]:disabled,
+input:disabled,
+select:disabled,
+select:disabled::picker-icon,
+.btn:disabled {
+    background: var(--color-disabled-bg);
+    border-color: var(--color-disabled-border);
+    color: var(--color-disabled-text);
+    cursor: default;
+    box-shadow: none;
+    transform: none;
+    text-shadow: none;
+    opacity: 0.6;
+}
+
+button:focus,
+input[type=submit]:focus,
+input[type=button]:focus,
+input:focus,
+select:focus,
+select:focus::picker-icon,
+.btn:focus {
+    color: var(--color-text-hover);
+}
+
+/* Класс для кнопок с предупреждением */
+.btn-warning {
+    background: var(--color-warning-bg);
+    border-color: var(--color-warning-border);
+    color: var(--color-warning-text);
+}
+
+.btn-warning:hover {
+    box-shadow:
+        2px 2px 4px var(--color-warning-box-shadow),
+        1px 1px 2px var(--color-warning-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-warning-box-shadow-inset) inset;
+    color: var(--color-warning-text-hover);
+}
+
+.btn-warning:active {
+    box-shadow:
+        1px 1px 2px var(--color-warning-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-warning-box-shadow-inset) inset;
+    color: var(--color-warning-text-hover);
+}
+
+/* Класс для кнопок с ошибкой */
+.btn-danger {
+    background: var(--color-danger-bg) !important;
+    border-color: var(--color-danger-border) !important;
+    color: var(--color-danger-text) !important;
+}
+
+.btn-danger:hover {
+    box-shadow:
+        2px 2px 4px var(--color-danger-box-shadow),
+        1px 1px 2px var(--color-danger-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-danger-box-shadow-inset) inset;
+    color: var(--color-danger-text-hover) !important;
+}
+
+.btn-danger:active {
+    box-shadow:
+        1px 1px 2px var(--color-danger-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-danger-box-shadow-inset) inset;
+    color: var(--color-danger-text-hover) !important;
+}
+
+.btn-info {
+    background: var(--color-info-bg) !important;
+    border-color: var(--color-info-border) !important;
+    color: var(--color-info-text) !important;
+}
+
+.btn-info:hover {
+    box-shadow:
+        2px 2px 4px var(--color-info-box-shadow),
+        1px 1px 2px var(--color-info-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-info-box-shadow-inset) inset;
+    color: var(--color-info-text-hover) !important;
+}
+
+.btn-info:active {
+    box-shadow:
+        1px 1px 2px var(--color-info-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-info-box-shadow-inset) inset;
+    color: var(--color-info-text-hover);
+}
+
+
+.btn-success {
+    background: var(--color-success-bg) !important;
+    border-color: var(--color-success-border) !important;
+    color: var(--color-success-text) !important;
+}
+
+.btn-success:hover {
+    box-shadow:
+        2px 2px 4px var(--color-success-box-shadow),
+        1px 1px 2px var(--color-success-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-success-box-shadow-inset) inset;
+    color: var(--color-success-text-hover) !important;
+}
+
+.btn-success:active {
+    box-shadow:
+        1px 1px 2px var(--color-success-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-success-box-shadow-inset) inset;
+    color: var(--color-success-text-hover) !important;
+}
+
+/* Класс для маленьких кнопок */
+.btn-sm {
+    padding: 3px 6px;
+    font-size: 11px;
+    min-height: 22px;
+    border-radius: 4px;
+}
+
+/* Класс для больших кнопок */
+.btn-lg {
+    padding: 8px 16px;
+    font-size: 14px;
+    min-height: 36px;
+    border-radius: 8px;
+}
+
+/* Класс для кнопок с иконками */
+.btn-icon {
+    padding: 6px;
+    min-width: 28px;
+    border-radius: 50%;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    text-align: center;
+    position: relative;
+    padding-right: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--color-input-bg-ng);
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><polygon points="0,0 10,0 5,6" fill="%2308c"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 3px center;
+
+}
+
+select:open {
+    background-color: var(--color-input-bg-ng);
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 6"><polygon points="0,0 10,0 5,6" fill="%2308d" transform="rotate(90 5 3)"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 3px center;
+}
+
+select:hover,
+select:active {
+    transform: none;
+}
+
+select:disabled {
+    background: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><polygon points="0,0 10,0 5,6" fill="%23888"/></svg>') no-repeat right 3px center;
+    cursor: default;
+}
+
+select option {
+    /*background-color: var(--color-select-option-bg);*/
+    background: var(--color-autofill-bg);
+    /* Цвет для опций */
+    color: var(--color-text);
+    /* Цвет текста в опциях */
+    transition: 0.4s;
+}
+
+option {
+    background: var(--color-bg-ng) !important;
+    color: var(--color-text) !important;
+}
+
+
+/* Контейнер чекбокса-слайдера */
+.slider-chkbox {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    height: auto;
+}
+
+/* Скрываем стандартный чекбокс */
+.slider-chkbox input[type="checkbox"] {
+    display: none;
+}
+
+/* Сам слайдер */
+.slider-chkbox .slider {
+    position: relative;
+    width: 28px !important;
+    height: 14px !important;
+    background: var(--color-slider-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px !important;
+    transition: background 0.3s;
+    margin-right: 4px !important;
+    margin-left: 4px !important;
+    box-shadow: 0 0 3px var(--color-box-shadow) inset;
+    display: flex !important;
+    align-items: center;
+    padding: 0 !important;
+}
+
+.slider-chkbox .slider:after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 8.5px;
+    height: 8.5px;
+    background: var(--color-slider-thumb-bg);
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 0 2px var(--color-box-shadow),
+        0 0 2px var(--color-box-shadow-inset) inset;
+}
+
+/* Активное состояние */
+.slider-chkbox input:checked+.slider {
+    background: var(--color-slider-thumb-checked-bg);
+    border-color: var(--color-border);
+}
+
+.slider-chkbox input:checked+.slider:after {
+    transform: translateX(10px);
+}
+
+/* Текст справа */
+.slider-chkbox .slider-text {
+    color: var(--color-text);
+    text-shadow: 1px 1px 1px var(--color-text-shadow);
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider-chkbox:hover>.slider-text {
+    color: var(--color-text-hover);
+}
+
+.radio-chkbox {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    height: auto;
+}
+
+.radio-chkbox input[type="radio"] {
+    display: none;
+}
+
+.radio-chkbox .radio-custom {
+    position: relative;
+    width: 12px;
+    height: 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    margin-right: 4px;
+    margin-left: 4px;
+    box-shadow: 0 0 2px var(--color-shadow) inset;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radio-chkbox .radio-custom:after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    background: var(--color-radio-thumb-bg);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s;
+    display: block;
+    margin: auto;
+}
+
+.radio-chkbox input[type="radio"]:checked+.radio-custom {
+    background: var(--color-radio-thumb-checked-bg);
+    box-shadow: 0 1px 1px var(--color-box-shadow) inset,
+        1px 0px 1px var(--color-box-shadow) inset,
+        0 -1px 1px var(--color-box-shadow) inset,
+        -1px 0px 1px var(--color-box-shadow) inset;
+}
+
+.radio-chkbox input[type="radio"]:checked+.radio-custom:after {
+    opacity: 1;
+}
+
+.radio-chkbox .radio-text {
+    color: var(--color-text);
+    text-shadow: 1px 1px 1px var(--color-shadow);
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.radio-chkbox:hover>.radio-text {
+    color: var(--color-text-hover);
+}
+
+input[type="checkbox"]:disabled~.slider:after,
+input[type="radio"]:disabled~.radio-custom:after,
+input[type="radio"]:checked:disabled+.radio-custom {
+    background: var(--color-disabled-bg) !important;
+}
+
+input[type="checkbox"]:disabled+.slider,
+input[type="checkbox"]:disabled~.slider:after,
+input[type="checkbox"]:disabled~.slider-text,
+input[type="radio"]:disabled+.radio-custom,
+input[type="radio"]:disabled~.radio-text {
+    border-color: var(--color-disabled-border) !important;
+    color: var(--color-disabled-text) !important;
+    box-shadow: none;
+    transform: none;
+    text-shadow: none;
+    opacity: 0.6;
+}
+
+/* Ссылки */
+
+a {
+    color: var(--color-text);
+    text-shadow: 1px 1px 1px var(--color-text-shadow);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+a:hover {
+    color: var(--color-text-hover);
+}
+
+
+table {
+    margin-left: auto;
+    margin-right: auto;
+    border-spacing: 0px;
+    border-radius: 8px;
+    /*box-shadow:
+        2px 2px 4px var(--color-box-shadow);*/
+    border-collapse: none;
+    /*border: 1px solid var(--color-border);*/
+    margin: 0px auto;
+    /*transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);*/
+}
+
+/* Убираем overflow: hidden для таблиц с .FixTop */
+table:not(:has(.FixTop)) {
+    overflow: hidden;
+}
+
+th,
+td {
+    padding: 2px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--color-text);
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    text-shadow: 1px 1px 1px var(--color-text-shadow);
+    border-radius: 4px;
+}
+
+th {
+    background: var(--color-table-th-bg);
+    border: 1px solid var(--color-table-th-border);
+    /*box-shadow: 0 0 2px var(--color-box-shadow) inset;*/
+}
+
+td {
+    background: var(--color-table-td-bg);
+    border: 1px solid var(--color-table-td-border);
+    /*box-shadow: 0 0 4px var(--color-box-shadow) inset;*/
+}
+
+tr:hover>th {
+    background: var(--color-table-th-bg-hover);
+    color: var(--color-text-hover);
+    /*box-shadow: 0 0 1px var(--color-box-shadow) inset;*/
+}
+
+td:hover,
+tr:hover td {
+    background: var(--color-table-td-bg-hover);
+    color: var(--color-text-hover);
+    /*box-shadow: 0 0 2px var(--color-box-shadow) inset;*/
+}
+
+
+th::before {
+    display: none;
+}
+
+
+.table-action-button {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    text-shadow: 0px 0px 3px var(--color-text-shadow) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    font-size: 12px !important;
+    overflow: hidden !important;
+}
+
+/* Улучшенные состояния ячеек */
+.cell-success,
+.cell-success td,
+.cell-success th {
+    background: var(--color-cell-success-bg);
+    color: var(--color-cell-success-text);
+    box-shadow: 0 0 2px var(--color-cell-success-box-shadow-inset) inset;
+}
+
+tr:hover td.cell-success,
+tr:hover th.cell-success,
+.cell-success:hover,
+.cell-success:hover td,
+.cell-success:hover th {
+    background: var(--color-cell-success-bg-hover);
+    color: var(--color-cell-success-text-hover);
+    box-shadow: 0 0 4px var(--color-cell-success-box-shadow-inset) inset;
+}
+
+.cell-warning,
+.cell-warning td,
+.cell-warning th {
+    background: var(--color-cell-warning-bg);
+    color: var(--color-cell-warning-text);
+    box-shadow: 0 0 2px var(--color-cell-warning-box-shadow-inset) inset;
+}
+
+tr:hover td.cell-warning,
+tr:hover th.cell-warning,
+.cell-warning:hover,
+.cell-warning:hover td,
+.cell-warning:hover th {
+    background: var(--color-cell-warning-bg-hover);
+    color: var(--color-cell-warning-text-hover);
+    box-shadow: 0 0 4px var(--color-cell-warning-box-shadow-inset) inset;
+}
+
+
+.cell-error,
+.cell-error td,
+.cell-error th {
+    background: var(--color-cell-error-bg);
+    color: var(--color-cell-error-text);
+    box-shadow: 0 0 2px var(--color-cell-error-box-shadow-inset) inset;
+}
+
+tr:hover td.cell-error,
+tr:hover th.cell-error,
+.cell-error:hover,
+.cell-error:hover td,
+.cell-error:hover th {
+    background: var(--color-cell-error-bg-hover);
+    color: var(--color-cell-error-text-hover);
+    box-shadow: 0 0 4px var(--color-cell-error-box-shadow-inset) inset;
+}
+
+.cell-info,
+.cell-info td,
+.cell-info th {
+    background: var(--color-cell-info-bg);
+    color: var(--color-cell-info-text);
+    box-shadow: 0 0 2px var(--color-cell-info-box-shadow-inset) inset;
+}
+
+tr:hover td.cell-info,
+tr:hover th.cell-info,
+.cell-info:hover,
+.cell-info:hover td,
+.cell-info:hover th {
+    background: var(--color-cell-info-bg-hover);
+    color: var(--color-cell-info-text-hover);
+    box-shadow: 0 0 4px var(--color-cell-info-box-shadow-inset) inset;
+}
+
+/* Улучшенные границы для СТРОК. Классы .red_border и .lime_border теперь нужно применять к тегу <tr> */
+tr.red_border td,
+tr.red_border th,
+.red_border {
+    border-color: var(--color-red-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-red-border) inset !important;
+}
+
+tr.red_border:hover td,
+tr.red_border:hover th,
+tr:hover th.red_border,
+tr:hover td.red_border,
+.red_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-red-border) inset !important;
+}
+
+tr.green_border td,
+tr.green_border th,
+.green_border {
+    border-color: var(--color-green-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-green-border) inset !important;
+}
+
+tr.green_border:hover td,
+tr.green_border:hover th,
+tr:hover th.green_border,
+tr:hover td.green_border,
+.green_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-green-border) inset !important;
+}
+
+tr.blue_border td,
+tr.blue_border th,
+.blue_border {
+    border-color: var(--color-blue-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-blue-border) inset !important;
+}
+
+tr.blue_border:hover td,
+tr.blue_border:hover th,
+tr:hover th.blue_border,
+tr:hover td.blue_border,
+.blue_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-blue-border) inset !important;
+}
+
+tr.yellow_border td,
+tr.yellow_border th,
+.yellow_border {
+    border-color: var(--color-yellow-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-yellow-border) inset !important;
+}
+
+tr.yellow_border:hover td,
+tr.yellow_border:hover th,
+tr:hover th.yellow_border,
+tr:hover td.yellow_border,
+.yellow_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-yellow-border) inset !important;
+}
+
+tr.orange_border td,
+tr.orange_border th,
+.orange_border {
+    border-color: var(--color-orange-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-orange-border) inset !important;
+}
+
+tr.orange_border:hover td,
+tr.orange_border:hover th,
+tr:hover th.orange_border,
+tr:hover td.orange_border,
+.orange_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-orange-border) inset !important;
+}
+
+tr.cyan_border td,
+tr.cyan_border th,
+.cyan_border {
+    border-color: var(--color-cyan-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-cyan-border) inset !important;
+}
+
+tr.cyan_border:hover td,
+tr.cyan_border:hover th,
+tr:hover th.cyan_border,
+tr:hover td.cyan_border,
+.cyan_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-cyan-border) inset !important;
+}
+
+tr.purple_border td,
+tr.purple_border th,
+.purple_border {
+    border-color: var(--color-purple-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-purple-border) inset !important;
+}
+
+tr.purple_border:hover td,
+tr.purple_border:hover th,
+tr:hover th.purple_border,
+tr:hover td.purple_border,
+.purple_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-purple-border) inset !important;
+}
+
+tr.pink_border td,
+tr.pink_border th,
+.pink_border {
+    border-color: var(--color-pink-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-pink-border) inset !important;
+}
+
+tr.pink_border:hover td,
+tr.pink_border:hover th,
+tr:hover th.pink_border,
+tr:hover td.pink_border,
+.pink_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-pink-border) inset !important;
+}
+
+tr.brown_border td,
+tr.brown_border th,
+.brown_border {
+    border-color: var(--color-brown-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-brown-border) inset !important;
+}
+
+tr.brown_border:hover td,
+tr.brown_border:hover th,
+tr:hover th.brown_border,
+tr:hover td.brown_border,
+.brown_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-brown-border) inset !important;
+}
+
+tr.lime_border td,
+tr.lime_border th,
+.lime_border {
+    border-color: var(--color-lime-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-lime-border) inset !important;
+}
+
+tr.lime_border:hover td,
+tr.lime_border:hover th,
+tr:hover th.lime_border,
+tr:hover td.lime_border,
+.lime_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-lime-border) inset !important;
+}
+
+tr.beige_border td,
+tr.beige_border th,
+.beige_border {
+    border-color: var(--color-beige-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-beige-border) inset !important;
+}
+
+tr.beige_border:hover td,
+tr.beige_border:hover th,
+tr:hover th.beige_border,
+tr:hover td.beige_border,
+.beige_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-beige-border) inset !important;
+}
+
+tr.beryl_border td,
+tr.beryl_border th,
+.beryl_border {
+    border-color: var(--color-beryl-border) !important;
+    box-shadow: 0 0 4px 2px var(--color-beryl-border) inset !important;
+}
+
+tr.beryl_border:hover td,
+tr.beryl_border:hover th,
+tr:hover th.beryl_border,
+tr:hover td.beryl_border,
+.beryl_border:hover {
+    box-shadow: 0 0 4px 3px var(--color-beryl-border) inset !important;
+}
+
+.FixTop {
+    position: sticky;
+    top: 0px;
+    z-index: 10;
+}
+
+/* Улучшенные цвета текста */
+.red_text,
+.red_text td,
+.red_text th {
+    color: var(--color-red-text) !important;
+}
+
+.red_text:hover,
+.red_text:hover td,
+.red_text:hover th {
+    color: var(--color-red-text-hover) !important;
+}
+
+.green_text,
+.green_text td,
+.green_text th {
+    color: var(--color-green-text) !important;
+}
+
+.green_text:hover,
+.green_text:hover td,
+.green_text:hover th {
+    color: var(--color-green-text-hover) !important;
+}
+
+.blue_text,
+.blue_text td,
+.blue_text th {
+    color: var(--color-blue-text) !important;
+}
+
+.blue_text:hover,
+.blue_text:hover td,
+.blue_text:hover th {
+    color: var(--color-blue-text-hover) !important;
+}
+
+.yellow_text,
+.yellow_text td,
+.yellow_text th {
+    color: var(--color-yellow-text) !important;
+}
+
+.yellow_text:hover,
+.yellow_text:hover td,
+.yellow_text:hover th {
+    color: var(--color-yellow-text-hover) !important;
+}
+
+.orange_text,
+.orange_text td,
+.orange_text th {
+    color: var(--color-orange-text) !important;
+}
+
+.orange_text:hover,
+.orange_text:hover td,
+.orange_text:hover th {
+    color: var(--color-orange-text-hover) !important;
+}
+
+.cyan_text,
+.cyan_text td,
+.cyan_text th {
+    color: var(--color-cyan-text) !important;
+}
+
+.cyan_text:hover,
+.cyan_text:hover td,
+.cyan_text:hover th {
+    color: var(--color-cyan-text-hover) !important;
+}
+
+.purple_text,
+.purple_text td,
+.purple_text th {
+    color: var(--color-purple-text) !important;
+}
+
+.purple_text:hover,
+.purple_text:hover td,
+.purple_text:hover th {
+    color: var(--color-purple-text-hover) !important;
+}
+
+.pink_text,
+.pink_text td,
+.pink_text th {
+    color: var(--color-pink-text) !important;
+}
+
+.pink_text:hover,
+.pink_text:hover td,
+.pink_text:hover th {
+    color: var(--color-pink-text-hover) !important;
+}
+
+.brown_text,
+.brown_text td,
+.brown_text th {
+    color: var(--color-brown-text) !important;
+}
+
+.brown_text:hover,
+.brown_text:hover td,
+.brown_text:hover th {
+    color: var(--color-brown-text-hover) !important;
+}
+
+.lime_text,
+.lime_text td,
+.lime_text th {
+    color: var(--color-lime-text) !important;
+}
+
+.lime_text:hover,
+.lime_text:hover td,
+.lime_text:hover th {
+    color: var(--color-lime-text-hover) !important;
+}
+
+.beige_text,
+.beige_text td,
+.beige_text th {
+    color: var(--color-beige-text) !important;
+}
+
+.beige_text:hover,
+.beige_text:hover td,
+.beige_text:hover th {
+    color: var(--color-beige-text-hover) !important;
+}
+
+.beryl_text,
+.beryl_text td,
+.beryl_text th {
+    color: var(--color-beryl-text) !important;
+}
+
+.beryl_text:hover,
+.beryl_text:hover td,
+.beryl_text:hover th {
+    color: var(--color-beryl-text-hover) !important;
+}
+
+/* Улучшенные фоны */
+.red_fon,
+.red_fon td,
+.red_fon th {
+    background: var(--color-red-bg) !important;
+}
+
+.red_fon:hover,
+.red_fon:hover td,
+.red_fon:hover th {
+    background: var(--color-red-bg-hover) !important;
+}
+
+.green_fon,
+.green_fon td,
+.green_fon th {
+    background: var(--color-green-bg) !important;
+}
+
+.green_fon:hover,
+.green_fon:hover td,
+.green_fon:hover th {
+    background: var(--color-green-bg-hover) !important;
+}
+
+.blue_fon,
+.blue_fon td,
+.blue_fon th {
+    background: var(--color-blue-bg) !important;
+}
+
+.blue_fon:hover,
+.blue_fon:hover td,
+.blue_fon:hover th {
+    background: var(--color-blue-bg-hover) !important;
+}
+
+.yellow_fon,
+.yellow_fon td,
+.yellow_fon th {
+    background: var(--color-yellow-bg) !important;
+}
+
+.yellow_fon:hover,
+.yellow_fon:hover td,
+.yellow_fon:hover th,
+tr:hover td.yellow_fon,
+tr:hover th.yellow_fon {
+    background: var(--color-yellow-bg-hover) !important;
+}
+
+.orange_fon,
+.orange_fon td,
+.orange_fon th {
+    background: var(--color-orange-bg) !important;
+}
+
+.orange_fon:hover,
+.orange_fon:hover td,
+.orange_fon:hover th,
+tr:hover td.orange_fon,
+tr:hover th.orange_fon {
+    background: var(--color-orange-bg-hover) !important;
+}
+
+.cyan_fon,
+.cyan_fon td,
+.cyan_fon th {
+    background: var(--color-cyan-bg) !important;
+}
+
+.cyan_fon:hover,
+.cyan_fon:hover td,
+.cyan_fon:hover th,
+tr:hover td.cyan_fon,
+tr:hover th.cyan_fon {
+    background: var(--color-cyan-bg-hover) !important;
+}
+
+.purple_fon,
+.purple_fon td,
+.purple_fon th {
+    background: var(--color-purple-bg) !important;
+}
+
+.purple_fon:hover,
+.purple_fon:hover td,
+.purple_fon:hover th,
+tr:hover td.purple_fon,
+tr:hover th.purple_fon {
+    background: var(--color-purple-bg-hover) !important;
+}
+
+.pink_fon,
+.pink_fon td,
+.pink_fon th {
+    background: var(--color-pink-bg) !important;
+}
+
+.pink_fon:hover,
+.pink_fon:hover td,
+.pink_fon:hover th,
+tr:hover td.pink_fon,
+tr:hover th.pink_fon {
+    background: var(--color-pink-bg-hover) !important;
+}
+
+.brown_fon,
+.brown_fon td,
+.brown_fon th {
+    background: var(--color-brown-bg) !important;
+}
+
+.brown_fon:hover,
+.brown_fon:hover td,
+.brown_fon:hover th,
+tr:hover td.brown_fon,
+tr:hover th.brown_fon {
+    background: var(--color-brown-bg-hover) !important;
+}
+
+.lime_fon,
+.lime_fon td,
+.lime_fon th {
+    background: var(--color-lime-bg) !important;
+}
+
+.lime_fon:hover,
+.lime_fon:hover td,
+.lime_fon:hover th,
+tr:hover td.lime_fon,
+tr:hover th.lime_fon {
+    background: var(--color-lime-bg-hover) !important;
+}
+
+.beige_fon,
+.beige_fon td,
+.beige_fon th {
+    background: var(--color-beige-bg) !important;
+}
+
+.beige_fon:hover,
+.beige_fon:hover td,
+.beige_fon:hover th,
+tr:hover td.beige_fon,
+tr:hover th.beige_fon {
+    background: var(--color-beige-bg-hover) !important;
+}
+
+.beryl_fon,
+.beryl_fon td,
+.beryl_fon th {
+    background: var(--color-beryl-bg) !important;
+}
+
+.beryl_fon:hover,
+.beryl_fon:hover td,
+.beryl_fon:hover th,
+tr:hover td.beryl_fon,
+tr:hover th.beryl_fon {
+    background: var(--color-beryl-bg-hover) !important;
+}
+
+
+.password-container {
+    align-items: center;
+    /* Центрирует по вертикали */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 5px;
+    margin: 8px 0 !important;
+}
+
+.password-container input {
+    padding-right: 26px !important;
+}
+
+.password-container .input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    width: 100%;
+}
+
+.password-container .vpas {
+    align-items: center;
+    justify-content: center;
+    content: "";
+    position: absolute;
+    display: inline-block;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    background: url(images/view.svg) 0 0 no-repeat;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.password-container .vpas.view {
+    background: url(images/no-view.svg) 0 0 no-repeat;
+}
+
+
+
+
+
+/* Кнопка меню */
+
+.menu_toggle_btn {
+
+
+    transition: all ease .2s;
+    opacity: 1;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    border-radius: 8px;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    min-height: auto;
+
+    display: none;
+}
+
+.menu_toggle_btn:hover {
+    color: var(--color-text-hover);
+    box-shadow:
+        2px 2px 4px var(--color-box-shadow),
+        1px 1px 2px var(--color-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-box-shadow-inset) inset;
+    transform: translateX(-0.5px) translateY(-0.5px);
+}
+
+.menu_toggle_btn:active {
+    box-shadow:
+        0 0 2px var(--color-box-shadow-inset) inset,
+        -0 -0 2px var(--color-box-shadow-inset) inset;
+    transform: translateX(0.5px) translateY(0.5px);
+
+}
+
+.menu_toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    width: 22px;
+    height: 22px;
+    position: relative;
+    top: 0;
+    flex-direction: column;
+}
+
+.menu_toggle>i {
+    height: 2px;
+    width: 18px;
+    background: var(--color-text);
+    /*position: absolute;
+    left: 0;*/
+
+    transition: all ease .2s;
+    border-radius: 1px;
+    box-shadow: 0 0 2px var(--color-box-shadow);
+}
+
+.menu_toggle>i:nth-child(1) {
+    margin-top: 5px;
+}
+
+.menu_toggle>i:nth-child(3) {
+    margin-bottom: 5px;
+}
+
+.menu_toggle:hover>i {
+    background: var(--color-text-hover);
+    box-shadow: 0 0 4px var(--color-box-shadow);
+}
+
+.menu-open .menu_toggle>i:nth-child(1) {
+    transform: translateY(5px) rotate(45deg);
+}
+
+.menu-open .menu_toggle>i:nth-child(2) {
+    opacity: 0;
+    transform: scale(0);
+}
+
+.menu-open .menu_toggle>i:nth-child(3) {
+    transform: translateY(-5px) rotate(-45deg);
+}
+
+/* Вариант 3: Кнопка с текстом (альтернатива) */
+.menu_toggle_btn.text {
+    width: auto;
+    min-width: 80px;
+    padding: 0 12px;
+    border-radius: 16px;
+}
+
+.menu_toggle_btn.text::after {
+    content: "Меню";
+    color: var(--color-text);
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow: 1px 1px 2px var(--color-text-shadow);
+    margin-left: 8px;
+}
+
+.menu_toggle_btn.text .menu_toggle {
+    width: 14px;
+    height: 14px;
+}
+
+/* Кнопка логов */
+.logs_toggle_btn {
+    left: 10px;
+    bottom: 20px;
+    height: 24px;
+    width: 24px;
+    position: absolute;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    cursor: pointer;
+    z-index: 100;
+    border-radius: 8px;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    text-align: center;
+    min-height: auto;
+    padding: 0;
+    margin: 0;
+}
+
+.logs_toggle_btn:hover {
+    color: var(--color-text-hover);
+    box-shadow:
+        2px 2px 4px var(--color-box-shadow),
+        1px 1px 2px var(--color-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-box-shadow-inset) inset;
+    transform: translateX(-0.5px) translateY(-0.5px);
+}
+
+.logs_toggle_btn:active {
+    box-shadow:
+        1px 1px 2px var(--color-box-shadow),
+        0 0 2px var(--color-box-shadow-inset) inset,
+        -0 -0 2px var(--color-box-shadow-inset) inset;
+    transform: translateX(0.5px) translateY(0.5px);
+}
+
+.logs_icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+#icon_log,
+#icon_close {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+    color: var(--color-text);
+    text-shadow: 1px 1px 2px var(--color-text-shadow);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#icon_close {
+    opacity: 0;
+}
+
+.logs_open #icon_log {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+}
+
+.logs_open #icon_close {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+#LogsPanel {
+    position: fixed;
+    left: 10px;
+    bottom: 50px;
+    width: 700px;
+    /*max-height: 50vh;*/
+    overflow: hidden;
+    background: var(--color-input-bg);
+    backdrop-filter: blur(2px);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    z-index: 999;
+    padding: 10px;
+    box-shadow: 0 10px 25px var(--color-box-shadow);
+}
+
+.theme-toggle-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1001;
+    width: 24px;
+    height: 24px;
+    padding: 2px;
+    border-radius: 8px;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+}
+
+.theme-toggle-btn:hover {
+    color: var(--color-text-hover);
+    box-shadow:
+        2px 2px 4px var(--color-box-shadow),
+        1px 1px 2px var(--color-box-shadow-inset) inset,
+        -1px -1px 2px var(--color-box-shadow-inset) inset;
+    transform: translateX(-0.5px) translateY(-0.5px);
+}
+
+.theme-toggle-btn:active {
+    box-shadow:
+        1px 1px 2px var(--color-box-shadow),
+        0 0 2px var(--color-box-shadow-inset) inset,
+        -0 -0 2px var(--color-box-shadow-inset) inset;
+    transform: translateX(0.5px) translateY(0.5px);
+}
+
+.theme-toggle-btn img {
+
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+}
+
+.theme-toggle-btn .dark-symbol {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="gold"/></svg>') center/contain no-repeat;
+}
+
+.theme-toggle-btn .light-symbol {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="gold" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5" fill="gold"/><g stroke="gold"><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></g></svg>') center/contain no-repeat;
+}
+
+.theme-toggle-btn .auto-symbol {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    background: url('images/auto-symbol.svg?v=5') center/contain no-repeat;
+    vertical-align: middle;
+}
+
+/* tooltip */
+.tip {
+    padding: 4px;
+    position: absolute;
+    z-index: 2000;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 0 10px 2px var(--color-box-shadow);
+    background: var(--color-input-bg);
+    border-radius: 7px;
+    backdrop-filter: blur(2px);
+    text-align: center;
+    font-size: 11px;
+    max-width: 90%;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.tip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.box {
+    display: inline-block;
+    margin: 0;
+    /*padding: 2px;*/
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-box-bg);
+    box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
+    /* backdrop-filter: blur(4px); */
+}
+
+
+dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--color-dialog-overlay-bg);
+    z-index: 999;
+    /* backdrop-filter: blur(2px); */
+    /*display: none;*/
+}
+
+:root {
+    --dialog-title-width: auto;
+    /* или 100% для динамической ширины */
+}
+
+
+
+.accauntlayer form {
+
+    /*margin: auto auto;*/
+    display: grid;
+    grid-template-columns: 30% 1fr;
+    align-items: center;
+    width: 98%;
+    max-width: 350px;
+    min-height: 200px;
+    grid-column: 2;
+    grid-row: 2;
+    /*transform: translateY(-50%);*/
+
+}
+
+.accauntlayer form>* {
+    margin: 8px;
+    padding: 0;
+}
+
+
+.accauntlayer input[type=text],
+.accauntlayer input[type=password] {
+    width: 100%;
+    padding: 8px;
+    margin: 0px;
+}
+
+
+.accauntlayer span {
+    width: 100%;
+    grid-column: 1 / 3;
+    margin: 8px 0 0 0;
+    padding: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+
+}
+
+
+
+.accauntlayer input[type=submit],
+.accauntlayer .pin-container {
+    width: 100%;
+    grid-column: 1/ span 2;
+    margin: 8px 0 0 0;
+    padding: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+
+}
+
+.accauntlayer .slider-chkbox .slider {
+    margin: 8px 4px !important;
+}
+
+.password-hint {
+    margin-top: 5px;
+    color: #666;
+    font-size: 9px;
+    text-align: left;
+    line-height: 1.3;
+    position: absolute;
+    top: 30px;
+    z-index: 100;
+    background: var(--color-box-bg);
+    padding: 4px;
+    border-radius: 5px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 0 10px 2px var(--color-box-shadow);
+    backdrop-filter: blur(2px);
+}
+
+.password-hint span {
+    margin: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+.pin-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.pin-input {
+    width: 40px;
+    height: 50px;
+    font-size: 24px;
+    text-align: center;
+}
+
+.OverView #UserName {
+    width: auto;
+    height: 1.5em;
+    font-size: 1.5em;
+    margin: 12px;
+    font-weight: bold;
+}
+
+.OverView #Planet {
+    position: relative;
+    height: 350px;
+    margin: auto;
+    overflow: hidden;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.OverView #Planet #PlanetName__ {
+    position: relative;
+    border: 0;
+    border-radius: 6px;
+    background-color: rgba(0, 25, 55, 0.3);
+    box-shadow: 1px 1px 7px 1px rgba(192, 192, 192, 0.7) inset;
+    padding: 8px;
+    text-align: center;
+    margin: 15px;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 1);
+    font-size: 16px;
+    z-index: 12;
+}
+
+.OverView #Planet #PlanetName {
+    font-size: 16px;
+    font-weight: 800;
+    width: 100%;
+    z-index: 10;
+}
+
+.OverView #Planet #PlanetInfo {
+    position: absolute;
+    width: 250px;
+    bottom: 0px;
+    right: 0px;
+    z-index: 10;
+    margin: 8px;
+    display: grid;
+    grid-template-columns: auto auto;
+    /* 2 столбца */
+    gap: 4px 12px;
+    /* отступы между строками и колонками */
+}
+
+#PlanetInfo__ {
+    position: absolute;
+    border: 0;
+    border-radius: 6px;
+    background-color: rgba(0, 25, 55, 0.3);
+    box-shadow: 0px 0px 4px 1px rgba(192, 192, 192, 0.7) inset;
+    padding: 8px;
+    text-align: center;
+    width: 250px;
+    bottom: 0px;
+    right: 0px;
+    margin: 15px;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 1);
+    z-index: 30;
+}
+
+.OverView #Planet #PlanetImage {
+    position: absolute;
+    max-width: 735px;
+    width: 735px;
+    height: 735px;
+    border-radius: 384px;
+    box-shadow: 0 0 50px #fff;
+    left: 50px;
+    top: 150px;
+    z-index: 0;
+}
+
+.OverView #Planet #PlanetDebris {
+    position: absolute;
+    background: url("/images/planets/overview/debris.png") 50px 0 no-repeat;
+    cursor: pointer;
+    border-radius: 100%;
+    width: 830px;
+    height: 830px;
+    left: -20px;
+    top: 85px;
+    z-index: 5;
+    -webkit-transition: all 0.5s linear;
+    -moz-transition: all 0.5s linear;
+    -o-transition: all 0.5s linear;
+    transition: all 0.5s linear;
+    opacity: 0.65;
+}
+
+.OverView #Planet #PlanetDebris:hover {
+    background: url("/images/planets/overview/debris_h.png") 50px 0 no-repeat;
+
+    opacity: 1;
+}
+
+.OverView #Planet #PlanetDebrisNoSel {
+    position: absolute;
+    border-radius: 100%;
+    width: 600px;
+    height: 620px;
+    left: 120px;
+    top: 180px;
+    content: "";
+    z-index: 7;
+}
+
+.OverView .Queues {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    max-width: 600px;
+    margin: 6px auto;
+}
+
+.TypeBox {
+    width: 100%;
+}
+
+.TypeBox:not(:first-child) {
+    margin-top: 4px;
+}
+
+.Queues {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    justify-items: center;
+}
+
+.ShipyardPage .Buttons {
+    margin: 2px;
+    margin-top: 10px;
+}
+
+game-build {
+    --element-width: 120px;
+    padding: 0px;
+    display: inline-block;
+    width: var(--element-width);
+    height: var(--element-width);
+    z-index: 0;
+    position: relative;
+    border: 1px solid var(--color-border);
+    box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
+    border-radius: 6px;
+    margin: 2px;
+}
+
+game-build .image {
+    width: var(--element-width);
+    height: var(--element-width);
+    left: 0;
+    top: 0;
+    position: absolute;
+    border: 1px solid var(--color-border);
+    box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
+    border-radius: 6px;
+    background-size: contain;
+    z-index: 0;
+}
+
+game-build.disabled {
+    -webkit-filter: grayscale(100%);
+    filter: grayscale(100%);
+}
+
+game-build.queues.active {
+    --queues-active-width: 326px;
+    /*406px;*/
+    --queues-active-height: 70px;
+    width: var(--queues-active-width);
+    height: var(--queues-active-height);
+}
+
+game-build.queues.active .head {
+    left: var(--queues-active-height);
+    width: calc(var(--queues-active-width) - var(--queues-active-height));
+    height: var(--queues-active-height);
+
+}
+
+game-build.queues.active .image {
+    width: var(--queues-active-height);
+    height: var(--queues-active-height);
+
+}
+
+game-build.queues.queued {
+    --queues-queued-width: 326px;
+    --queues-queued-height: 45px;
+    width: var(--queues-queued-width);
+    height: var(--queues-queued-height);
+}
+
+game-build.queues.queued .head {
+    padding: 0;
+    left: var(--queues-queued-height);
+    width: calc(var(--queues-queued-width) - var(--queues-queued-height));
+    height: var(--queues-queued-height);
+
+}
+
+game-build.queues.queued .image {
+    width: var(--queues-queued-height);
+    height: var(--queues-queued-height);
+
+}
+
+game-build.queues .head {
+
+    display: grid;
+    grid-template-columns: 86px auto;
+    align-items: end;
+    flex-wrap: wrap;
+    border-radius: 0 6px 6px 0;
+}
+
+game-build.queues .image {
+    border-radius: 6px 0 0 6px;
+}
+
+game-build.queues .Planet {
+    overflow: hidden;
+    max-width: 80px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+}
+
+game-build.queues .btn-box-cancel {
+    --btn-size: 16px;
+}
+
+
+game-build.queues .head .tooltip-progress {
+    grid-column: 1 / span 2;
+    margin: 2px 10px;
+}
+
+game-build.over_queues {
+    --over_queues-width: 80px;
+    --over_queues-height: 80px;
+    width: var(--over_queues-width);
+    height: var(--over_queues-height);
+}
+
+game-build.over_queues .head {
+    width: var(--over_queues-width);
+}
+
+game-build.over_queues .bottom {
+    width: var(--over_queues-width);
+    padding-top: 0;
+}
+
+game-build.over_queues .head .level,
+game-build.over_queues .head .level .LevelNumber,
+game-build.over_queues .head .name,
+game-build.over_queues .bottom .LastTimeNumber {
+    font-size: 9px;
+}
+
+game-build.over_queues .image {
+    width: var(--over_queues-height);
+    height: var(--over_queues-height);
+}
+
+
+game-build .head {
+    position: absolute;
+    width: var(--element-width);
+
+    border: 1px solid var(--color-border);
+    background: var(--color-box-bg);
+    box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
+    border-radius: 6px;
+
+    left: 0px;
+    top: 0px;
+    padding: 2px;
+    hyphens: auto;
+    z-index: 10;
+
+}
+
+game-build .head .name {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+game-build .bottom {
+    position: absolute;
+    width: var(--element-width);
+
+    border: 1px solid var(--color-border);
+    background: var(--color-box-bg);
+    box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
+    border-radius: 6px;
+
+    left: 0px;
+    bottom: 0px;
+    padding: 2px;
+    hyphens: auto;
+    z-index: 10;
+
+}
+
+game-build .LevelNumber {
+    color: var(--color-lime-text);
+}
+
+game-build.builds .btn-box-info {
+    left: 3px;
+    bottom: 2px;
+}
+
+game-build.builds .btn-box-up {
+    right: 2px;
+    bottom: 2px;
+}
+
+game-build.builds .btn-box-down {
+    right: 28px;
+    bottom: 2px;
+}
+
+game-build.builds .btn-box-plus {
+    right: 2px;
+    bottom: 2px;
+}
+
+game-build.builds .btn-box-max {
+    right: 2px;
+    bottom: 2px;
+}
+
+game-build.builds .btn-input {
+    right: 28px;
+    left: 2px;
+    bottom: 2px;
+    border-color: var(--color-cyan-border);
+    box-shadow: 0 0 4px 2px var(--color-cyan-border) inset;
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
+game-build.builds .btn-input::-webkit-inner-spin-button,
+game-build.builds .btn-input::-webkit-outer-spin-button {
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
+game-build.builds .btn-box-cancel {
+    right: 0;
+    bottom: 0;
+}
+
+game-build.queues .btn-box-cancel {
+    right: 0;
+    top: 0;
+}
+
+.input-limit-flash {
+    animation: flashLimit 1s ease;
+}
+
+@keyframes flashLimit {
+    0% {
+        box-shadow: 0 0 4px 2px var(--color-red-border) inset;
+    }
+
+    100% {
+        box-shadow: none;
+    }
+}
+
+/* Базовый стиль кнопок */
+.btn-box {
+
+    --btn-size: 24px;
+
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--btn-size);
+    height: var(--btn-size);
+
+    border: 1px solid var(--color-border);
+    background: var(--color-box-bg);
+    box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
+    border-radius: 6px;
+
+    cursor: pointer;
+    padding: 0;
+    color: var(--color-text);
+    /* цвет иконки по умолчанию */
+    font-family: "Material Design Icons";
+    z-index: 20;
+}
+
+.btn-box::before {
+    font-size: calc(var(--btn-size));
+    transition: all 0.2s ease;
+}
+
+.btn-box:hover::before {
+    transform: scale(1.2);
+}
+
+.btn-box:active::before {
+    transform: scale(0.9);
+}
+
+.btn-box[disabled],
+.btn-box[disabled]::before {
+    color: var(--color-disabled-text);
+    user-select: none;
+    pointer-events: auto;
+    /* важно! разрешаем события */
+}
+
+
+.btn-box[disabled]:active,
+.btn-box[disabled]:active::before {
+    user-select: none;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.btn-box[disabled]:hover::before {
+    color: var(--color-disabled-text);
+    pointer-events: auto;
+    user-select: none;
+    transform: scale(1);
+}
+
+
+/* Иконки через ::before */
+.btn-box-up::before {
+    content: "\F005E";
+}
+
+.btn-box-up:hover::before {
+    color: var(--color-green-text-hover);
+}
+
+.btn-box-down::before {
+    content: "\F0046";
+}
+
+.btn-box-down:hover::before {
+    color: var(--color-red-text-hover);
+}
+
+.btn-box-cancel::before {
+    content: "\F1398";
+    color: var(--color-red-text);
+}
+
+.btn-box-cancel:hover::before {
+    color: var(--color-red-text-hover);
+}
+
+.btn-box-info::before {
+    content: "\F02D6";
+    color: var(--color-info-text);
+    font-size: calc(var(--btn-size) - 4px);
+
+}
+
+.btn-box-info:hover::before {
+    color: var(--color-info-text-hover);
+}
+
+.btn-box-max::before {
+    content: "\F013F";
+    color: var(--color-info-text);
+}
+
+.btn-box-plus::before {
+    content: "\F0415";
+    color: var(--color-info-text);
+}
+
+.btn-box-plus:hover::before {
+    color: var(--color-info-text-hover);
+}
+
+.btn-input {
+    width: auto;
+    margin: 0;
+    backdrop-filter: blur(5px);
+    cursor: auto;
+}
+
+.MessageTypesBox {
+    display: flex;
+    /*grid-template-columns: repeat(5, 90px);*/
+    /* 4 элемента на строку */
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.MessageTypeBox {
+    cursor: pointer;
+    min-width: 80px;
+}
+
+.Message {
+    display: block;
+    margin: 2px;
+}
+
+.Message span {
+    margin: 0 2px;
+}
+
+.MessageText {
+    white-space: pre-line;
+    margin: 4px;
+}
+
+@media screen and (max-width: 760px) {
+
+    .gamelayer {
+        grid-template-rows: 6px 42px 1fr 12px;
+
+        grid-template-columns: 6px 0 1fr 6px;
+    }
+
+    #TopNav {
+        height: 40px;
+    }
+
+    #TopNav .ResBox {
+        flex-direction: column;
+        padding: 0 1px 4px 1px;
+    }
+
+    #TopNav .ResBox::before {
+        margin-bottom: -2px;
+    }
+
+    #LeftMenu.menu_open {
+        visibility: visible;
+        opacity: 1;
+        transition:
+            opacity 0.3s ease,
+            visibility 0s linear 0s;
+        /* скрываем после затухания */
+    }
+
+    #LeftMenu {
+        top: 40px;
+        position: absolute;
+        transition: 1s;
+        opacity: 0;
+        visibility: hidden;
+        z-index: 100;
+        transition:
+            opacity 0.3s ease,
+            visibility 0s linear 0.2s;
+        /* сразу показываем */
+    }
+
+
+    .menu_toggle_btn {
+        display: flex;
+    }
+}

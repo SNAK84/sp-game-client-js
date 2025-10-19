@@ -1,0 +1,214 @@
+:root {
+	/* Фон */
+	--color-bg: linear-gradient(135deg, #f7f3e9 0%, #ede7d9 100%);
+	--color-bg-ng: #f7f3e9;
+	--color-bg-image: url(images/bg-light.jpg);
+
+	/* Текст */
+	--color-text: #263238;
+	--color-text-secondary: #607d8b;
+	--color-text-hover: #000000;
+	--color-text-shadow: rgba(255, 255, 255, 0.7);
+
+	/* Границы и тени */
+	--color-border: #b0bec5;
+	--color-box-shadow: rgba(0, 0, 0, 0.08);
+	--color-box-shadow-inset: #e0e0e0;
+
+	/* Scrollbar */
+	--color-scrollbar-track-bg: rgba(230, 235, 245, 0.5);
+	--color-scrollbar-track-border: #b0bec5;
+	--color-scrollbar-thumb-bg: rgba(176, 190, 197, 0.9);
+	--color-scrollbar-thumb-border: #b0bec5;
+	--color-scrollbar-thumb-shadow: rgba(0, 0, 0, 0.12);
+	--color-scrollbar-thumb-hover-bg: #90a4ae;
+	--color-scrollbar-thumb-hover-shadow: #b0bec5;
+	--color-scrollbar-corner-bg: rgba(230, 235, 245, 0.5);
+
+	/* Disabled */
+	--color-disabled-bg: rgba(220, 220, 220, 0.5);
+	--color-disabled-border: #b0bec5;
+	--color-disabled-text: #b0bec5;
+
+	/* Акцентные цвета (приглушённые) */
+	--color-warning-bg: rgba(255, 214, 0, 0.18);
+	--color-warning-border: #ffe082;
+	--color-warning-text: #b26a00;
+	--color-warning-box-shadow: #fffde7;
+	--color-warning-box-shadow-inset: #ffe082;
+	--color-warning-text-hover: #ffb300;
+
+	--color-danger-bg: rgba(255, 64, 64, 0.15);
+	--color-danger-border: #ffcdd2;
+	--color-danger-text: #b71c1c;
+	--color-danger-box-shadow: #ffebee;
+	--color-danger-box-shadow-inset: #ffcdd2;
+	--color-danger-text-hover: #d32f2f;
+
+	--color-info-bg: rgba(64, 128, 255, 0.10);
+	--color-info-border: #bbdefb;
+	--color-info-text: #1565c0;
+	--color-info-box-shadow: #e3f2fd;
+	--color-info-box-shadow-inset: #bbdefb;
+	--color-info-text-hover: #1976d2;
+
+	--color-success-bg: rgba(76, 220, 120, 0.10);
+	--color-success-border: #b2dfdb;
+	--color-success-text: #00695c;
+	--color-success-box-shadow: #e0f2f1;
+	--color-success-box-shadow-inset: #b2dfdb;
+	--color-success-text-hover: #00897b;
+
+	/* Input */
+	--color-input-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(245, 247, 250, 0.7) 100%);
+	--color-input-bg-ng: rgba(255, 255, 255, 0.7);
+	--color-input-border: #b0bec5;
+	--color-input-text: #263238;
+
+	/* Slider */
+	--color-slider-bg: rgba(230, 235, 245, 0.7);
+	--color-slider-thumb-bg: #90a4ae;
+	--color-slider-thumb-checked-bg: #1976d2;
+
+	/* Radio */
+	--color-radio-bg: rgba(230, 235, 245, 0.7);
+	--color-radio-thumb-bg: #90a4ae;
+	--color-radio-thumb-checked-bg: #1976d2;
+
+	/* Autofill */
+	--color-autofill-bg: rgba(245, 247, 250, 0.7);
+	--color-autofill-border: #1976d2;
+	--color-autofill-text: #263238;
+
+	--color-box-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(230, 235, 245, 0.45) 100%);
+
+	--color-table-tr-hover-bg: rgba(220, 230, 240, 0.85);
+
+	--color-table-th-bg: rgba(235, 237, 240, 0.85);
+	--color-table-th-bg-hover: #e3f2fd;
+	--color-table-th-border: #b0bec5;
+	--color-table-td-bg: rgba(255, 255, 255, 0.85);
+	--color-table-td-bg-hover: rgba(240, 245, 245, 0.85);
+	--color-table-td-border: #b0bec5;
+
+	--color-cell-success-bg: rgba(76, 220, 120, 0.08);
+	--color-cell-success-border: #b2dfdb;
+	--color-cell-success-text: #00695c;
+	--color-cell-success-bg-hover: rgba(76, 220, 120, 0.18);
+	--color-cell-success-text-hover: #00897b;
+	--color-cell-success-box-shadow-inset: #b2dfdb;
+
+	--color-cell-warning-bg: rgba(255, 193, 7, 0.10);
+	--color-cell-warning-border: #ffe082;
+	--color-cell-warning-text: #b26a00;
+	--color-cell-warning-bg-hover: rgba(255, 193, 7, 0.18);
+	--color-cell-warning-text-hover: #ffb300;
+	--color-cell-warning-box-shadow-inset: #ffe082;
+
+	--color-cell-error-bg: rgba(255, 64, 64, 0.08);
+	--color-cell-error-border: #ffcdd2;
+	--color-cell-error-text: #b71c1c;
+	--color-cell-error-bg-hover: rgba(255, 64, 64, 0.18);
+	--color-cell-error-text-hover: #d32f2f;
+	--color-cell-error-box-shadow-inset: #ffcdd2;
+
+	--color-cell-info-bg: rgba(64, 128, 255, 0.08);
+	--color-cell-info-border: #bbdefb;
+	--color-cell-info-text: #1565c0;
+	--color-cell-info-bg-hover: rgba(64, 128, 255, 0.18);
+	--color-cell-info-text-hover: #1976d2;
+	--color-cell-info-box-shadow-inset: #bbdefb;
+
+	/* Светлая тема – текст */
+	--color-red-text: #aa0000;
+	--color-red-text-hover: #dd3333;
+
+	--color-green-text: #007700;
+	--color-green-text-hover: #339933;
+
+	--color-blue-text: #0033aa;
+	--color-blue-text-hover: #3366cc;
+
+	--color-yellow-text: #999900;
+	--color-yellow-text-hover: #cccc33;
+
+	--color-orange-text: #aa5500;
+	--color-orange-text-hover: #cc7722;
+
+	--color-cyan-text: #009999;
+	--color-cyan-text-hover: #33cccc;
+
+	--color-purple-text: #7700aa;
+	--color-purple-text-hover: #9933cc;
+
+	--color-pink-text: #aa4477;
+	--color-pink-text-hover: #cc7799;
+
+	--color-brown-text: #552200;
+	--color-brown-text-hover: #774422;
+
+	--color-lime-text: #339900;
+	--color-lime-text-hover: #66bb33;
+
+	--color-beige-text: #333333;
+	--color-beige-text-hover: #555555;
+
+	--color-beryl-text: #00cccc;
+	--color-beryl-text-hover: #33ffff;
+
+
+
+	/* Цветные границы */
+	--color-red-border: #ff8888;
+	--color-green-border: #88ff88;
+	--color-blue-border: #8888ff;
+	--color-yellow-border: #ffff88;
+	--color-orange-border: #ffa000;
+	--color-cyan-border: #00bcd4;
+	--color-purple-border: #b000b0;
+	--color-pink-border: #f48fb1;
+	--color-brown-border: #553322;
+	--color-lime-border: #88ff88;
+	--color-beige-border: #f5f5dc;
+	--color-beryl-border: #00ffff;
+
+	--color-red-bg: rgba(255, 16, 16, 0.35);
+	--color-green-bg: rgba(76, 220, 120, 0.35);
+	--color-blue-bg: rgba(64, 128, 255, 0.35);
+	--color-yellow-bg: rgba(255, 214, 0, 0.38);
+	--color-orange-bg: rgba(255, 160, 0, 0.36);
+	--color-cyan-bg: rgba(0, 188, 212, 0.35);
+	--color-purple-bg: rgba(156, 39, 176, 0.35);
+	--color-pink-bg: rgba(244, 143, 177, 0.35);
+	--color-brown-bg: rgba(121, 85, 72, 0.35);
+	--color-lime-bg: rgba(0, 255, 0, 0.35);
+	/* Лайм */
+	--color-beige-bg: rgba(245, 245, 220, 0.35);
+	/* Бежевый */
+	--color-beryl-bg: rgba(0, 255, 255, 0.35);
+	/* Берюзовый */
+
+	/* Цветные границы */
+	--color-red-bg-hover: rgba(255, 16, 16, 0.52);
+	--color-green-bg-hover: rgba(76, 220, 120, 0.52);
+	--color-blue-bg-hover: rgba(64, 128, 255, 0.52);
+	--color-yellow-bg-hover: rgba(255, 214, 0, 0.55);
+	--color-orange-bg-hover: rgba(255, 160, 0, 0.53);
+	--color-cyan-bg-hover: rgba(0, 188, 212, 0.52);
+	--color-purple-bg-hover: rgba(156, 39, 176, 0.52);
+	--color-pink-bg-hover: rgba(244, 143, 177, 0.52);
+	--color-brown-bg-hover: rgba(121, 85, 72, 0.52);
+	--color-lime-bg-hover: rgba(0, 255, 0, 0.52);
+	--color-beige-bg-hover: rgba(245, 245, 220, 0.52);
+	--color-beryl-bg-hover: rgba(0, 255, 255, 0.52);
+
+	/* Overlay */
+	--color-overlay-bg: rgba(240, 245, 255, 0.75);
+	--color-dialog-overlay-bg: rgba(240, 245, 255, 0.5);
+
+	/* Ссылки */
+	--color-link: #1976d2;
+	--color-link-hover: #0d47a1;
+
+
+}
