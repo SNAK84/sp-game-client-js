@@ -411,7 +411,10 @@ class GameBuild extends HTMLElement {
             if (!this.ItemDataCount) this.ItemDataCount = {};
 
             if (this._data.count > count && Page.$Content.Items && Page.$Content.Items[this._data.id]) {
-                if (!this.ItemDataCount[this._data.id])
+                if (
+                    !this.ItemDataCount[this._data.id] ||
+                    Page.$Content.Items[this._data.id][0].data.count > this.ItemDataCount[this._data.id] + this._data.count - count
+                )
                     this.ItemDataCount[this._data.id] = Page.$Content.Items[this._data.id][0].data.count;
 
 
@@ -464,9 +467,9 @@ class GameBuild extends HTMLElement {
         } else if (this._type === 'over_queues') {
 
             this.Image.css({
-                    'background': `url("/images/${this._images}/${this._data.name}.gif") no-repeat`,
-                    'background-size': 'contain'
-                });
+                'background': `url("/images/${this._images}/${this._data.name}.gif") no-repeat`,
+                'background-size': 'contain'
+            });
 
             const remaining = Math.max(0, Math.round(this._data.end_time - GameServerTime.now()));
             this.Bottom.LastTimeNumber.text(secondToTime(remaining));

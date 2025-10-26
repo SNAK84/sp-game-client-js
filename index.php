@@ -31,6 +31,7 @@ $Pages = array(
     'researchs' => 'ResearchsPageClass',
     'shipyard' => 'HangarPageClass',
     'defense' => 'HangarPageClass',
+    'galaxy' => 'GalaxyPageClass',
     'messages' => 'MessagesPageClass'
 );
 
@@ -46,16 +47,13 @@ $AjaxArray = [];
 $tpl = <<<HTML
     <overlay show="true" style="transition:opacity300msease0s;opacity:0.75;"></overlay>
 
-<div id="ping-indicator">Ping: ...</div>
-    <div id="MenuBtn" class="menu_toggle_btn ResBox ">
+    <div id="ping-indicator">Ping: ...</div>
+
+    <div id="MenuBtn" class="menu_toggle_btn ResBox" style="display:none">
         <div class="menu_toggle"><i></i><i></i><i></i></div>
         Меню
     </div>
-    <!--button id="themeToggleBtn" class="theme-toggle-btn" tooltip="Тема">
-        <span id="themeToggleIcon" class="auto-symbol"></span>
-    </button-->
-    <!--div id="LeftMenu" show="false" style="opacity: 0; display: none;" olddisplay="block"></div-->
-
+    
     <div id="layer" style="display:none"></div>
 
 
@@ -97,18 +95,6 @@ $tpl = <<<HTML
     <div id="bottom_panel">
         <span id="copyright"> Проект «Космические пираты v2.0.alfa». Все права защищены.</span>
     </div>
-
-    <div class="logs_toggle_btn" id="logsButton" onclick="toggleLogs()">
-        <div class="logs_icon">
-            <span id="icon_log">📋</span>
-            <span id="icon_close">✕</span>
-        </div>
-    </div>
-    
-    <div id="LogsPanel" style="display: none;">
-        <div id="LogsContent" style="text-align:left; max-height: 300px; overflow: auto;"></div>
-    </div>
-
 
 HTML;
 

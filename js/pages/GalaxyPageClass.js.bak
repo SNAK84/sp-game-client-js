@@ -1,0 +1,812 @@
+window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
+
+    Name = "GalaxyPageClass";
+
+    // === Переменные для инерции ===
+    velocity = { x: 0, y: 0 };
+    lastDrag = { x: 0, y: 0, time: 0 };
+    isDragging = false;
+    isTouching = false;
+    inertiaActive = false;
+    friction = 0.95; // коэффициент трения
+    minVelocity = 0.05; // минимальная скорость до остановки
+
+    targetZoom = 0.1;
+    zoomLerpSpeed = 0.15;
+
+    SystemShow = false;
+
+    constructor() {
+        super();
+
+        console.log("constructor GalaxyPageClass");
+
+        // === Canvas ===
+        this.canvas = document.createElement("canvas");
+        this.ctx = this.canvas.getContext("2d");
+
+        // базовые настройки
+        this.zoom = 0.5;
+        this.minZoom = 0.1;
+        this.maxZoom = 3;
+
+        this.offset = { x: 0, y: 0 };
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+
+        this.planets = [];
+        this.planetImages = {};
+
+        this.asteroidSprites = []; // массив Image()
+        this.asteroidSpriteSizes = [
+            [69, 58], [122, 74], [139, 116], [210, 168],
+            [252, 210], [252, 266], [253, 137], [483, 327]
+        ];
+
+        this.asteroidBelts = {};
+
+        // === DOM ===
+        this.$Layer.toggleClass("accauntlayer", false);
+        this.$Layer.toggleClass("gamelayer", true);
+        this.tooltip = this.createTooltip();
+
+
+        this.$System = this.createDiv("", "System", "system box").hide();
+        this.$System.append(this.canvas);
+
+        this.$Content.addClass("Galaxy").append(this.$System);
+
+        this.canvas.style.display = "block";
+        this.canvas.style.margin = "0 auto";
+        this.canvas.style.userSelect = "none";
+        this.canvas.style.cursor = "grab";
+        this.canvas.style.position = "absolute";
+        this.canvas.style.top = "50%";
+        this.canvas.style.left = "50%";
+        this.canvas.style.transform = "translate(-50%, -50%)";
+
+        // === События ===
+        this.canvas.addEventListener("wheel", (e) => this.onWheel(e));
+        this.canvas.addEventListener("mousedown", (e) => this.onMouseDown(e));
+        this.canvas.addEventListener("mouseup", (e) => this.onMouseUp(e));
+        this.canvas.addEventListener("mouseleave", (e) => this.onMouseUp(e));
+        this.canvas.addEventListener("mousemove", (e) => this.onMouseMove(e));
+        this.canvas.addEventListener("mousemove", (e) => this.onMouseDrag(e));
+
+        // === Сенсорное управление ===
+        this.isTouching = false;
+        this.touchStartDist = 0;
+        this.startZoom = 1;
+        this.lastTouchCenter = { x: 0, y: 0 };
+
+        this.canvas.addEventListener("touchstart", (e) => this.onTouchStart(e), { passive: false });
+        this.canvas.addEventListener("touchmove", (e) => this.onTouchMove(e), { passive: false });
+        this.canvas.addEventListener("touchend", (e) => this.onTouchEnd(e));
+
+        this.SystemShow = false;
+    }
+
+    // === Получение центра и дистанции между пальцами ===
+    getTouchCenter(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left - rect.width / 2;
+        const y = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top - rect.height / 2;
+        return { x, y };
+    }
+
+    getTouchDistance(e) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // === Начало касания ===
+    onTouchStart(e) {
+        if (e.touches.length === 1) {
+            // Однопальцевое перемещение
+            this.isDragging = true;
+            this.canvas.style.cursor = "grabbing";
+            const touch = e.touches[0];
+            this.dragStart.x = touch.clientX - this.offset.x;
+            this.dragStart.y = touch.clientY - this.offset.y;
+        } else if (e.touches.length === 2) {
+            e.preventDefault();
+            this.isTouching = true;
+            this.isDragging = false;
+
+            this.touchStartDist = this.getTouchDistance(e);
+            this.startZoom = this.zoom;
+
+            // Центр между пальцами в координатах canvas
+            const rect = this.canvas.getBoundingClientRect();
+            const touchCenter = {
+                x: (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left,
+                y: (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
+            };
+
+            this.lastTouchCenter = touchCenter;
+        }
+    }
+
+    // === Перемещение ===
+    onTouchMove(e) {
+        if (e.touches.length === 1 && this.isDragging) {
+            // перемещение одним пальцем
+            const touch = e.touches[0];
+            this.offset.x = touch.clientX - this.dragStart.x;
+            this.offset.y = touch.clientY - this.dragStart.y;
+            this.limitPan();
+
+        } else if (e.touches.length === 2 && this.isTouching) {
+            e.preventDefault();
+
+            const newDist = this.getTouchDistance(e);
+            const zoomChange = newDist / this.touchStartDist;
+            const newZoom = this.startZoom * zoomChange;
+
+            // центр pinch в координатах canvas
+            const rect = this.canvas.getBoundingClientRect();
+            const touchCenter = {
+                x: (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left,
+                y: (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
+            };
+
+            // пересчитать смещение так, чтобы масштабирование было относительно точки касания
+            const cx = this.canvas.width / 2;
+            const cy = this.canvas.height / 2;
+            const worldX = (touchCenter.x - cx - this.offset.x) / this.zoom;
+            const worldY = (touchCenter.y - cy - this.offset.y) / this.zoom;
+
+            this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, newZoom));
+
+            this.offset.x = touchCenter.x - cx - worldX * this.zoom;
+            this.offset.y = touchCenter.y - cy - worldY * this.zoom;
+
+            this.limitPan();
+        }
+    }
+
+    // === Завершение касания ===
+    onTouchEnd(e) {
+        if (e.touches.length === 0) {
+            this.isDragging = false;
+            this.isTouching = false;
+            this.canvas.style.cursor = "grab";
+        }
+    }
+
+    // === Tooltip ===
+    createTooltip() {
+        const tooltip = document.createElement("div");
+        tooltip.style.position = "absolute";
+        tooltip.style.pointerEvents = "none";
+        tooltip.style.padding = "6px 8px";
+        tooltip.style.background = "rgba(0,0,0,0.8)";
+        tooltip.style.color = "#fff";
+        tooltip.style.borderRadius = "6px";
+        tooltip.style.fontSize = "12px";
+        tooltip.style.display = "none";
+        this.$Content[0].appendChild(tooltip);
+        return tooltip;
+    }
+
+    showTooltip(x, y, planet) {
+        this.tooltip.innerHTML = `
+            <strong>${planet.name}</strong><br>
+            Диаметр: ${planet.size.toLocaleString()} км<br>
+            Температура: ${planet.temp_min}…${planet.temp_max}°C
+        `;
+        this.tooltip.style.left = x + 15 + "px";
+        this.tooltip.style.top = y + 15 + "px";
+        this.tooltip.style.display = "block";
+    }
+
+    hideTooltip() {
+        this.tooltip.style.display = "none";
+    }
+
+    // === Масштабирование колесиком ===
+    onWheel(event) {
+        event.preventDefault();
+        const zoomFactor = 1.1;
+        const oldZoom = this.zoom;
+        if (event.deltaY < 0) this.zoom *= zoomFactor;
+        else this.zoom /= zoomFactor;
+        this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom));
+
+        // центрирование под курсором
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left - this.canvas.width / 2;
+        const mouseY = event.clientY - rect.top - this.canvas.height / 2;
+        this.offset.x -= mouseX * (this.zoom / oldZoom - 1);
+        this.offset.y -= mouseY * (this.zoom / oldZoom - 1);
+
+        this.limitPan();
+    }
+
+    // === Перемещение мышью ===
+    onMouseDown(e) {
+        if (e.button !== 0) return;
+        this.isDragging = true;
+        this.canvas.style.cursor = "grabbing";
+        this.dragStart.x = e.clientX - this.offset.x;
+        this.dragStart.y = e.clientY - this.offset.y;
+        this.velocity = { x: 0, y: 0 };
+        this.lastDrag = { x: e.clientX, y: e.clientY, time: performance.now() };
+        this.inertiaActive = false;
+    }
+
+    onMouseUp(e) {
+        this.isDragging = false;
+        this.canvas.style.cursor = "grab";
+    }
+
+    onMouseDrag(e) {
+        if (!this.isDragging) return;
+        this.offset.x = e.clientX - this.dragStart.x;
+        this.offset.y = e.clientY - this.dragStart.y;
+        this.limitPan();
+    }
+
+    onMouseMove(e) {
+        if (!this.isDragging) return;
+
+        const now = performance.now();
+        const dx = e.clientX - this.lastDrag.x;
+        const dy = e.clientY - this.lastDrag.y;
+        const dt = (now - this.lastDrag.time) / 16.67; // нормализуем к ~60fps
+
+        this.offset.x = e.clientX - this.dragStart.x;
+        this.offset.y = e.clientY - this.dragStart.y;
+        this.limitPan();
+
+        // скорость в пикселях/кадр
+        this.velocity.x = dx / dt;
+        this.velocity.y = dy / dt;
+
+        this.lastDrag = { x: e.clientX, y: e.clientY, time: now };
+    }
+
+    // === Ограничение перемещения (границы панорамирования) ===
+    limitPan() {
+        const contentRect = this.$Content[0].getBoundingClientRect();
+        const systemRadius = (this.canvas.width / 2) * this.zoom;
+
+        const maxPanX = Math.max(0, systemRadius);
+        const maxPanY = Math.max(0, systemRadius);
+
+        this.offset.x = Math.max(-maxPanX, Math.min(maxPanX, this.offset.x));
+        this.offset.y = Math.max(-maxPanY, Math.min(maxPanY, this.offset.y));
+    }
+
+    // === Размер планеты (нелинейный) ===
+    getPlanetSizePx(size_km) {
+        const min_km = 3000;
+        const max_km = 40000;
+        const min_px = 20;
+        const max_px = 64;
+        const gamma = 0.9;
+        const norm = (size_km - min_km) / (max_km - min_km);
+        return min_px + (max_px - min_px) * Math.pow(norm, gamma);
+    }
+
+    // === Автоматический расчет размера canvas ===
+    adjustCanvasSize(maxDistance) {
+        // при maxDistance = 12000 должно влезть вся система
+        // подберём масштаб: пусть 12000 соответствует радиусу 500 px
+        const baseScale = 800 / (maxDistance + 2000);
+        const canvasSize = Math.ceil(maxDistance * baseScale * 2.5);
+        this.canvas.width = Math.max(800, Math.min(canvasSize, 5000));
+        this.canvas.height = this.canvas.width;
+        this.scale = baseScale;
+
+        console.log("canvas.width", this.canvas.width, "baseScale", baseScale);
+    }
+
+    // === Загрузка изображений ===
+    async loadPlanetImages(planets) {
+        const promises = [];
+        this.planetImages = {};
+
+        planets.forEach(p => {
+            if (!p.image) return;
+            const key = p.image;
+            if (!this.planetImages[key]) {
+                const img = new Image(128, 128);
+                const promise = new Promise(resolve => {
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve();
+                });
+                img.src = `/images/planets/galaxy/${key}.png`;
+                this.planetImages[key] = img;
+                promises.push(promise);
+            }
+        });
+
+        // солнце
+        const sun = new Image(128, 128);
+        const p2 = new Promise(resolve => {
+            sun.onload = () => resolve();
+            sun.onerror = () => resolve();
+        });
+        sun.src = `/images/stars/star_${this.System.star_type}.png`;
+        this.planetImages["sun"] = sun;
+        promises.push(p2);
+
+        for (let i = 0; i < 8; i++) {
+            const img = new Image(this.asteroidSpriteSizes[i][0], this.asteroidSpriteSizes[i][1]);
+            const ast = new Promise(resolve => {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+            });
+            img.src = `/images/asteroids/asteroid_${i + 1}.png`;
+            this.asteroidSprites[i] = img;
+            promises.push(ast);
+        }
+
+        return Promise.all(promises);
+    }
+
+    generateAsteroidBelt(orbitId, options) {
+
+        const { radius, beltWidth } = options;
+
+        const baseDensity = 0.5;
+        const count = Math.floor(2 * Math.PI * radius * baseDensity * (0.8 + Math.random() * 0.4));
+
+        const asteroids = [];
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const r = radius + (Math.random() - 0.5) * beltWidth;
+
+            // случайный спрайт
+            const spriteIndex = Math.floor(Math.random() * this.asteroidSprites.length);
+
+            const sizeRand = 0.8 + Math.random() * 0.4; // немного разных размеров
+            const speed = (Math.random() * 0.5 + 0.5) * 0.02; // индивидуальная скорость вращения
+            const direction = Math.random() < 0.5 ? -1 : 1;   // часть вращается в другую сторону
+            const alpha = 0.7 + Math.random() * 0.3; // постоянная прозрачность (без мерцания)
+
+            // вращение вокруг собственной оси
+            const rotation = Math.random() * Math.PI * 2;
+            const rotationSpeed = (Math.random() * 0.02 + 0.01) * (Math.random() < 0.5 ? -1 : 1);
+
+            const hue = Math.random() * 20 + 350; // оттенок от 0 до 360
+            const saturation = 20 + Math.random() * 40; // насыщенность
+            const lightness = 40 + Math.random() * 20;
+            const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+
+            asteroids.push({
+                angle, r, spriteIndex, sizeRand,
+                speed, direction, alpha,
+                rotation, rotationSpeed, color
+            });
+        }
+
+        this.asteroidBelts[orbitId] = {
+            asteroids,
+            globalRotation: Math.random() * Math.PI * 2, // общий угол вращения
+            globalSpeed: 0.0002 + Math.random() * 0.0003 // общая скорость вращения
+        };
+    }
+
+    drawAsteroidBelt(orbitId) {
+        const ctx = this.ctx;
+        const beltData = this.asteroidBelts[orbitId];
+        if (!beltData) return;
+
+        const { asteroids } = beltData;
+        beltData.globalRotation += beltData.globalSpeed; // вращаем весь пояс
+
+        const baseScale = 0.025; // общий масштаб спрайтов, регулируй визуально
+        const zoomFactor = 1 / this.zoom; // компенсируем зум, чтобы астероиды не «распухали» при приближении
+
+        ctx.save();
+        ctx.rotate(beltData.globalRotation); // вращаем систему координат для общего движения
+
+        for (const a of asteroids) {
+            // вращаем астероиды
+            a.angle += a.speed * a.direction * 0.01;
+            a.rotation += a.rotationSpeed * 1; // вращаем вокруг оси
+
+            const x = a.r * Math.cos(a.angle);
+            const y = a.r * Math.sin(a.angle);
+
+            const img = this.asteroidSprites[a.spriteIndex];
+            const [w, h] = this.asteroidSpriteSizes[a.spriteIndex];
+
+            const scaledW = w * baseScale * 1 * a.sizeRand;
+            const scaledH = h * baseScale * 1 * a.sizeRand;
+
+            ctx.globalAlpha = a.alpha;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(a.rotation * 0.1); // вращаем сам спрайт
+
+            if (!img || !img.complete) {
+                ctx.beginPath();
+                ctx.arc(x, y, 2 * a.sizeRand, 0, 2 * Math.PI);
+                ctx.fillStyle = "gray";
+                ctx.fill();
+            } else {
+                ctx.drawImage(img, -scaledW / 2, -scaledH / 2, scaledW, scaledH);
+                //ctx.drawImage(img, x - scaledW / 2, y - scaledH / 2, scaledW, scaledH);
+
+                /*
+                ctx.globalCompositeOperation = "source-atop"; // красим только непрозрачные пиксели
+                ctx.fillStyle = "hsla(30, 90%, 45%, 1.00)"; // можно задать любой оттенок — например коричнево-серый
+                ctx.fillRect(-scaledW / 2, -scaledH / 2, scaledW, scaledH);
+                ctx.globalCompositeOperation = "source-over";
+                */
+            }
+            ctx.restore();
+        }
+        ctx.restore();
+        ctx.globalAlpha = 1;
+    }
+
+
+
+    // === Отрисовка ===
+    renderPlanets() {
+
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.translate(cx + this.offset.x, cy + this.offset.y);
+        ctx.scale(this.zoom, this.zoom);
+
+        // солнце
+        const sun = this.planetImages["sun"];
+
+
+        if (sun && sun.complete) {
+            const sun_size = this.System.star_size * 6;
+            ctx.drawImage(sun, sun_size / 2 * -1, sun_size / 2 * -1, sun_size, sun_size);
+        } else {
+            ctx.beginPath();
+            const sun_size = this.System.star_size * 8;
+            ctx.arc(0, 0, sun_size, 0, 2 * Math.PI);
+            ctx.fillStyle = this.System.color;
+            ctx.fill();
+        }
+
+        for (const orbit of this.Orbits) {
+            const distNorm = (orbit.distance - 600) / (12000 - 600);
+            const orbita = 80 + distNorm * (this.canvas.width / 3);
+
+            if (orbit.type == 1) {
+                this.drawAsteroidBelt(orbit.orbit);
+
+                /*ctx.beginPath();
+                ctx.arc(0, 0, orbita, 0, 2 * Math.PI);
+                ctx.strokeStyle = "rgba(255,0,0,0.55)";
+                ctx.lineWidth = 5;*/
+
+            } else if (orbit.type == 2) {
+                ctx.beginPath();
+                ctx.arc(0, 0, orbita, 0, 2 * Math.PI);
+                ctx.strokeStyle = "rgba(0,0,255,0.55)";
+                ctx.lineWidth = 5;
+
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, orbita, 0, 2 * Math.PI);
+                ctx.strokeStyle = "rgba(255,255,255,0.15)";
+                ctx.lineWidth = 1;
+            }
+            ctx.stroke();
+        }
+
+        // === Получаем текущее серверное время ===
+        const serverNow = GameServerTime.now(); // float, например 1761326451.2070699
+
+
+        for (const p of this.Planets) {
+            //const orbit = this.Orbits.find(o => o.orbit === p.planet);
+            const orbit = this.orbitMap[p.planet];
+            if (!orbit) continue;
+            const distNorm = (orbit.distance - 600) / (12000 - 600);
+            const orbita = 80 + distNorm * (this.canvas.width / 3);
+
+            const rotationDir = (p.rotation === 0) ? -1 : 1;
+
+
+            /// --- Расчёт угла в градусах ---
+            const deltaHours = (serverNow - p.update_time) / 3600; // сколько часов прошло
+
+            const degShift = deltaHours * p.speed * (this.SpeedPlanets / 24);
+            let deg = (p.deg + rotationDir * degShift) % 360;
+            if (deg < 0) deg += 360;
+
+            const rad = deg * Math.PI / 180;
+            const x = orbita * Math.cos(rad);
+            const y = orbita * Math.sin(rad);
+
+            const diameter = this.getPlanetSizePx(p.size);
+            const radius = diameter / 2;
+
+            const img = this.planetImages[p.image];
+            if (img && img.complete)
+                ctx.drawImage(img, x - radius, y - radius, diameter, diameter);
+            else {
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = "gray";
+                ctx.fill();
+            }
+
+            const textColor = getComputedStyle(document.documentElement)
+                .getPropertyValue('--color-text') || 'rgba(0,0,0,0.5)';
+            const shadowColor = getComputedStyle(document.documentElement)
+                .getPropertyValue('--color-text-shadow') || 'rgba(0,0,0,0.5)';
+
+
+            ctx.save(); // сохраняем состояние
+
+
+            ctx.fillStyle = textColor.trim();
+            ctx.font = "11px Verdana";      // увеличенный размер шрифта
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            // Мягкая тень для glow
+            ctx.shadowColor = shadowColor.trim();
+            ctx.shadowBlur = 2;             // мягкая тень
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
+            ctx.imageSmoothingEnabled = false
+
+            // Лёгкое вертикальное сжатие, чтобы текст был тоньше и аккуратнее
+            //ctx.translate(); // перемещаем центр текста
+            //ctx.scale(this.zoom, this.zoom);               // сжатие по вертикали
+            ctx.fillText(p.name, x, y + radius + 11);
+
+            ctx.restore(); // восстанавливаем исходное состояние
+
+            p._screen = { x: cx + this.offset.x + x * this.zoom, y: cy + this.offset.y + y * this.zoom, r: radius * this.zoom };
+        }
+
+        ctx.restore();
+    }
+
+    // === Вычисление минимального зума, чтобы система влезала в div + 50px ===
+    calculateMinZoom() {
+        const contentRect = this.$Content[0].getBoundingClientRect();
+        const maxOrbit = this.System.max_distance || 12000;
+
+        // Радиус орбиты в пикселях (так же, как в отрисовке)
+        const orbitRadius = 80 + (maxOrbit - 600) / (this.System.max_distance - 600) * (this.canvas.width / 3);
+
+        // Ширина и высота видимой области с запасом 50px
+        const availableWidth = contentRect.width - 100;
+        const availableHeight = contentRect.height - 100;
+
+        // Чтобы орбита поместилась
+        const zoomByWidth = availableWidth / (orbitRadius * 2);
+        const zoomByHeight = availableHeight / (orbitRadius * 2);
+
+        // Берём минимальное из двух и немного уменьшаем для запаса
+        const minZoom = Math.min(zoomByWidth, zoomByHeight) * 0.95;
+
+        // ограничим диапазон
+        this.minZoom = Math.max(0.1, Math.min(minZoom, 1));
+        if (this.zoom < this.minZoom) this.zoom = this.minZoom;
+    }
+
+
+    // === Анимация ===
+    animate() {
+        const now = performance.now();
+        if (!this.lastFrameTime) this.lastFrameTime = now;
+        const delta = now - this.lastFrameTime;
+
+        if (delta > 16) { // ~60 FPS
+            this.renderPlanets();
+            this.lastFrameTime = now;
+        }
+
+        this.animationFrameId = requestAnimationFrame(() => this.animate());
+    }
+
+    // === Остановка анимации ===
+    stopAnimation() {
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+    }
+
+    NavigationEvent(e) {
+
+        if ($(e.currentTarget).attr("disabled")) {
+            return false;
+        }
+
+        this.$System.stop(true, true).fadeOut(250, () => {
+            this.stopAnimation();
+            this.SystemShow = false;
+        });
+
+        const target = e.currentTarget;
+        const id = target.id;
+
+
+        let Galaxy = this.System.galaxy;
+        let System = this.System.system;
+
+        switch (id) {
+            case "NavigationGalaxyNext":
+                Galaxy += 1;
+                break;
+            case "NavigationGalaxyPrev":
+                Galaxy -= 1;
+                break;
+            case "NavigationSystemNext":
+                System += 1;
+                break;
+            case "NavigationSystemPrev":
+                System -= 1;
+                break;
+            case "NavigationOrbit":
+                Galaxy = this.$Content.Navigation.Galaxy.Input.val();
+                System = this.$Content.Navigation.System.Input.val();
+                break;
+            default:
+                return;
+                break;
+        }
+
+
+        Galaxy = Math.max(1, Math.min(this.MaxGalaxy, Galaxy));
+        System = Math.max(1, Math.min(this.MaxSystem, System));
+
+
+        GameEvents.emit("SendServer", {
+            mode: "galaxy",
+            //action: act,
+            data: {
+                'galaxy': Galaxy,
+                'system': System
+            }
+        });
+    }
+
+    CreateNavigation() {
+        //this.$Content.Buttons = {};
+        this.$Content.Navigation = $("<div>").addClass("Navigation");
+
+        this.$Content.Navigation.Galaxy = this.createDiv("", "NavigationGalaxyBlock", "GalaxyBlock");
+
+        this.$Content.Navigation.Galaxy.Prev = this.createDiv(
+            "", "NavigationGalaxyPrev", 'btn-box btn-box-left', this.NavigationEvent.bind(this));
+
+        this.$Content.Navigation.Galaxy.Next = this.createDiv(
+            "", "NavigationGalaxyNext", 'btn-box btn-box-right', this.NavigationEvent.bind(this));
+
+        this.$Content.Navigation.Galaxy.Input = this.createInput(
+            'number', 'NavigationGalaxyInput', '', "InputNumber", this.renderNavigation.bind(this), this.System.galaxy, { min: 1, max: () => this.MaxGalaxy });
+
+        this.$Content.Navigation.Galaxy.append(
+            this.$Content.Navigation.Galaxy.Prev,
+            this.$Content.Navigation.Galaxy.Input,
+            this.$Content.Navigation.Galaxy.Next
+        );
+
+
+        this.$Content.Navigation.System = this.createDiv("", "NavigationSystemBlock", "SystemBlock");
+
+        this.$Content.Navigation.System.Prev = this.createDiv(
+            "", "NavigationSystemPrev", 'btn-box btn-box-left', this.NavigationEvent.bind(this));
+
+        this.$Content.Navigation.System.Next = this.createDiv(
+            "", "NavigationSystemNext", 'btn-box btn-box-right', this.NavigationEvent.bind(this));
+
+        this.$Content.Navigation.System.Input = this.createInput(
+            'number', 'NavigationSystemInput', '', "InputNumber", this.renderNavigation.bind(this), this.System.system, { min: 1, max: () => this.MaxSystem });
+
+        this.$Content.Navigation.System.append(
+            this.$Content.Navigation.System.Prev,
+            this.$Content.Navigation.System.Input,
+            this.$Content.Navigation.System.Next
+        );
+
+        this.$Content.Navigation.Buttons = this.createDiv("", "NavigationButtonsBlock", "ButtonsBlock");
+
+        this.$Content.Navigation.Buttons.Orbit = this.createDiv(
+            "", "NavigationOrbit", 'btn-box btn-box-orbit', this.NavigationEvent.bind(this));
+        this.$Content.Navigation.Buttons.append(this.$Content.Navigation.Buttons.Orbit)
+
+        this.$Content.Navigation.append(this.$Content.Navigation.Galaxy, this.$Content.Navigation.System, this.$Content.Navigation.Buttons);
+
+
+        this.$Content.prepend(this.$Content.Navigation);
+
+
+    }
+
+    renderNavigation() {
+        if (!this.$Content?.Navigation) {
+            this.CreateNavigation();
+        }
+
+        console.log("renderNavigation");
+        const CurrentGalaxy = this.$Content.Navigation.Galaxy.Input.val();
+        this.$Content.Navigation.Galaxy.Prev.attr('disabled', CurrentGalaxy <= 1);
+        this.$Content.Navigation.Galaxy.Next.attr('disabled', CurrentGalaxy >= this.MaxGalaxy);
+
+        const CurrentSystem = this.$Content.Navigation.System.Input.val();
+        this.$Content.Navigation.System.Prev.attr('disabled', CurrentSystem <= 1);
+        this.$Content.Navigation.System.Next.attr('disabled', CurrentSystem >= this.MaxSystem);
+
+
+    }
+
+    // === Основной рендер ===
+    async render() {
+        await super.render();
+
+        this.stopAnimation(); // <-- Сначала останавливаем предыдущую анимацию
+
+        this.System = this.messageData.data.Page?.System || {};
+        this.Orbits = this.messageData.data.Page?.Orbits || [];
+        this.Planets = this.messageData.data.Page?.Planets || [];
+
+        this.orbitMap = Object.fromEntries(this.Orbits.map(o => [o.orbit, o]));
+
+
+        this.MaxGalaxy = parseInt(this.messageData.data.Page?.MaxGalaxy || 9);
+        this.MaxSystem = parseInt(this.messageData.data.Page?.MaxSystem || 256);
+
+        this.SpeedPlanets = this.messageData.data.Page?.SpeedPlanets ?? 24;
+
+
+
+        this.$Content.Navigation?.Galaxy.Input.val(this.System.galaxy);
+        this.$Content.Navigation?.System.Input.val(this.System.system);
+
+        this.renderNavigation();
+
+
+        await this.loadPlanetImages(this.Planets);
+
+
+        // вычисляем оптимальный размер canvas
+        //this.adjustCanvasSize(this.System.max_distance || 12000);
+        this.adjustCanvasSize(13000);
+
+        // вычисляем минимальный зум так, чтобы система влезала целиком
+        this.calculateMinZoom();
+
+        // где-то после загрузки данных, перед this.animate()
+        for (const orbit of this.Orbits) {
+            if (orbit.type === 1) { // пояс астероидов
+                const distNorm = (orbit.distance - 600) / (12000 - 600);
+                const orbita = 80 + distNorm * (this.canvas.width / 3);
+
+                this.generateAsteroidBelt(orbit.orbit, {
+                    radius: orbita,
+                    beltWidth: 30
+                });
+            }
+        }
+
+        // центрируем изначально
+        this.offset.x = 0;
+        this.offset.y = 0;
+
+        //await this.loadAsteroidSprites();
+        this.animate();
+
+        if (!this.SystemShow)
+            this.$System.stop(true, true).fadeIn(250, () => {
+                this.SystemShow = true;
+            });
+    }
+};

@@ -421,7 +421,7 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
     render() { }
 
     GotoGame() {
-        if ('credentials' in navigator) {
+        if ('credentials' in navigator && Data.login) {
             const cred = new PasswordCredential({
                 id: Data.login.login,
                 name: Data.login.login,

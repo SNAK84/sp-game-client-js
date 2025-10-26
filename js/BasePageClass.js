@@ -75,6 +75,7 @@ window.BasePageClass = class BasePageClass {
             $("#MenuBtn").removeClass("menu-open");
             $("#MenuBtn").ToolTip('Показать Меню');
 
+            if(Dialog) Dialog.close();
             Overlay.Show(null, 250, () => {
                 this.$Content.stop(true, true).fadeOut(250, () => {
                     this.$Content.Show = false;
@@ -175,6 +176,8 @@ window.BasePageClass = class BasePageClass {
     RenderTopNav(mData, startTicker = true) {
 
         this.$TopNav.show();
+
+        $(".menu_toggle_btn").attr('style', '');
         //await Lang.waitLangs();
 
         if (this.$TopNav.length === 0) this.initTopNav();
@@ -332,7 +335,7 @@ window.BasePageClass = class BasePageClass {
         const $select = $("<select>").attr("id", "planets-select");
         $.each(Data.Planets, (index, planet) => {
             const ptype = (planet.planet_type == 1) ? "П" : "М";
-            const optionText = `${planet.name} [${planet.galaxy}:${planet.system}] (${ptype})`;
+            const optionText = `${planet.name} [${planet.galaxy}:${planet.system}:${planet.planet}] (${ptype})`;
             const $option = $("<option>")
                 .val(planet.id)
                 .text(optionText)
@@ -397,6 +400,7 @@ window.BasePageClass = class BasePageClass {
         $("#planets-select")
             .planetselectmenu({
                 change: (event, data) => {
+                    if(Dialog) Dialog.close();
                     Overlay.Show(null, 250, () => {
                         //this.$Content.html($Content);
                         this.$Content.stop(true, true).fadeOut(250, () => {
@@ -450,7 +454,7 @@ window.BasePageClass = class BasePageClass {
 
     Show(mode = "", data = null) {
 
-         console.log("Show " + this.Name);
+        console.log("Show " + this.Name);
         // Сохраняем данные из сообщения для использования в формах
         if (data) {
             this.messageData = data;
@@ -483,6 +487,8 @@ window.BasePageClass = class BasePageClass {
     }
 
     Hide() {
+        if(Dialog) Dialog.close();
+
         //this.$Content.fadeOut(250);
         this.$Content.stop(true, true).fadeOut(250, () => {
             this.$Content.Show = false;
@@ -775,19 +781,19 @@ window.BasePageClass = class BasePageClass {
 
         if (nameclass) $input.addClass(nameclass);
 
-        if (onInput) {
-            $input.on("input.form focus.form", onInput);
-        }
+
 
         // Автоматическая инициализация числовых полей
         if (type === "number") {
-            this.initNumericInput($input, options);
+            this.initNumericInput($input, options, onInput);
+        } else if (onInput) {
+            $input.on("input.form focus.form", onInput);
         }
 
         return $input;
     }
 
-    createButton(id, label, onClick, disabled = false, tooltip = null, classname = null) {
+    createButton(id, label, onClick = null, disabled = false, tooltip = null, classname = null) {
         const $button = $("<input>", {
             type: "button",
             id: id,
@@ -951,7 +957,7 @@ window.BasePageClass = class BasePageClass {
      * @param {number|Function|null} [options.max=null] - максимальное значение или функция, возвращающая число
      * @param {boolean} [options.allowNegative=false] - можно ли вводить отрицательные значения
      */
-    initNumericInput(targetInput, options = {}) {
+    initNumericInput(targetInput, options = {}, userOnInput = null) {
         const $input = $(targetInput);
 
         const getValue = (v) =>
@@ -1032,6 +1038,11 @@ window.BasePageClass = class BasePageClass {
                 }
 
                 input.value = num;
+
+                // ✅ Вызов пользовательского обработчика onInput, если он есть
+                if (userOnInput && typeof userOnInput === 'function') {
+                    userOnInput.call(input, event);
+                }
             }
         });
     }

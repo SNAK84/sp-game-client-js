@@ -1074,6 +1074,7 @@ $(document).ready(() => {
 
     window.GameEvents = new GameEventsClass();
     window.GameServerTime = new ServerTime();
+    window.Dialog = new DialogClass();
 
     window.WS = new WebSocketClass();
 

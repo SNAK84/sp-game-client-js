@@ -14,6 +14,8 @@ class ToolTipClass {
 
 	LastCursorX = 0;
 	LastCursorY = 0;
+
+
 	constructor() {
 		if (!this.$Tip) {
 			this.$Tip = $("<tool-tip>").addClass("tip").hide();
@@ -56,7 +58,7 @@ class ToolTipClass {
 		if (newContent instanceof jQuery || newContent instanceof HTMLElement) {
 			this.$Tip.empty().append(newContent);
 		} else {
-			this.$Tip.html(newContent ?? "");
+			this.$Tip.html(newContent.replace(/\n/g, '<br>') ?? "");
 		}
 
 		this.setCss();
@@ -73,14 +75,22 @@ class ToolTipClass {
 			return false;
 		}
 		this.css = $(parent).data('tooltip-css');
-		// Проверяем, изменился ли контент
-		const currentContent = this.$Tip.contents().toArray(); // текущие дочерние элементы
-		let changed = false;
 
+		// Проверяем, изменился ли контент
+
+		let changed = true;
+		const $tip = this.$Tip;
 		if (newContent instanceof jQuery || newContent instanceof HTMLElement) {
-			changed = !$(currentContent).is(newContent);
+			// Сравнение по ссылке на DOM-элемент
+			const newEl = newContent instanceof jQuery ? newContent[0] : newContent;
+			const currentEl = $tip.children().first()[0]; // первый дочерний элемент тултипа
+			changed = currentEl !== newEl;
 		} else if (typeof newContent === "string") {
-			changed = this.$Tip.html() !== newContent;
+			const normalizedNew = newContent.replace(/\n/g, '<br>').trim();
+			const normalizedOld = ($tip.html() || '').trim();
+
+			// Сравнение без учёта мелких HTML-разниц
+			changed = $('<div>').html(normalizedOld).text().trim() !== $('<div>').html(normalizedNew).text().trim();
 		}
 
 		if (!changed) {

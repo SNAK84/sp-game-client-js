@@ -94,17 +94,139 @@ overlay {
     /* backdrop-filter: blur(2px); */
 }
 
-/*
-.wrapper {
-    display: grid;
+
+dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    grid-template-columns: 0 2fr 0;
-    grid-template-rows: 0 auto 0;
-    justify-items: center;
-    align-items: start;
+    background: var(--color-dialog-overlay-bg);
+    z-index: 999;
+     backdrop-filter: blur(1px); 
+    /*display: none;*/
 }
-*/
+
+:root {
+    --dialog-title-width: auto;
+    /* или 100% для динамической ширины */
+}
+
+dialog-main {
+
+    box-shadow: 0 0 4px 2px var(--color-box-shadow);
+    z-index: 10001;
+    /* display: none;*/
+
+    position: fixed;
+    /*padding: 30px 10px 10px;*/
+    /* Увеличен верхний padding для места под заголовок */
+
+    border: 1px solid var(--color-border);
+    /*box-shadow: 0 0 10px 2px rgba(32, 64, 128, 1);*/
+    /*transition: all 0.2s ease;*/
+    background: var(--color-box-bg);
+    backdrop-filter: blur(4px);
+    border-radius: 7px;
+
+    text-align: center;
+
+
+    max-width: 90%;
+    min-width: calc(var(--dialog-title-width) + 300px);
+    max-height: calc(100vh - 120px);
+    
+    transition: all 0.1s ease;
+    /*overflow: hidden;*/
+    /* Увеличиваем ширину на 30px */
+}
+
+
+
+dialog-title {
+    position: absolute;
+    top: -10px;
+    /* Вынос заголовка чуть выше окна */
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 16px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 0 2px 1px var(--color-box-shadow);
+    background: var(--color-bg);
+    border-radius: 5px;
+    color: var(--color-text-hover);
+    font-weight: bold;
+    white-space: nowrap;
+    width: var(--dialog-title-width);
+    /* Устанавливаем ширину заголовка */
+
+}
+
+dialog-content {
+    margin: 10px;
+    margin-top: 30px;
+    /*margin-bottom: 40px;*/
+    position: relative;
+    display: block;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    z-index: 10;
+}
+
+dialog-buttons {
+    position: absolute;
+    text-align: right;
+    display: block;
+    transition: all 0.2s ease;
+    bottom: 10px;
+    right: 10px;
+    padding-top: 22px;
+    z-index: 1;
+}
+
+dialog-close-button {
+    position: absolute;
+    top: -2px;
+    right: 2px;
+    background: none;
+    border: none;
+    color: var(--color-danger-text);
+    font-size: 16px;
+    cursor: pointer;
+    width: auto;
+    height: auto;
+    display: inline-block;
+    align-items: unset;
+    justify-content: unset;
+    transition: all 0.2s ease;
+    box-shadow: none;
+    text-shadow: none;
+    min-height: auto;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
+
+dialog-close-button:hover {
+    color: var(--color-danger-text-hover);
+    transform: scale(1.1);
+    text-shadow: 0 0 4px var(--color-box-shadow);
+}
+
+dialog-close-button:active {
+    transform: scale(0.9);
+    /* Уменьшение размера при нажатии */
+    transition: none;
+}
+
+dialog-close-button:focus {
+    outline: none;
+    /* Убираем обводку при фокусе */
+    box-shadow: 0 0 5px var(--color-box-shadow);
+    /* Добавляем тень при фокусе */
+}
+
 
 .accauntlayer {
     position: absolute;
@@ -1881,7 +2003,7 @@ tr:hover th.beryl_fon {
 .tip {
     padding: 4px;
     position: absolute;
-    z-index: 2000;
+    z-index: 20000;
     border: 1px solid var(--color-border);
     box-shadow: 0 0 10px 2px var(--color-box-shadow);
     background: var(--color-input-bg);
@@ -1908,26 +2030,6 @@ tr:hover th.beryl_fon {
     box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
     /* backdrop-filter: blur(4px); */
 }
-
-
-dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--color-dialog-overlay-bg);
-    z-index: 999;
-    /* backdrop-filter: blur(2px); */
-    /*display: none;*/
-}
-
-:root {
-    --dialog-title-width: auto;
-    /* или 100% для динамической ширины */
-}
-
-
 
 .accauntlayer form {
 
@@ -2039,25 +2141,28 @@ dialog-overlay {
     max-width: 600px;
 }
 
-.OverView #Planet #PlanetName__ {
-    position: relative;
-    border: 0;
-    border-radius: 6px;
-    background-color: rgba(0, 25, 55, 0.3);
-    box-shadow: 1px 1px 7px 1px rgba(192, 192, 192, 0.7) inset;
-    padding: 8px;
-    text-align: center;
-    margin: 15px;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 1);
-    font-size: 16px;
-    z-index: 12;
-}
-
 .OverView #Planet #PlanetName {
     font-size: 16px;
     font-weight: 800;
-    width: 100%;
+    width: calc(100% - 20px);
     z-index: 10;
+    margin: 10px;
+    padding: 6px;
+    cursor: pointer;
+}
+
+.OverView #Planet #PlanetName::after {
+    margin-left: 8px;
+    content: "\F08BB";
+    font-family: "Material Design Icons";
+    font-weight: 1;
+    color: var(--color-info-text);
+    transition: all 0.2s ease;
+
+}
+
+.OverView #Planet #PlanetName:hover::after {
+    color: var(--color-info-text-hover);
 }
 
 .OverView #Planet #PlanetInfo {
@@ -2074,21 +2179,6 @@ dialog-overlay {
     /* отступы между строками и колонками */
 }
 
-#PlanetInfo__ {
-    position: absolute;
-    border: 0;
-    border-radius: 6px;
-    background-color: rgba(0, 25, 55, 0.3);
-    box-shadow: 0px 0px 4px 1px rgba(192, 192, 192, 0.7) inset;
-    padding: 8px;
-    text-align: center;
-    width: 250px;
-    bottom: 0px;
-    right: 0px;
-    margin: 15px;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 1);
-    z-index: 30;
-}
 
 .OverView #Planet #PlanetImage {
     position: absolute;
@@ -2143,6 +2233,78 @@ dialog-overlay {
     max-width: 600px;
     margin: 6px auto;
 }
+
+#RenamePlanet {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+
+#InfoPlanetName {
+    font-size: 24px;
+    color: var(--color-info-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#InfoPlanetName:hover {
+    font-size: 26px;
+    color: var(--color-info-text-hover);
+}
+
+.Galaxy .system {
+    overflow: hidden;
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    top: 30px;
+}
+
+.Galaxy .Navigation {
+    display: inline-flex;
+    width: auto;
+}
+
+.Galaxy .Navigation>* {
+    display: inline-flex;
+}
+
+.Galaxy .Navigation>*>* {
+    margin: 2px;
+}
+
+.Galaxy .Navigation .InputNumber {
+    width: calc(3ch + 10px);
+    -moz-appearance: textfield;
+    appearance: none;
+    display: inline-block;
+}
+
+.Galaxy .Navigation .InputNumber::-webkit-inner-spin-button,
+.Galaxy .Navigation .InputNumber::-webkit-outer-spin-button {
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
+.Galaxy .canvas {
+    display: block;
+    margin: 0 0;
+    user-select: none;
+    cursor: grab;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.Galaxy .PlanetName {
+    position: absolute;
+    z-index: 50;
+    cursor: pointer;
+    transition: transform 0.05s linear;
+    padding: 2px;
+}
+
 
 .TypeBox {
     width: 100%;
@@ -2394,6 +2556,10 @@ game-build.queues .btn-box-cancel {
     top: 0;
 }
 
+game-build .btn-box {
+    position: absolute;
+}
+
 .input-limit-flash {
     animation: flashLimit 1s ease;
 }
@@ -2413,7 +2579,7 @@ game-build.queues .btn-box-cancel {
 
     --btn-size: 24px;
 
-    position: absolute;
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2479,6 +2645,24 @@ game-build.queues .btn-box-cancel {
     color: var(--color-green-text-hover);
 }
 
+.btn-box-left::before {
+    content: "\F0731";
+    color: var(--color-info-text);
+}
+
+.btn-box-left:hover::before {
+    color: var(--color-info-text-hover);
+}
+
+.btn-box-right::before {
+    content: "\F0734";
+    color: var(--color-info-text);
+}
+
+.btn-box-right:hover::before {
+    color: var(--color-info-text-hover);
+}
+
 .btn-box-down::before {
     content: "\F0046";
 }
@@ -2518,6 +2702,16 @@ game-build.queues .btn-box-cancel {
 }
 
 .btn-box-plus:hover::before {
+    color: var(--color-info-text-hover);
+}
+
+.btn-box-orbit::before {
+    content: "\F0018";
+    color: var(--color-info-text);
+    font-size: calc(var(--btn-size) - 6px);
+}
+
+.btn-box-orbit:hover::before {
     color: var(--color-info-text-hover);
 }
 

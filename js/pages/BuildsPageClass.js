@@ -92,7 +92,7 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 
         this.$Content.Builds = {};
         $.each(BuildList, (id, buid) => {
-            this.$Content.Builds[id] = $("<game-build>");
+            this.$Content.Builds[id] = $("<game-build>",{id:"build"+id});
             this.$Content.Builds[id][0].data = buid;
             this.$Content.Types[buid.type].append(this.$Content.Builds[id]);
         });
