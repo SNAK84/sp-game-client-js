@@ -5,12 +5,14 @@ class GameBuild extends HTMLElement {
 
     _type = "builds";
     _images = "builds";
+    _OnInput = null;
     created = false;
 
     queues = false;
 
     EventActive = false;
     _boundRender = null;
+
 
     constructor() {
         super();
@@ -29,6 +31,13 @@ class GameBuild extends HTMLElement {
     }
     get type() {
         return this._type;
+    }
+
+    set OnInput(callback) {
+        this._OnInput = callback;
+    }
+    get OnInput() {
+        return this._OnInput;
     }
 
     set data(buildData) {
@@ -119,6 +128,7 @@ class GameBuild extends HTMLElement {
     create() {
         if (this._type === 'queues') this.queues = true;
 
+        this.id = this._type + this._data.id;
         this.Image = this.createElement("div", "image")
             .css({
                 'background': `url("/images/${this._images}/${this._data.name}.gif") no-repeat`,
@@ -224,6 +234,45 @@ class GameBuild extends HTMLElement {
 
             $(this).append(this.Bottom.container);
 
+        } else if (this._type === 'fleetsDetails') {
+        } else if (this._type === 'fleets') {
+            this.Buttons = {
+                Info: this.createElement("div", "btn-box btn-box-info"),
+                Max: this.createElement("div", "btn-box btn-box-max")
+            };
+
+            this.Input = Page.createInput('number', 'buildCount', 'Сколько строить', "btn-box btn-input", this._OnInput, 0, {
+                min: 0,
+                max: () => this._data.count
+            });
+
+            this.Buttons.Max.ToolTip(Lang.build.maximum);
+
+            this.Buttons.Max
+                .off("click.build")
+                .on("click.build", (e) => {
+                    if ($(e.currentTarget).attr("disabled")) {
+                        return false;
+                    }
+                    GameEvents.emit("BuildAction", {
+                        action: "max",
+                        id: this._data.id,
+                        Price: this._data.costResources
+                    });
+                });
+
+            this.Buttons.Info
+                .off(isTouch ? "confirmed-click.build" : "click.build")
+                .on(isTouch ? "confirmed-click.build" : "click.build", (e) => {
+                    if ($(e.currentTarget).attr("disabled")) {
+                        return false;
+                    }
+                    GameEvents.emit("BuildAction", { action: "info", id: this._data.id });
+                });
+
+
+            $(this).append(this.Buttons.Info, this.Buttons.Max, this.Input)
+
         } else if (this._type !== 'queues') {
             this.Buttons = {
                 Up: this.createElement("div", "btn-box btn-box-up"),
@@ -236,13 +285,7 @@ class GameBuild extends HTMLElement {
                 min: 0,
                 max: () => Page.getMaxConstructibleElements(this._data.id, this._data.costResources)
             });
-            /*
-            this.Input = this.createElement("input", "btn-box btn-input").attr({
-                'type': "text",
-                'inputmode': "numeric",
-                'pattern': "\d*",
-                'autocomplete': "off"
-            }).val(0);*/
+
 
             this.ToolTip = {
                 levelBuildNum: this.createElement("span", "levelNum lime_text"),
@@ -273,6 +316,11 @@ class GameBuild extends HTMLElement {
                     this.createElement("div", "", Lang.queues.full),
                     this.createElement("div", "tooltip-empty")
                 );
+            this.ToolTipBuild.FieldsFull = this.createElement("div", "ToolTipBuildFieldsFull red_text").hide()
+                .append(
+                    this.createElement("div", "", Lang.build.NotFieldsBuild),
+                    this.createElement("div", "tooltip-empty")
+                );
 
             this.ToolTipBuild.IsBusy = this.createElement("div", "ToolTipBuildIsBusy red_text").hide()
                 .append(
@@ -290,7 +338,7 @@ class GameBuild extends HTMLElement {
                 prod: { title: Lang.build.productionIncrease, table: this.ToolTip.ProdNextTable, items: this.ToolTip.ProdNextTableItems, resources: this._data.Prod?.Next }
             }).hide();
 
-            this.ToolTipBuild.append(this.ToolTipBuild.IsBusy, this.ToolTipBuild.QueueFull, this.ToolTipBuild.Build, this.ToolTipBuild.MaxLevel);
+            this.ToolTipBuild.append(this.ToolTipBuild.IsBusy, this.ToolTipBuild.QueueFull, this.ToolTipBuild.FieldsFull, this.ToolTipBuild.Build, this.ToolTipBuild.MaxLevel);
             //this.ToolTipBuild.prepend(this.ToolTip.maxLevel);
 
             this.ToolTipDismantle = this.createElement("div", "ToolTipDismantle");
@@ -370,6 +418,7 @@ class GameBuild extends HTMLElement {
             this.Buttons.Max
                 .off("click.build")
                 .on("click.build", (e) => {
+                    
                     if ($(e.currentTarget).attr("disabled")) {
                         return false;
                     }
@@ -399,7 +448,7 @@ class GameBuild extends HTMLElement {
         if (!this._data) return;
         if (!this.created) this.create();
 
-        $(this).removeClass().addClass(this._type);
+        $(this).addClass(this._type);
 
         let count = this._data.count ?? 0;
         if ((this._images === 'fleets' || this._images === 'defenses') && (this._type === 'queues' || this._type === 'over_queues')) {
@@ -422,6 +471,7 @@ class GameBuild extends HTMLElement {
             }
 
         }
+        //console.log(count);
         this.Header.Number.text((this._images === 'builds' || this._images === 'techs') ? this._data.level : count);
 
         if (this._type === 'queues') {
@@ -476,6 +526,10 @@ class GameBuild extends HTMLElement {
 
             this.Header.Name.text(Lang.tech[this._data.id]);
 
+        } else if (this._type === 'fleets' || this._type === 'fleetsDetails') {
+
+            //this.Buttons.Info.css("bottom", "28px");
+
         } else {
             this.ToolTip.levelBuildNum.text(this._data.levelToBuild + 1);
             this.ToolTip.timeBuildNum.text(secondToTime(this._data.elementTime, true, this._data.elementTime < 10));
@@ -512,6 +566,10 @@ class GameBuild extends HTMLElement {
                 this.Input.Dis = true;
             }
 
+            if (this._data.MaxFields > 0 && this._data.CurrentFields >= this._data.MaxFields) {
+                this.Buttons.Up.Dis = true;
+            }
+
             let count = this._data.count;
             $.each(Page.$Content.Queues.Items, (id, queue) => {
                 if (this._data.id == queue[0]._data.id)
@@ -534,6 +592,7 @@ class GameBuild extends HTMLElement {
             this.ToolTipBuild.Build.toggle(!(this._data.levelToBuild >= this._data.maxLevel));
             this.ToolTipBuild.MaxLevel.toggle((this._data.levelToBuild >= this._data.maxLevel));
             this.ToolTipBuild.QueueFull.toggle(this._data.CountQueue >= this._data.MaxQueue);
+            this.ToolTipBuild.FieldsFull.toggle(this._data.CurrentFields >= this._data.MaxFields);
             this.ToolTipBuild.IsBusy.toggle(this._data.working);
 
             this.ToolTipDismantle.QueueFull.toggle(this._data.CountQueue >= this._data.MaxQueue);
@@ -566,7 +625,7 @@ class GameBuild extends HTMLElement {
 
 
 
-        if (!this._data.accessible) {
+        if (!this._data.accessible && this._type !== 'fleets' && this._type !== 'fleetsDetails' ) {
             if (this._type !== 'queues' && this._type !== 'over_queues') $(this).addClass("disabled");
         } else {
             $(this).removeClass("disabled");

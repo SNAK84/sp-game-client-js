@@ -15,13 +15,15 @@ $Theme = 'dark';
 $JavaScripts = array(
     'jquery-3.7.1.min',
     'jquery-ui-1.14.1.min',
+    'jquery.ui.touch-punch.fixed',
     'Dialog',
     'base',
     'tooltip',
     'websocket',
     'LangManager',
     'BasePageClass',
-    'GameBuildElement'
+    'GameBuildElement',
+    'IconSelector'
 );
 $PagesDir = 'js/pages/';
 $Pages = array(
@@ -32,7 +34,8 @@ $Pages = array(
     'shipyard' => 'HangarPageClass',
     'defense' => 'HangarPageClass',
     'galaxy' => 'GalaxyPageClass',
-    'messages' => 'MessagesPageClass'
+    'fleets' => 'FleetsPageClass',
+    'messages' => 'MessagesPageClass',
 );
 
 $LangsDir = 'lang/';

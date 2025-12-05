@@ -65,7 +65,7 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
     getSelectElements() {
         let count = 0;
         $.each(this.$Content.Items, (id, build) => {
-            count += build[0].Input.val();
+            count += build[0]?.Input.val();
         });
 
         return count;
@@ -85,8 +85,6 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
                 if (count > 0) items[id] = count;
             }
         });
-
-        console.log("buildSelectElements", items);
 
         GameEvents.emit("SendServer", {
             mode: Data.mode,
@@ -187,11 +185,11 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
         this.$Content.Buttons = $("<div>").addClass("Buttons").hide();
 
         this.$Content.Buttons.Build = this.createButton(
-            "ButtonsBuild", "Строить", this.buildSelectElements.bind(this), false, null, 'btn-success');
+            "ButtonsBuild", Lang.build.build, this.buildSelectElements.bind(this), false, null, 'btn-success');
 
         //this._clearSelectElements = this.clearSelectElements.bind(this);
         this.$Content.Buttons.Clear = this.createButton(
-            "ButtonsBuild", "Очистить", this.clearSelectElements.bind(this), false, null, 'btn-warning');
+            "ButtonsBuild", Lang.build.Clear, this.clearSelectElements.bind(this), false, null, 'btn-warning');
 
 
         this.$Content.Buttons.append(this.$Content.Buttons.Build, this.$Content.Buttons.Clear);

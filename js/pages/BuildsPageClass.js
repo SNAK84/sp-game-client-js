@@ -92,7 +92,7 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 
         this.$Content.Builds = {};
         $.each(BuildList, (id, buid) => {
-            this.$Content.Builds[id] = $("<game-build>",{id:"build"+id});
+            this.$Content.Builds[id] = $("<game-build>", { id: "build" + id });
             this.$Content.Builds[id][0].data = buid;
             this.$Content.Types[buid.type].append(this.$Content.Builds[id]);
         });
@@ -105,6 +105,8 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         $.each(this.messageData.data.Page?.BuildList, (id, buid) => {
             buid.CountQueue = this.messageData.data.Page?.CountQueue ?? 0;
             buid.MaxQueue = this.messageData.data.Page?.MaxQueue ?? 0;
+            buid.CurrentFields = this.messageData.data.Page?.field_used ?? 0;
+            buid.MaxFields = this.messageData.data.Page?.field_current ?? 0;
             this.$Content.Builds[id][0].data = buid;
         });
     }
@@ -281,6 +283,35 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         this.$Content.Queues.QueueTimer.Timer.text(secondToTime(Math.max(0, Math.round(this.$Content.Queues.QueueTimer.allEndTime - GameServerTime.now()))));
     }
 
+    CreateInfo() {
+        this.$Content.Info = $("<div>").addClass("box InfoBox");
+
+        this.$Content.Info.FieldsInfo = $("<div>").addClass("FieldsInfo");
+        this.$Content.Info.FieldsInfo.CurrentFields = $("<span>").addClass("CurrentFields");
+        this.$Content.Info.FieldsInfo.MaxFields = $("<span>").addClass("MaxFields green_text");
+        this.$Content.Info.FieldsInfo.append(
+            $("<span>").text(Lang.queues.fieldsOccupied + ": "),
+            this.$Content.Info.FieldsInfo.CurrentFields,
+            $("<span>").text(" " + Lang.of + " "),
+            this.$Content.Info.FieldsInfo.MaxFields
+        );
+        this.$Content.Info.append(this.$Content.Info.FieldsInfo);
+
+        this.$Content.append(this.$Content.Info);
+
+    }
+
+    renderInfo() {
+        if (!this.$Content?.Info || this.$Content.Info.length === 0) {
+            this.CreateInfo();
+        }
+
+        this.renderColor(this.$Content.Info.FieldsInfo.CurrentFields, this.messageData.data.Page?.field_used, this.messageData.data.Page?.field_current);
+
+        this.$Content.Info.FieldsInfo.CurrentFields.text(this.messageData.data.Page?.field_used);
+        this.$Content.Info.FieldsInfo.MaxFields.text(this.messageData.data.Page?.field_current);
+    }
+
     async render() {
 
         await super.render();
@@ -288,6 +319,9 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         console.log("BuildsPageClass render");
 
         this.renderQueues();
+
+        this.renderInfo();
+
         this.renderTypes();
         this.renderBuilds();
 

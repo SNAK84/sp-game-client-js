@@ -142,6 +142,7 @@ window.BasePageClass = class BasePageClass {
     }
 
     RenderLeftMenu() {
+
         console.log(`RenderLeftMenu [mode="${Data.mode}"]`);
         //alert(mode);
         // убираем выделение у всех
@@ -328,6 +329,7 @@ window.BasePageClass = class BasePageClass {
     }
 
     RenderPlanetsList(Data) {
+        //return;
         if (this.$PlanetsList.length === 0) this.initPlanetsList();
 
         this.$PlanetsList.empty().show();

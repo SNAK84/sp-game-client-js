@@ -443,7 +443,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
         for (const a of asteroids) {
             // вращаем астероиды
-            a.angle += a.speed * a.direction * 0.01;
+            a.angle += a.speed * a.direction * 0.05;
             a.rotation += a.rotationSpeed * 1; // вращаем вокруг оси
 
             const x = a.r * Math.cos(a.angle);
@@ -483,7 +483,69 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         ctx.globalAlpha = 1;
     }
 
+    generateGasGiant(orbitId, options) {
+        const {
+            radius,        // расстояние от звезды
+            name = "Gas Giant",
+            color = "rgba(100,180,255,1)",
+            ringColor = "rgba(180,200,255,0.35)",
+            ringInner = 1.8,   // внутр. радиус кольца (в кратных радиусах планеты)
+            ringOuter = 2.5,   // внеш. радиус кольца (в кратных радиусах планеты)
+            size = 60000,      // диаметр планеты (в км, для getPlanetSizePx)
+            speed = 0.3,       // скорость вращения
+            rotation = 1       // направление вращения (1 или -1)
+        } = options;
 
+        // сохраняем как отдельный объект для отрисовки
+        this.gasGiants ??= {};
+        this.gasGiants[orbitId] = {
+            orbitId,
+            radius,
+            name,
+            color,
+            ringColor,
+            ringInner,
+            ringOuter,
+            size,
+            speed,
+            rotation,
+            deg: Math.random() * 360 // случайная стартовая позиция
+        };
+    }
+
+    drawGasGiant(giant) {
+        const ctx = this.ctx;
+        const diameter = this.getPlanetSizePx(giant.size);
+        const radius = diameter / 2;
+
+        // вычисляем положение по орбите
+        const rad = (giant.deg * Math.PI) / 180;
+        const x = giant.radius * Math.cos(rad);
+        const y = giant.radius * Math.sin(rad);
+
+        // кольца
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rad / 2); // небольшой наклон
+
+        // кольцо
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius * giant.ringOuter, radius * giant.ringInner, 0, 0, 2 * Math.PI);
+        ctx.strokeStyle = giant.ringColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.restore();
+
+        // сам гигант
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = giant.color;
+        ctx.fill();
+
+        // обновляем угол
+        giant.deg += giant.speed * giant.rotation * 0.1;
+    }
 
     // === Отрисовка ===
     renderPlanets() {
@@ -522,10 +584,14 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
 
             } else if (orbit.type == 2) {
+
                 ctx.beginPath();
                 ctx.arc(0, 0, rad, 0, 2 * Math.PI);
                 ctx.strokeStyle = "rgba(0,0,255,0.55)";
                 ctx.lineWidth = 6;
+
+                /*const giant = this.gasGiants?.[orbit.orbit];
+                if (giant) this.drawGasGiant(giant);*/
 
             } else {
                 ctx.beginPath();
@@ -667,8 +733,8 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         }
 
         this.smoothZoomTo(this.minZoom, 250);
-        this.$System.stop(true, true).fadeOut(250, () => {
             this.stopAnimation();
+        this.$System.stop(true, true).fadeOut(250, () => {
             this.SystemShow = false;
         });
 
@@ -930,6 +996,16 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
                 this.generateAsteroidBelt(orbit.orbit, {
                     radius: this.orbitUeToPx(orbit.distance),
                     beltWidth: 64
+                });
+            } else if (orbit.type === 2) {
+                // газовый гигант
+                this.generateGasGiant(orbit.orbit, {
+                    radius: 350,
+                    color: "rgba(90,160,255,1)",
+                    ringColor: "rgba(200,220,255,0.35)",
+                    size: 90000,
+                    speed: 0.4,
+                    rotation: 1
                 });
             }
         }

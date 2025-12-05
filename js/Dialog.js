@@ -68,6 +68,7 @@ class DialogClass {
         this.ShowOverlay = overlay;
         this.position = position;
 
+        this.minHeight = 0;
         this.minWidth = width;
         this.dialogDiv.innerHTML = '';
 
@@ -132,7 +133,7 @@ class DialogClass {
     }
 
     initDrag(handle) {
-        
+
         handle.style.cursor = 'move';
         handle.onmousedown = (e) => {
             this.dragging = true;
@@ -282,6 +283,8 @@ class DialogClass {
         const rectContent = contentEl ? contentEl.getBoundingClientRect() : { width: 0, height: 0 };
         const rectButtons = buttonsEl ? buttonsEl.getBoundingClientRect() : { width: 0, height: 0 };
 
+        //if (this.minWidth > window.innerWidth) this.minWidth = window.innerWidth - 40;
+
         this.minWidth = Math.max(this.minWidth || 0, Math.ceil(rectTitle.width + 50));
         this.minHeight = Math.max(this.minHeight || 0, Math.ceil(rectTitle.height + rectContent.height + rectButtons.height));
 
@@ -315,7 +318,7 @@ class DialogClass {
                     this.dialogDiv.style.transitionProperty = this.transitionProperty;
                 });
 
-            if (this.ShowOverlay) $(this.overlay).fadeIn(250);
+            if (this.ShowOverlay) $(this.overlay).stop(true, true).show();
             document.addEventListener('keydown', this.handleEsc);
         });
     }
@@ -341,6 +344,31 @@ class DialogClass {
             }],
             true
         );
+    }
+
+
+    ErrorLoad(msg, error = false, reload = false) {
+        this.create(
+            `<div style="text-align:center; color:red;">${msg.replace(/\n/g, '<br>')}</div>`,
+            `Ошибка${error ? ` №${error}` : ''}`,
+            [{
+                text: Lang.Close,
+                action: () => {
+                    this.close();
+                    if (typeof callback === 'function') callback();
+                }
+            }],
+            {
+                overlay: true,
+                escEnabled: false,
+                width: 350,
+                drag: true,
+                position: { my: 'center center', of: "document" }
+            }
+        );
+
+
+
     }
 
     error(message, errorCode, callback) {

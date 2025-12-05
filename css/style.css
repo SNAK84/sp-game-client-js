@@ -102,8 +102,9 @@ dialog-overlay {
     width: 100%;
     height: 100%;
     background: var(--color-dialog-overlay-bg);
-    z-index: 999;
-     backdrop-filter: blur(1px); 
+    z-index: 10000;
+    /*backdrop-filter: blur(1px);*/
+    transition: all 0.1s ease;
     /*display: none;*/
 }
 
@@ -135,7 +136,7 @@ dialog-main {
     max-width: 90%;
     min-width: calc(var(--dialog-title-width) + 300px);
     max-height: calc(100vh - 120px);
-    
+
     transition: all 0.1s ease;
     /*overflow: hidden;*/
     /* Увеличиваем ширину на 30px */
@@ -176,7 +177,12 @@ dialog-content {
 dialog-buttons {
     position: absolute;
     text-align: right;
-    display: block;
+    display: flex;
+
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+
     transition: all 0.2s ease;
     bottom: 10px;
     right: 10px;
@@ -682,7 +688,6 @@ input[type=button]:hover,
         1px 1px 2px var(--color-box-shadow-inset) inset,
         -1px -1px 2px var(--color-box-shadow-inset) inset;
     transform: translateY(-0.5px) translateX(-0.5px);
-    color: var(--color-text-hover);
 }
 
 button:active,
@@ -724,6 +729,12 @@ select:focus::picker-icon,
     color: var(--color-text-hover);
 }
 
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
 /* Класс для кнопок с предупреждением */
 .btn-warning {
     background: var(--color-warning-bg);
@@ -743,14 +754,18 @@ select:focus::picker-icon,
     box-shadow:
         1px 1px 2px var(--color-warning-box-shadow-inset) inset,
         -1px -1px 2px var(--color-warning-box-shadow-inset) inset;
-    color: var(--color-warning-text-hover);
+    color: var(--color-warning-text-hover) !important;
+}
+
+.btn-warning:focus {
+    color: var(--color-warning-text-hover) !important;
 }
 
 /* Класс для кнопок с ошибкой */
 .btn-danger {
-    background: var(--color-danger-bg) !important;
-    border-color: var(--color-danger-border) !important;
-    color: var(--color-danger-text) !important;
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger-border);
+    color: var(--color-danger-text);
 }
 
 .btn-danger:hover {
@@ -758,7 +773,7 @@ select:focus::picker-icon,
         2px 2px 4px var(--color-danger-box-shadow),
         1px 1px 2px var(--color-danger-box-shadow-inset) inset,
         -1px -1px 2px var(--color-danger-box-shadow-inset) inset;
-    color: var(--color-danger-text-hover) !important;
+    color: var(--color-danger-text-hover);
 }
 
 .btn-danger:active {
@@ -768,10 +783,14 @@ select:focus::picker-icon,
     color: var(--color-danger-text-hover) !important;
 }
 
+.btn-danger:focus {
+    color: var(--color-danger-text-hover) !important;
+}
+
 .btn-info {
-    background: var(--color-info-bg) !important;
-    border-color: var(--color-info-border) !important;
-    color: var(--color-info-text) !important;
+    background: var(--color-info-bg);
+    border-color: var(--color-info-border);
+    color: var(--color-info-text);
 }
 
 .btn-info:hover {
@@ -779,21 +798,24 @@ select:focus::picker-icon,
         2px 2px 4px var(--color-info-box-shadow),
         1px 1px 2px var(--color-info-box-shadow-inset) inset,
         -1px -1px 2px var(--color-info-box-shadow-inset) inset;
-    color: var(--color-info-text-hover) !important;
+    color: var(--color-info-text-hover);
 }
 
 .btn-info:active {
     box-shadow:
         1px 1px 2px var(--color-info-box-shadow-inset) inset,
         -1px -1px 2px var(--color-info-box-shadow-inset) inset;
-    color: var(--color-info-text-hover);
+    color: var(--color-info-text-hover) !important;
 }
 
+.btn-info:focus {
+    color: var(--color-info-text-hover) !important;
+}
 
 .btn-success {
-    background: var(--color-success-bg) !important;
-    border-color: var(--color-success-border) !important;
-    color: var(--color-success-text) !important;
+    background: var(--color-success-bg);
+    border-color: var(--color-success-border);
+    color: var(--color-success-text);
 }
 
 .btn-success:hover {
@@ -801,13 +823,17 @@ select:focus::picker-icon,
         2px 2px 4px var(--color-success-box-shadow),
         1px 1px 2px var(--color-success-box-shadow-inset) inset,
         -1px -1px 2px var(--color-success-box-shadow-inset) inset;
-    color: var(--color-success-text-hover) !important;
+    color: var(--color-success-text-hover);
 }
 
 .btn-success:active {
     box-shadow:
         1px 1px 2px var(--color-success-box-shadow-inset) inset,
         -1px -1px 2px var(--color-success-box-shadow-inset) inset;
+    color: var(--color-success-text-hover) !important;
+}
+
+.btn-success:focus {
     color: var(--color-success-text-hover) !important;
 }
 
@@ -2123,6 +2149,154 @@ tr:hover th.beryl_fon {
     text-align: center;
 }
 
+.ui-draggable {
+    cursor: grab;
+
+}
+
+.ui-draggable-dragging {
+    cursor: grabbing;
+    z-index: 9999;
+}
+
+.ui-dragging {
+    opacity: 0.7;
+    transform: scale(1.05);
+    cursor: grabbing;
+    position: absolute;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.ui-draggable-helper {
+    pointer-events: none;
+}
+
+.ui-drop-active {
+    transition: 0.2s ease;
+}
+
+.ui-drop-hover {
+    outline: 2px dashed #00bfff;
+    background-color: rgba(0, 128, 255, 0.1);
+}
+
+icon-selector {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px;
+    margin: 4px;
+}
+
+icon-selector[vertical] {
+    flex-direction: column;
+}
+
+.NavType {
+    display: flex;
+    flex-direction: column;
+    object-fit: contain;
+    filter: brightness(0.7);
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+}
+
+.NavType:hover {
+    /*opacity: 0.9;*/
+    filter: brightness(0.8);
+    border: 0;
+    box-shadow: none;
+}
+
+
+.NavType[selected] {
+    opacity: 1;
+    filter: brightness(1.2);
+}
+
+.NavTypeImg {
+    height: 36px;
+    width: 44px;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.NavTypePlanet {
+    background: url("/images/icons/types.png") 0 0 no-repeat;
+}
+
+.NavTypeMoon {
+    background: url("/images/icons/types.png") -44px 0 no-repeat;
+}
+
+.NavTypeDedris {
+    background: url("/images/icons/types.png") -88px 0 no-repeat;
+}
+
+.NavTypeFree {
+    background: url("/images/icons/types.png") -132px 0 no-repeat;
+}
+
+
+
+
+.NavMissionImg {
+    height: 40px;
+    width: 40px;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.Mission_1 {
+    background: url("/images/icons/mission_icon.png") -0 0 no-repeat;
+}
+.Mission_2 {
+    background: url("/images/icons/mission_icon.png") -40px 0 no-repeat;
+}
+.Mission_3 {
+    background: url("/images/icons/mission_icon.png") -80px 0 no-repeat;
+}
+.Mission_4 {
+    background: url("/images/icons/mission_icon.png") -120px 0 no-repeat;
+}
+.Mission_5 {
+    background: url("/images/icons/mission_icon.png") -160px 0 no-repeat;
+}
+.Mission_6 {
+    background: url("/images/icons/mission_icon.png") -200px 0 no-repeat;
+}
+.Mission_7 {
+    background: url("/images/icons/mission_icon.png") -240px 0 no-repeat;
+}
+.Mission_8 {
+    background: url("/images/icons/mission_icon.png") -280px 0 no-repeat;
+}
+.Mission_9 {
+    background: url("/images/icons/mission_icon.png") -320px 0 no-repeat;
+}
+.Mission_10 {
+    background: url("/images/icons/mission_icon.png") -360px 0 no-repeat;
+}
+
+.InputNavigation {
+    width: calc(5ch + 10px);
+    -moz-appearance: textfield;
+    appearance: none;
+    display: inline-block;
+}
+
+.InputNavigation::-webkit-inner-spin-button,
+.InputNavigation::-webkit-outer-spin-button {
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
 .OverView #UserName {
     width: auto;
     height: 1.5em;
@@ -2234,6 +2408,78 @@ tr:hover th.beryl_fon {
     margin: 6px auto;
 }
 
+.BuildsPage,
+.ResearchsPage,
+.ShipyardPage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.FleetsPage {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.FleetsPage .InfoFleet {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: end;
+    flex-wrap: wrap;
+    column-gap: 8px;
+    margin: 4px;
+    padding: 4px;
+}
+
+.FleetsPage .InfoFleet .FleetMoreDetails {
+    grid-column: 1 / span 3;
+    margin: 4px;
+    padding: 4px;
+}
+
+.FleetMoreDetails>* {}
+
+.FleetsPage .NewFleetBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.CargoTable {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+}
+
+.InfoFleet .Name {
+    grid-column: span 2;
+}
+
+.InfoFleet .Buttons {
+    display: flex;
+    flex-direction: column;
+    grid-column: 3;
+    grid-row: 1 / span 5;
+    height: 100%;
+    justify-content: space-between;
+}
+
+.InfoFleet .Buttons>* {
+    margin: 0px;
+    padding: 2px;
+    min-height: 0px;
+}
+
+
+
+.BuildsPage .InfoBox {
+    padding: 6px;
+    margin: 6px 0 4px 0;
+}
+
 #RenamePlanet {
     display: flex;
     justify-content: space-evenly;
@@ -2246,6 +2492,7 @@ tr:hover th.beryl_fon {
     cursor: pointer;
     transition: all 0.2s ease;
 }
+
 #InfoPlanetName:hover {
     font-size: 26px;
     color: var(--color-info-text-hover);
@@ -2308,10 +2555,7 @@ tr:hover th.beryl_fon {
 
 .TypeBox {
     width: 100%;
-}
-
-.TypeBox:not(:first-child) {
-    margin-top: 4px;
+    margin: 2px 0px;
 }
 
 .Queues {
@@ -2319,12 +2563,20 @@ tr:hover th.beryl_fon {
     flex-direction: column;
     gap: 2px;
     justify-items: center;
+    padding: 4px 8px;
+}
+
+.Queues .Queued {
+    display: flex;
+    gap: 2px;
+    flex-direction: column;
 }
 
 .ShipyardPage .Buttons {
     margin: 2px;
     margin-top: 10px;
 }
+
 
 game-build {
     --element-width: 120px;
@@ -2340,11 +2592,31 @@ game-build {
     margin: 2px;
 }
 
+game-build.fleets>*>*>*,
+game-build.fleets>*>*,
+game-build.fleets>* {
+    font-size: 9px;
+}
+
+game-build.fleets {
+    --element-width: 100px;
+}
+
+game-build.fleetsDetails>*>*>*,
+game-build.fleetsDetails>*>*,
+game-build.fleetsDetails>* {
+    font-size: 7px;
+}
+
+game-build.fleetsDetails {
+    --element-width: 80px;
+}
+
 game-build .image {
     width: var(--element-width);
     height: var(--element-width);
-    left: 0;
-    top: 0;
+    left: -1px;
+    top: -1px;
     position: absolute;
     border: 1px solid var(--color-border);
     box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
@@ -2367,8 +2639,8 @@ game-build.queues.active {
 }
 
 game-build.queues.active .head {
-    left: var(--queues-active-height);
-    width: calc(var(--queues-active-width) - var(--queues-active-height));
+    left: calc(var(--queues-active-height) - 2px);
+    width: calc(var(--queues-active-width) - var(--queues-active-height) + 1px);
     height: var(--queues-active-height);
 
 }
@@ -2388,8 +2660,8 @@ game-build.queues.queued {
 
 game-build.queues.queued .head {
     padding: 0;
-    left: var(--queues-queued-height);
-    width: calc(var(--queues-queued-width) - var(--queues-queued-height));
+    left: calc(var(--queues-queued-height) - 2px);
+    width: calc(var(--queues-queued-width) - var(--queues-queued-height) + 1px);
     height: var(--queues-queued-height);
 
 }
@@ -2469,8 +2741,8 @@ game-build .head {
     box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
     border-radius: 6px;
 
-    left: 0px;
-    top: 0px;
+    left: -1px;
+    top: -1px;
     padding: 2px;
     hyphens: auto;
     z-index: 10;
@@ -2493,8 +2765,8 @@ game-build .bottom {
     box-shadow: 2px 2px 8px 2px var(--color-box-shadow);
     border-radius: 6px;
 
-    left: 0px;
-    bottom: 0px;
+    left: -1px;
+    bottom: -1px;
     padding: 2px;
     hyphens: auto;
     z-index: 10;
@@ -2508,6 +2780,11 @@ game-build .LevelNumber {
 game-build.builds .btn-box-info {
     left: 3px;
     bottom: 2px;
+}
+
+game-build.fleets .btn-box-info {
+    left: 3px;
+    bottom: 28px;
 }
 
 game-build.builds .btn-box-up {
@@ -2525,25 +2802,19 @@ game-build.builds .btn-box-plus {
     bottom: 2px;
 }
 
-game-build.builds .btn-box-max {
+game-build.builds .btn-box-max,
+game-build.fleets .btn-box-max {
     right: 2px;
     bottom: 2px;
 }
 
-game-build.builds .btn-input {
+game-build.builds .btn-input,
+game-build.fleets .btn-input {
     right: 28px;
     left: 2px;
     bottom: 2px;
     border-color: var(--color-cyan-border);
     box-shadow: 0 0 4px 2px var(--color-cyan-border) inset;
-    -moz-appearance: textfield;
-    appearance: none;
-}
-
-game-build.builds .btn-input::-webkit-inner-spin-button,
-game-build.builds .btn-input::-webkit-outer-spin-button {
-    -moz-appearance: textfield;
-    appearance: none;
 }
 
 game-build.builds .btn-box-cancel {
