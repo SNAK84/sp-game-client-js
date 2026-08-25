@@ -1,8 +1,31 @@
+/**
+ * BuildsPageClass - Класс страницы строительства ( Buildings page )
+ * 
+ * Отвечает за отображение и управление строениями на планете:
+ * - Список строений по типам (здания, обороны, корабли)
+ * - Очередь строительства с таймерами
+ * - Управление строительством (подъём, разбор, отмена)
+ * 
+ * @class
+ * @extends BasePageClass
+ */
 window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 
-
+    /**
+     * Имя класса для идентификации
+     * @type {string}
+     */
     Name = "BuildsPageClass";
 
+/**
+     * Конструктор инициализации класса
+     * 
+     * Настраивает слои, создаёт обработчики событий для действий со строениями:
+     * - info - показать информацию о строении
+     * - upgrade - начать строительство
+     * - dismantle - разбор строения
+     * - cancel - отмена строительства
+     */
     constructor() {
 
         console.log("constructor BuildsPageClass");
@@ -62,6 +85,11 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 
     }
 
+    /**
+     * Создаёт структуру типов строений (здания, оборона, корабли)
+     * 
+     * Инициализирует $Content.Types для каждого типа из messageData.data.Page?.Types
+     */
     CreateTypes() {
         const Types = this.messageData.data.Page?.Types;
         if (!Types) return;
@@ -75,6 +103,11 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         });
     }
 
+    /**
+     * Обновляет названия типов строений
+     * 
+     * Обновляет текст заголовков типов с локализованными названиями
+     */
     renderTypes() {
         if (!this.$Content?.Types || this.$Content.Types.length === 0) {
             this.CreateTypes();
@@ -85,6 +118,11 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         });
     }
 
+    /**
+     * Создаёт элементы строений для каждого типа
+     * 
+     * Инициализирует $Content.Builds для каждого строения из BuildList
+     */
     CreateBuilds() {
         //this.messageData.data
         const BuildList = this.messageData.data.Page?.BuildList;
@@ -98,6 +136,12 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         });
     }
 
+    /**
+     * Обновляет данные существующих строений
+     * 
+     * Обновляет свойство data для каждого строения, добавляя информацию о
+     * очереди и занятых полях
+     */
     renderBuilds() {
         if (!this.$Content?.Builds || this.$Content.Builds.length === 0) {
             this.CreateBuilds();
@@ -111,6 +155,16 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         });
     }
 
+    /**
+     * Создаёт структуру очереди строительства
+     * 
+     * Создаёт элементы:
+     * - $Content.Queues - контейнер очереди
+     * - $Content.Queues.Items - элементы очереди
+     * - $Content.Queues.QueueStatus - статус очереди (X из Y)
+     * - $Content.Queues.FieldsInfo - информация о занятых полях
+     * - $Content.Queues.QueueTimer - таймер завершения
+     */
     CreateQueues() {
         const queues = this.messageData.data.Page?.QueueList;
         this.$Content.Queues = $("<div>").addClass("box Queues").hide();
@@ -180,6 +234,16 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 
     }
 
+    /**
+     * Обновляет элементы очереди строительства
+     * 
+     * Синхронизирует список строений в очереди:
+     * - Удаляет строения, которых больше нет
+     * - Добавляет новые строения
+     * - Обновляет данные существующих
+     * 
+     * Обновляет таймеры и отображение статуса очереди
+     */
     renderQueues() {
         const queues = this.messageData.data.Page?.QueueList;
 
@@ -258,6 +322,19 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 
     }
 
+    /**
+     * Вычисляет цвет индикатора прогресса очереди
+     * 
+     * @param {jQuery} Obj - Элемент для установки цвета
+     * @param {number} Count - Текущее количество в очереди
+     * @param {number} Max - Максимальное количество
+     * 
+     * Применяет цвета:
+     * - lime_text: ≤50%
+     * - yellow_text: ≤75%
+     * - orange_text: ≤90%
+     * - red_text: >90%
+     */
     renderColor(Obj, Count, Max) {
         const QueueProc = (Count / Max) * 100;
 
@@ -283,6 +360,13 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         this.$Content.Queues.QueueTimer.Timer.text(secondToTime(Math.max(0, Math.round(this.$Content.Queues.QueueTimer.allEndTime - GameServerTime.now()))));
     }
 
+    /**
+     * Создаёт элемент панели информации о строениях
+     * 
+     * Создаёт:
+     * - $Content.Info - контейнер информации
+     * - $Content.Info.FieldsInfo - информация о занятых полях
+     */
     CreateInfo() {
         this.$Content.Info = $("<div>").addClass("box InfoBox");
 
@@ -301,6 +385,11 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 
     }
 
+    /**
+     * Обновляет панель информации о строениях
+     * 
+     * Обновляет информацию о занятых полях и их процентах
+     */
     renderInfo() {
         if (!this.$Content?.Info || this.$Content.Info.length === 0) {
             this.CreateInfo();
@@ -312,6 +401,16 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         this.$Content.Info.FieldsInfo.MaxFields.text(this.messageData.data.Page?.field_current);
     }
 
+    /**
+     * Основной метод рендеринга страницы
+     * 
+     * Вызывается при открытии страницы строительства
+     * Обновляет:
+     * - Очередь строительства
+     * - Панель информации
+     * - Типы строений
+     * - Строения
+     */
     async render() {
 
         await super.render();
@@ -325,9 +424,49 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
         this.renderTypes();
         this.renderBuilds();
 
-
-
-
     }
 
 }
+
+/**
+ * BuildsPageClass - Документация
+ * 
+ * Основной класс страницы строительства в игре.
+ * 
+ * Отвечает за отображение и управление строениями на планете:
+ * - Список строений по типам (здания, обороны, корабли)
+ * - Очередь строительства с таймерами
+ * - Управление строительством (подъём, разбор, отмена)
+ * 
+ * События:
+ * - BuildAction: Действия со строениями
+ *   - info: Показать информацию о строении
+ *   - upgrade: Начать строительство
+ *   - dismantle: Разбор строения
+ *   - cancel: Отмена строительства
+ * 
+ * Элементы DOM:
+ * - .BuildsPage: Контейнер страницы
+ * - .TypeBox: Контейнер типа строений
+ * - .Queues: Контейнер очереди
+ * - .QueueStatus: Статус очереди (X из Y)
+ * - .QueueTimer: Таймер завершения
+ * 
+ * Свойства:
+ * - $Content.Types: Объект типов строений
+ * - $Content.Builds: Объект строений
+ * - $Content.Queues: Контейнер очереди
+ * - $Content.Info: Панель информации
+ * 
+ * Методы:
+ * - renderTypes(): Обновляет названия типов строений
+ * - renderBuilds(): Обновляет данные строений
+ * - renderQueues(): Обновляет очередь строительства
+ * - renderInfo(): Обновляет панель информации
+ * - renderColor(): Вычисляет цвет индикатора прогресса
+ * - renderQueuesTimer(): Обновляет таймер очереди
+ * 
+ * @class BuildsPageClass
+ * @extends BasePageClass
+ * @name BuildsPageClass
+ */

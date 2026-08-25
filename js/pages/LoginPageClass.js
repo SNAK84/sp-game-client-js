@@ -234,6 +234,15 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
     RenderData(module) {
 
         console.log("RenderData " + module);
+
+        // Если окно ввода PIN уже показано и снова приходит verify_email —
+        // не скрываем и не перерисовываем его (иначе форма мгновенно закрывается).
+        if (module === "verify_email" &&
+            this.VerifyEmailForm && this.VerifyEmailForm.is(":visible")) {
+            Overlay.Hide(null, 250);
+            return;
+        }
+
         // скрываем текущую форму
         if (this.CurrentForm) $(this.CurrentForm).hide(200);
 
@@ -248,19 +257,37 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
                 break;
 
             case "verify_email":
+                // Если окно ввода PIN уже показано и активно — не перерисовываем его
+                // (иначе повторные verify_email-сообщения постоянно сбрасывают форму).
+                if (this.VerifyEmailForm && this.VerifyEmailForm.is(":visible")) {
+                    Overlay.Hide(null, 250);
+                    return;
+                }
                 this.CoolDownEmail = this.messageData?.getData?.("cooldown") ?? 60;
                 this.FieldsForm.verify_email[3].timer.time = this.CoolDownEmail * 1000;
                 this.CurrentForm = this.CreateVerifyEmailForm();
                 $(this.CurrentForm).show(300);
+                Overlay.Hide(null, 250);
                 break;
 
             case "send_verify_email":
                 this.CoolDownEmail = this.messageData?.getData?.("cooldown") ?? 60;
                 this.FieldsForm.verify_email[3].timer.time = this.CoolDownEmail * 1000;
+                // Гарантируем создание/обновление формы верификации
+                this.CurrentForm = this.CreateVerifyEmailForm();
                 this.renderForm(this.VerifyEmailForm, this.FieldsForm.verify_email);
+                $(this.CurrentForm).show(300);
+                Overlay.Hide(null, 250);
                 break;
 
             default:
+                // Не перекрываем уже открытое окно верификации обычной формой логина
+                // (например, когда приходит bootstrap-ответ missing_token mode=login/action=login
+                // ПОСЛЕ того, как окно ввода PIN уже показано).
+                if (this.VerifyEmailForm && this.VerifyEmailForm.is(":visible")) {
+                    Overlay.Hide(null, 250);
+                    return;
+                }
                 this.CurrentForm = this.CreateLoginForm();
                 $(this.CurrentForm).show(300);
                 break;
@@ -435,6 +462,15 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
         $("#RegisterForm").remove();
         $("#VerifyEmailForm").remove();
 
+        // Сбрасываем кэшированные ссылки на формы, т.к. их DOM-узлы только что удалены.
+        // Иначе при следующем показе страницы логина (например, после выхода)
+        // CreateLoginForm() вернёт устаревшую ссылку на отсоединённый элемент,
+        // и форма не отобразится.
+        this.LoginForm = null;
+        this.PasswordForm = null;
+        this.RegisterForm = null;
+        this.VerifyEmailForm = null;
+        this.CurrentForm = null;
 
         Data.login = null;
         Data.mode = "overview";

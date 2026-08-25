@@ -132,14 +132,15 @@ dialog-main {
 
     text-align: center;
 
+    display: flex;
+    flex-direction: column;
 
     max-width: 90%;
     min-width: calc(var(--dialog-title-width) + 300px);
     max-height: calc(100vh - 120px);
 
     transition: all 0.1s ease;
-    /*overflow: hidden;*/
-    /* Увеличиваем ширину на 30px */
+    /*overflow: hidden; /* Обрезаем контент, чтобы не вылезал за border-radius */
 }
 
 
@@ -166,12 +167,19 @@ dialog-title {
 dialog-content {
     margin: 10px;
     margin-top: 30px;
-    /*margin-bottom: 40px;*/
+    /*margin-bottom: 50px;*/
     position: relative;
+    /*display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;*/
+
     display: block;
     max-height: calc(100vh - 300px);
     overflow-y: auto;
     z-index: 10;
+    height: calc(100% - 100px);
+    max-height: calc(100vh - 160px);
 }
 
 dialog-buttons {
@@ -2203,6 +2211,7 @@ icon-selector[vertical] {
     box-shadow: none;
     background: transparent;
     padding: 0;
+    width: 54px;
 }
 
 .NavType:hover {
@@ -2215,7 +2224,7 @@ icon-selector[vertical] {
 
 .NavType[selected] {
     opacity: 1;
-    filter: brightness(1.2);
+    filter: brightness(1.2) contrast(5);
 }
 
 .NavTypeImg {
@@ -2251,37 +2260,52 @@ icon-selector[vertical] {
     margin: 0;
     border: 0;
     box-shadow: none;
+    filter: brightness(0.5);
 }
 
-.Mission_1 {
+.Mission_ATTACK {
     background: url("/images/icons/mission_icon.png") -0 0 no-repeat;
 }
-.Mission_2 {
+
+.Mission_GROUP_ATTACK {
     background: url("/images/icons/mission_icon.png") -40px 0 no-repeat;
 }
-.Mission_3 {
+
+.Mission_DESTROY {
     background: url("/images/icons/mission_icon.png") -80px 0 no-repeat;
 }
-.Mission_4 {
+
+.Mission_DEFEND {
     background: url("/images/icons/mission_icon.png") -120px 0 no-repeat;
 }
-.Mission_5 {
+
+.Mission_TRANSPORT {
     background: url("/images/icons/mission_icon.png") -160px 0 no-repeat;
 }
-.Mission_6 {
+
+.Mission_RELOCATE {
     background: url("/images/icons/mission_icon.png") -200px 0 no-repeat;
 }
-.Mission_7 {
+
+.Mission_COLONIZE {
     background: url("/images/icons/mission_icon.png") -240px 0 no-repeat;
 }
-.Mission_8 {
+
+.Mission_RECYCLE {
     background: url("/images/icons/mission_icon.png") -280px 0 no-repeat;
 }
-.Mission_9 {
+
+.Mission_MERGE {
     background: url("/images/icons/mission_icon.png") -320px 0 no-repeat;
 }
-.Mission_10 {
+
+.Mission_SPY,
+.Mission_OBSERVE {
     background: url("/images/icons/mission_icon.png") -360px 0 no-repeat;
+}
+
+.Mission_EXPEDITION {
+    background: url("/images/icons/mission_icon.png") -400px 0 no-repeat;
 }
 
 .InputNavigation {
@@ -2439,8 +2463,6 @@ icon-selector[vertical] {
     padding: 4px;
 }
 
-.FleetMoreDetails>* {}
-
 .FleetsPage .NewFleetBlock {
     display: flex;
     flex-direction: column;
@@ -2473,7 +2495,278 @@ icon-selector[vertical] {
     min-height: 0px;
 }
 
+#sendPanel>div {
+    margin: 6px;
+}
 
+.FleetInfoPanel {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.FleetInfoPanel .FleetInfoLabel {
+    white-space: nowrap;
+}
+
+/* === Стили для диалога управления флотом === */
+.FleetTaskPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.FleetCoordsPanel {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    align-items: start;
+}
+
+.FleetCoordsPanel>div:first-child,
+.FleetCoordsPanel>icon-selector {
+    grid-column: 1 / -1;
+}
+
+.FleetMainView,
+.FleetMissionView,
+.FleetCommandsView {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.FleetMissionView icon-selector {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+}
+
+.FleetCommandsList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.FleetCmdRow {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.FleetCmdRow select,
+.FleetCmdRow input {
+    flex: 1;
+    min-width: 0;
+}
+
+.FleetCurrentCommands {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.FleetCmdItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+}
+
+.FleetCmdItem .CmdName {
+    flex: 1;
+}
+
+.FleetCmdItem .CmdCoords {
+    color: var(--color-text-secondary, #888);
+    font-size: 0.9em;
+}
+
+.FleetCmdItem .CmdStatus {
+    color: var(--color-info-text, #4a9eff);
+    font-size: 0.85em;
+}
+
+/* === Панель действий === */
+.FleetActionsPanel {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.FleetActionsPanel button {
+    padding: 6px 12px;
+}
+
+/* === Панель текущих команд === */
+.FleetCurrentCommandsPanel {
+    padding: 4px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.FleetCurrentCommandsPanel .hr-line {
+    margin: 4px 0;
+}
+
+/* === Панель миссий === */
+.FleetMissionPanel {
+    padding: 8px;
+    max-width: 300px;
+    /*    background: var(--color-panel-bg, rgba(0,0,0,0.1));
+    border-radius: 6px;
+    border: 1px solid var(--color-border);*/
+}
+
+.FleetMissionPanel>div:first-child {
+    margin-bottom: 8px;
+}
+
+.FleetMissionPanel icon-selector {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+}
+
+/* === Панель ресурсов === */
+.FleetResourcesPanel {
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+}
+
+.FleetResourcesTitle {
+    font-weight: 600;
+    color: var(--color-info-text);
+}
+
+.FleetResourcesGrid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px;
+}
+
+.FleetResRow {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.FleetResLabel {
+    color: var(--color-text);
+    white-space: nowrap;
+}
+
+.FleetResControls {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.FleetResInput {
+    width: calc(9ch + 12px);
+    -moz-appearance: textfield;
+    appearance: none;
+    text-align: right;
+}
+
+.FleetResInput::-webkit-inner-spin-button,
+.FleetResInput::-webkit-outer-spin-button {
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
+.FleetResBtn {
+    --btn-size: 20px;
+}
+
+.FleetResourcesFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border);
+}
+
+.FleetRemainingWrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.FleetRemainingValue {
+    font-weight: 700;
+    color: var(--color-info-text);
+    min-width: 5ch;
+    text-align: right;
+}
+
+.FleetAllResBtn {
+    min-width: 116px;
+}
+
+@media screen and (max-width: 760px) {
+    .FleetResRow {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .FleetResControls {
+        justify-content: flex-end;
+    }
+
+    .FleetResourcesFooter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .FleetAllResBtn {
+        width: 100%;
+    }
+}
+
+/* === Панель координат (внутри миссии) === */
+.FleetMissionCoordsView {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+.FleetMissionCoordsView button {
+    margin-top: 8px;
+}
+
+/* === Панель миссий (внутренняя) === */
+.FleetMissionInnerView {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+/* === Вкладки === */
+.FleetTaskTabs {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    padding: 4px 0;
+}
 
 .BuildsPage .InfoBox {
     padding: 6px;

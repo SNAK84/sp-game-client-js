@@ -870,7 +870,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         if (!orbit) return;*/
 
         this.$Content.PlanetsNames[planet.planet] = this.createDiv(
-            planet.UserName, 'PlanetName' + planet.planet, "PlanetName box"
+            planet.name, 'PlanetName' + planet.planet, "PlanetName box"
         );
 
         this.$System.append(this.$Content.PlanetsNames[planet.planet]);
@@ -906,7 +906,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         /*const orbit = this.orbitMap[p.planet];
         if (!orbit) return;*/
 
-        this.$Content.PlanetsNames[p.planet].text(p.UserName);
+        this.$Content.PlanetsNames[p.planet].text(p.name);
     }
 
     renderPlanetsNamePosition(p, x, y, radius, cx, cy) {

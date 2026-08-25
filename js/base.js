@@ -200,8 +200,8 @@ const ShowPage = {
                 // Обёртка на случай, если конструктор кидает — чтобы не ломать приложение
                 const inst = new PageClass();
                 inst.Name = className;
-                this._pageInstances[className] = inst;
-            } catch (e) {
+                                    this._pageInstances[className] = inst;
+                            } catch (e) {
                 console.error("Ошибка при создании экземпляра страницы:", e);
                 return;
             }
@@ -210,7 +210,7 @@ const ShowPage = {
         // Делай текущим и вызывай Show
         if (!Page || Page.Name !== className)
             Page = new PageClass();//this._pageInstances[className];
-        try {
+                try {
             Page.Show?.(module, safeData);
         } catch (e) {
             console.error("Ошибка при вызове Page.Show():", e);
@@ -856,6 +856,16 @@ class WebSocketClass {
             // отправляем queued сообщения
             this.flushQueue();
 
+            // При reconnect не шлём повторно игровой mode (Data.mode), если не верифицирован
+            // e-mail и пользователь в окне верификации/логина — иначе сервер будет снова
+            // возвращать verify_email и клиент попадёт в цикл запросов.
+            if (this.reconnect && Page && Page.Name === "LoginPageClass") {
+                console.log("onopen: reconnect на странице логина, игровой mode не отправляем");
+                this.reconnect = false;
+                Overlay.Hide();
+                return;
+            }
+
             this.send(new Message()
                 .setMode((this.reconnect) ? Data.mode : "connect")
                 .setAction((this.reconnect) ? "reconnect" : "handshake")
@@ -963,9 +973,14 @@ class WebSocketClass {
                     return;
 
                 case "handshake":
-                    // системный ответ после (re)connect — прячем overlay
-                    console.log("Overlay.Hide() on handshake/reconnect");
-                    //Overlay.Hide();
+                    // системный ответ после (re)connect
+                    // Не отправляем повторный запрос, если пользователь уже находится
+                    // в окне верификации e-mail — иначе сервер снова вернёт
+                    // mode=login/action=verify_email и форма будет перерисовываться в цикле.
+                    if (Data.mode === "login" && Page && Page.Name === "LoginPageClass") {
+                        console.log("handshake: уже на странице логина, повторный запрос пропущен");
+                        return;
+                    }
                     GameEvents.emit("SendServer", {
                         mode: Data.mode,
                         //action: "list",
@@ -1045,7 +1060,15 @@ class WebSocketClass {
 
         // --- ROUTING TO PAGES (не для системных модов) --- //
         if (msg.mode && msg.action !== "ping" && msg.mode !== "connect" && msg.mode !== "lang") {
-            // перед показом страницы мы уже обновили локальный lang (если нужен)
+            // Если окно ввода PIN уже показано, не даём bootstrap-ответам
+            // (mode=login/action=login от missing_token) закрыть/перекрыть его.
+            if (msg.mode === "login" && msg.action === "login" &&
+                Page && Page.Name === "LoginPageClass" && Page.VerifyEmailForm && Page.VerifyEmailForm.is(":visible")) {
+                console.log("handleMessage: окно ввода PIN уже открыто, игнорируем login-форму");
+                return;
+            }
+            // Нормализация: системные префиксы "0overview" и т.п. не входят в pageMap.
+            // Если мод не распознан, ShowPage.Show сам выполнит fallback и скроет Overlay.
             ShowPage.Show(msg.mode, msg);
             return;
         }

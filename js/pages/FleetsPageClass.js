@@ -76,6 +76,8 @@ window.FleetsPageClass = class FleetsPageClass extends BasePageClass {
         const Fleet = this.messageData.data.Page?.FleetList[FleetId];
         if (!Fleet) return;
 
+        console.log(Fleet);
+
         const Commands = this.messageData.data.Page?.FleetList[FleetId]?.Commands;
 
 
@@ -83,6 +85,7 @@ window.FleetsPageClass = class FleetsPageClass extends BasePageClass {
         const $panel = $("<div>").addClass("FleetTaskPanel");
         $panel.append(this.createSpan(`🚀 Текущие задания:`), "<br><br>");
 
+        const $sendPanel = this.createDiv("", "sendPanel");
 
         if (Commands) {
 
@@ -90,10 +93,9 @@ window.FleetsPageClass = class FleetsPageClass extends BasePageClass {
         } else {
             $panel.append("-= Комманды отсутствуют =-", "<br><br>");
 
-            const $sendPanel = this.createDiv("", "sendPanel");
 
             // === Панель ввода координат как в OGame ===
-            const $coordPanel = $("<div>").addClass("FleetCoordsPanel");
+            const $coordPanel = $("<div>").addClass("box FleetCoordsPanel");
 
             // Поля ввода координат
             const $galaxy = this.createSpan("", "GalaxyBlock", "GalaxyBlock");
@@ -158,6 +160,7 @@ window.FleetsPageClass = class FleetsPageClass extends BasePageClass {
             selector.single = true;
             selector.vertical = false;
 
+            selector.value = 1;
             // --- Реакция на выбор типа ---
             selector.addEventListener("change", e => {
                 selectedType = Number(e.detail.value);
@@ -182,65 +185,230 @@ window.FleetsPageClass = class FleetsPageClass extends BasePageClass {
             // --- Сборка панели ---
             $coordPanel.append(
                 $("<div>").text("Координаты назначения:"),
-                $iconSelector, "<br>",
-                $galaxy, $system, "<br>", $orbit,
-                $distance, " ", $deg
+                $iconSelector,
+                $galaxy, $system, $orbit,
+                $distance, $deg
             );
 
-            $sendPanel.append($coordPanel);
+
+
+
+            const $MissionPanel = $("<div>").addClass("box FleetMissionPanel");
+
+
+            // === Выбор миссии через icon-selector ===
+            const $missionSelector = $("<icon-selector>");
+            const missionSelector = $missionSelector[0];
+
+            // Подключаем tooltip
+            missionSelector.setTooltipHandler((button, item) => {
+                $(button).ToolTip(item.tooltip, item.tooltipCss);
+            });
+
+            // Готовим список миссий (из серверных данных)
+            const FleetMissions = this.messageData.data.Page?.FleetMissions;
+
+            console.log(FleetMissions);
+
+            const mItems = {};
+            if (FleetMissions) {
+                for (const m of FleetMissions) {
+                    mItems[m.id] = {
+                        label: "121",//Lang[m.lang],
+                        value: m.id,
+                        class: "NavType",
+                        imgClass: "NavMissionImg Mission_" + m.key,   // css под иконку
+                        tooltip: Lang[m.lang]
+                    };
+                }
+            }
+
+            missionSelector.items = mItems;
+
+            missionSelector.single = true;
+            missionSelector.vertical = false;
+
+            // Текущее выбранное задание
+            let selectedMission = null;
+
+            missionSelector.addEventListener("change", e => {
+                selectedMission = Number(e.detail.value);
+            });
+
+            //const $commandsList = $("<div>").addClass("FleetCommandsList");
+            //const $addCmdBtn = this.createButton("AddCmd", "Добавить команду", () => addCommandRow());
+            const $sendBtn = this.createButton("SendCmds", "Отправить", () => sendFleetCommands());
+            //const $clearBtn = this.createButton("ClearCmds", "Очистить", () => $commandsList.empty());
+
+            $MissionPanel.append(
+                $("<div>").text("Тип миссии:"),
+                $missionSelector,
+                
+                //$addCmdBtn, 
+                //$clearBtn
+            );
+
+            //$sendPanel.append($coordPanel);
+
+            // Инфо Поле
+
+            const $infoPanel = $("<div>").addClass("box FleetInfoPanel");
+
+            const infoMap = {
+                coords: "Coords",
+                distance: "Distance",
+                duration: "Duration",
+                fuel: "Fuel",
+                storage: "Storage",
+                maxspeed: "MaxSpeed"
+            };
+
+            const infos = {};
+            Object.entries(infoMap).forEach(([key, suffix]) => {
+                infos[key] = this.createSpan("-", `FleetInfo${suffix}`, "FleetInfo");
+            });
+
+            const infoLabels = {
+                coords: "Координаты цели:",
+                distance: "Расстояние:",
+                duration: "Время полета:",
+                fuel: "Потребление топлива:",
+                storage: "Грузоподъемность:",
+                maxspeed: "Максимальная скорость:"
+            };
+
+            Object.entries(infoLabels).forEach(([key, label]) => {
+                $infoPanel.append(
+                    this.createSpan(label, null, "FleetInfoLabel"),
+                    infos[key]
+                );
+            });
+
+
+
+            // Поля ввода ресурсов
+
+            const $resourcesPanel = $("<div>").addClass("box FleetResourcesPanel");
+            const $resourcesTitle = this.createDiv("Ресурсы:", null, "FleetResourcesTitle");
+            const $resourcesGrid = $("<div>").addClass("FleetResourcesGrid");
+            const $resourcesFooter = $("<div>").addClass("FleetResourcesFooter");
+
+            const resourceIds = Object.keys(Data.Resources || {})
+                .map(Number)
+                .filter((resId) => resId >= 900 && resId <= 910)
+                .sort((a, b) => a - b);
+
+            const resourceInputs = {};
+
+            const parseNumber = (value) => Number(String(value ?? "").replace(/[^\d.-]/g, "")) || 0;
+
+            const $remainingResources = this.createSpan("-", "FleetRemainingResources", "FleetRemainingValue");
+
+            const updateRemainingResources = () => {
+                const storage = parseNumber(infos.storage.text());
+
+                if (!storage) {
+                    $remainingResources.text("-");
+                    return;
+                }
+
+                let usedResources = 0;
+                Object.values(resourceInputs).forEach(($input) => {
+                    usedResources += parseNumber($input.val());
+                });
+
+                const remain = Math.max(storage - usedResources, 0);
+                $remainingResources.text(humanNumber(remain, true, 2));
+            };
+
+            resourceIds.forEach((resId) => {
+                const $row = $("<div>").addClass("FleetResRow0");
+                const $label = this.createSpan(`${Lang.tech?.[resId] || `Ресурс ${resId}`}:`, null, "FleetResLabel");
+                const $controls = $("<div>").addClass("FleetResControls");
+
+                const $input = this.createInput(
+                    "number",
+                    `ResInput${resId}`,
+                    "",
+                    "InputResources FleetResInput",
+                    updateRemainingResources,
+                    0,
+                    { min: 0, max: () => Number(Data.Resources?.[resId]?.count) || 0 }
+                );
+
+                const $setZeroBtn = $("<button>", {
+                    type: "button",
+                    class: "btn-box btn-box-left FleetResBtn",
+                    title: "Очистить ресурс"
+                }).on("click", () => {
+                    $input.val(0).trigger("input");
+                });
+
+                const $setMaxBtn = $("<button>", {
+                    type: "button",
+                    class: "btn-box btn-box-right FleetResBtn",
+                    title: "Заполнить максимум"
+                }).on("click", () => {
+                    const maxValue = Number(Data.Resources?.[resId]?.count) || 0;
+                    $input.val(maxValue).trigger("input");
+                });
+
+                resourceInputs[resId] = $input;
+
+                $controls.append($setZeroBtn, $input, $setMaxBtn);
+                /*$row.append($label, $controls);
+                $resourcesGrid.append($row);*/
+                $resourcesGrid.append($label, $controls);
+                
+            });
+
+            const $remainingWrap = $("<div>").addClass("FleetRemainingWrap").append(
+                this.createSpan("Остаток:", null, "FleetResLabel"),
+                $remainingResources
+            );
+
+            const $fillAllBtn = this.createButton(
+                "all_resources",
+                "Все ресурсы",
+                () => {
+                    resourceIds.forEach((resId) => {
+                        const maxValue = Number(Data.Resources?.[resId]?.count) || 0;
+                        resourceInputs[resId].val(maxValue).trigger("input");
+                    });
+                    updateRemainingResources();
+                },
+                false,
+                null,
+                "btn btn-sm FleetAllResBtn"
+            );
+
+            $resourcesFooter.append($remainingWrap, $fillAllBtn);
+            $resourcesPanel.append($resourcesTitle, $resourcesGrid, $resourcesFooter);
+
+            if (infos.storage?.[0]) {
+                const storageObserver = new MutationObserver(updateRemainingResources);
+                storageObserver.observe(infos.storage[0], { childList: true, characterData: true, subtree: true });
+            }
+
+            updateRemainingResources();
+
+            $sendPanel.append(
+                $coordPanel,
+                $MissionPanel,
+                $infoPanel,
+                $resourcesPanel,
+                $sendBtn);
 
             $panel.append($sendPanel);
         }
 
-        // === Выбор миссии через icon-selector ===
-        const $missionSelector = $("<icon-selector>");
-        const missionSelector = $missionSelector[0];
 
-        // Подключаем tooltip
-        missionSelector.setTooltipHandler((button, item) => {
-            $(button).ToolTip(item.tooltip, item.tooltipCss);
-        });
-
-        // Готовим список миссий (из серверных данных)
-        const FleetMissions = this.messageData.data.Page?.FleetMissions;
-
-        const mItems = {};
-        if (FleetMissions) {
-            for (const m of FleetMissions) {
-                mItems[m.id] = {
-                    label: "121",//Lang[m.lang],
-                    value: m.id,
-                    class: "NavType",
-                    imgClass: "NavMissionImg Mission_" + m.id,   // css под иконку
-                    tooltip: Lang[m.lang]
-                };
-            }
-        }
-
-        missionSelector.items = mItems;
-
-        missionSelector.single = true;
-        missionSelector.vertical = false;
-
-        // Текущее выбранное задание
-        let selectedMission = null;
-
-        missionSelector.addEventListener("change", e => {
-            selectedMission = Number(e.detail.value);
-        });
-
-        const $commandsList = $("<div>").addClass("FleetCommandsList");
-        const $addCmdBtn = this.createButton("AddCmd", "Добавить команду", () => addCommandRow());
-        const $sendBtn = this.createButton("SendCmds", "Отправить", () => sendFleetCommands());
-        const $clearBtn = this.createButton("ClearCmds", "Очистить", () => $commandsList.empty());
-
-        $panel.append($("<div>").text("Тип миссии:"), $missionSelector, "<br>", $commandsList, "<br>", $addCmdBtn, $clearBtn, $sendBtn);
 
 
         Dialog.create($panel, `🚀 Управление флотом #${FleetId}`, [
             { text: Lang.Close, action: () => Dialog.close(), class: ["btn-warning"] }
         ], {
-            width: 460,
+            width: 360,
             overlay: true,
             drag: true,
             position: { my: 'center bottom', at: 'center center', of: "#Planet" }

@@ -286,7 +286,7 @@ class DialogClass {
         //if (this.minWidth > window.innerWidth) this.minWidth = window.innerWidth - 40;
 
         this.minWidth = Math.max(this.minWidth || 0, Math.ceil(rectTitle.width + 50));
-        this.minHeight = Math.max(this.minHeight || 0, Math.ceil(rectTitle.height + rectContent.height + rectButtons.height));
+        this.minHeight = Math.max(this.minHeight || 0, Math.ceil(rectTitle.height + rectContent.height + rectButtons.height + 40));
 
         // apply minWidth (this likely changes layout)
         this.dialogDiv.style.width = this.minWidth + 'px';
