@@ -14,10 +14,24 @@ class IconSelector extends HTMLElement {
     if (!this.hasAttribute("single")) this.single = true;
     if (!this.hasAttribute("vertical")) this.vertical = false;
 
-    this.addEventListener("click", (e) => {
+    const selectButton = (e) => {
       const btn = e.target.closest("button");
       if (btn) this.toggleSelection(btn);
-    });
+    };
+
+    let touchedButton = null;
+    this.addEventListener("touchstart", (e) => {
+      touchedButton = e.target.closest("button");
+    }, { passive: true });
+
+    this.addEventListener("touchend", (e) => {
+      const button = e.target.closest("button");
+      if (!button || button !== touchedButton) return;
+
+      touchedButton = null;
+    }, { passive: true });
+
+    this.addEventListener("click", selectButton, true);
   }
 
   set items(data) {
@@ -36,8 +50,11 @@ class IconSelector extends HTMLElement {
       if (!btn) {
         btn = document.createElement("button");
         btn.dataset.key = key;
-        this.appendChild(btn);
       }
+
+      // appendChild перемещает уже существующую кнопку и тем самым
+      // сохраняет порядок, заданный в items, после любого обновления списка.
+      this.appendChild(btn);
     }
 
     // 3️⃣ Обновляем содержимое
@@ -106,27 +123,16 @@ class IconSelector extends HTMLElement {
 
       // === TOOLTIP ===
       if (item.tooltip) {
-
-        // Если есть кастомный обработчик tooltip
         if (this.tooltipHandler) {
-
-          // предотвращаем повторное навешивание
-          if (!btn._tooltipBound) {
-            this.tooltipHandler(btn, item);
-            btn._tooltipBound = true;
-          }
-
+          this.tooltipHandler(btn, item);
         } else {
-          // fallback → обычный title
           btn.title = typeof item.tooltip === "string" ? item.tooltip : "";
         }
 
       } else {
-        // если tooltip отключён
         btn.removeAttribute("title");
-
-        // удаляем флаг
-        btn._tooltipBound = false;
+        $(btn).removeData("tooltip").removeData("tooltip-css").removeData("tooltip-bound");
+        ToolTip.unBindEvents(btn);
       }
 
     }
@@ -138,21 +144,38 @@ class IconSelector extends HTMLElement {
 
   toggleSelection(button) {
     const value = button.getAttribute("value");
+    const wasSelected = button.hasAttribute("selected");
+    let selected = true;
 
     if (this.single) {
-      this.value = value;
-      this.querySelectorAll("button").forEach((btn) =>
-        btn.toggleAttribute("selected", btn === button)
-      );
+      if (this.deselectable && wasSelected) {
+        this.value = "";
+        this.querySelectorAll("button").forEach((btn) =>
+          btn.removeAttribute("selected")
+        );
+        selected = false;
+      } else {
+        this.value = value;
+        this.querySelectorAll("button").forEach((btn) =>
+          btn.toggleAttribute("selected", btn === button)
+        );
+      }
     } else {
       button.toggleAttribute("selected");
-      const selected = [...this.querySelectorAll("button[selected]")].map((btn) =>
+      selected = button.hasAttribute("selected");
+      const selectedValues = [...this.querySelectorAll("button[selected]")].map((btn) =>
         btn.getAttribute("value")
       );
-      this.value = selected;
+      this.value = selectedValues;
     }
 
-    this.dispatchEvent(new CustomEvent("change", { detail: { value: this.value } }));
+    this.dispatchEvent(new CustomEvent("change", {
+      detail: {
+        value: this.value,
+        changedValue: value,
+        selected
+      }
+    }));
   }
 
   get value() {
@@ -165,7 +188,7 @@ class IconSelector extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ["value", "single", "vertical"];
+    return ["value", "single", "vertical", "deselectable"];
   }
 
   attributeChangedCallback(name) {
@@ -199,6 +222,15 @@ class IconSelector extends HTMLElement {
   set vertical(val) {
     if (val) this.setAttribute("vertical", "");
     else this.removeAttribute("vertical");
+  }
+
+  get deselectable() {
+    return this.hasAttribute("deselectable")
+      && this.getAttribute("deselectable") !== "false";
+  }
+  set deselectable(val) {
+    if (val) this.setAttribute("deselectable", "");
+    else this.removeAttribute("deselectable");
   }
 }
 

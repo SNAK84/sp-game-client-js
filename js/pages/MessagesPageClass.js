@@ -104,38 +104,54 @@ window.MessagesPageClass = class MessagesPageClass extends BasePageClass {
 
         $Head.append($Date, $From, $Subject);
 
-        let Text = Message.text;
-        if (!Text) {
+        const $Text = this.createDiv("", "MessageText" + Message.id, "MessageText");
+        if (Message.text) {
+            $Text.text(String(Message.text));
+        } else {
             const data = JSON.parse(Message.data);
-            Text = Lang.notifications.sample[Message.sample]
+            const template = String(Lang.notifications.sample[Message.sample] || "");
+            const replaceData = {};
 
-            let replaceData = {};
             $.each(data, (index, value) => {
-                if (index === 'lang') {
+                if (index === "lang") {
                     $.each(value, (key, val) => {
                         if (typeof val === "string" && val.startsWith("Element.")) {
-                            replaceData[key] = Lang.tech[Number(val.split('.')[1])];
+                            replaceData[key] = Lang.tech[Number(val.split(".")[1])];
                         } else {
-                            replaceData[key] = Lang['notifications.' + val];
-
+                            replaceData[key] = Lang["notifications." + val];
                         }
                     });
-
                 } else if (index.startsWith("Resources")) {
-                    let Resources = this.createDiv("", index + Message.id, "box Message" + index);
+                    const resources = this.createDiv("", index + Message.id, "box Message" + index);
                     $.each(value, (res, valres) => {
-                        let itemsStorage = this.createDiv(humanNumber(valres, true, 3), "Res_" + res, `ResBox icon${res}`);
-                        Resources.append(itemsStorage);
+                        const itemsStorage = this.createDiv(
+                            humanNumber(valres, true, 3),
+                            "Res_" + res,
+                            "ResBox icon" + res
+                        );
+                        resources.append(itemsStorage);
                     });
-                    replaceData[index] = Resources.html();
+                    replaceData[index] = resources;
                 } else {
-                    replaceData[index] = "" + value;
+                    replaceData[index] = String(value);
                 }
             });
-            Text = Text.replace(/\{(\w+)\}/g, (_, key) => replaceData[key] || `{${key}}`);
-        }
-        let $Text = this.createDiv("", "MessageText" + Message.id, "MessageText").html(Text);
 
+            template.split(/(\{\w+\})/g).forEach(part => {
+                const match = part.match(/^\{(\w+)\}$/);
+                if (!match) {
+                    $Text.append(document.createTextNode(part));
+                    return;
+                }
+
+                const value = replaceData[match[1]];
+                if (value && value.jquery) {
+                    $Text.append(value);
+                } else {
+                    $Text.append(document.createTextNode(value ?? part));
+                }
+            });
+        }
         return $Message.append($Head, $Text);
     }
 
@@ -167,9 +183,9 @@ window.MessagesPageClass = class MessagesPageClass extends BasePageClass {
     }
 
 
-    async render() {
+    async render(generation = this.renderGeneration) {
 
-        await super.render();
+        if (!await super.render(generation)) return;
 
         this.renderTypes();
 

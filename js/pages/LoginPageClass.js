@@ -15,6 +15,7 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
     LoginValid = false;
     PassValid = false;
     MailValid = false;
+    CoolDownEmail = 60;
 
     FieldsForm = {
         login: [
@@ -105,6 +106,12 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
                     onEnd: (element) => element.disabled = false
                 },
                 onInput: (event) => {
+                    const cooldown = Number(this.CoolDownEmail) > 0 ? Number(this.CoolDownEmail) : 60;
+                    this.FieldsForm.verify_email[3].timer.time = cooldown * 1000;
+                    if (this.VerifyEmailForm) {
+                        this.renderForm(this.VerifyEmailForm, this.FieldsForm.verify_email);
+                    }
+
                     Overlay.Show(null, 250, () => {
                         WS.Submit("login", "send_verify_email");
                     });
@@ -198,7 +205,10 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
     CreateVerifyEmailForm() {
 
         if (this.VerifyEmailForm) {
-            this.CoolDownEmail = this.messageData?.getData?.("cooldown") ?? 60;
+            const cooldown = Number(this.messageData?.getData?.("cooldown"));
+            if (Number.isFinite(cooldown) && cooldown >= 0) {
+                this.CoolDownEmail = cooldown;
+            }
             this.FieldsForm.verify_email[3].timer.time = this.CoolDownEmail * 1000;
             this.renderForm(this.VerifyEmailForm, this.FieldsForm.verify_email);
             return this.VerifyEmailForm;
@@ -213,7 +223,10 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
             this.VerifyEmailForm.addClass("box").hide();
             this.$Layer.append(this.VerifyEmailForm);
         } else {
-            this.CoolDownEmail = this.messageData?.getData?.("cooldown") ?? 60;
+            const cooldown = Number(this.messageData?.getData?.("cooldown"));
+            if (Number.isFinite(cooldown) && cooldown >= 0) {
+                this.CoolDownEmail = cooldown;
+            }
             this.FieldsForm.verify_email[3].timer.time = this.CoolDownEmail * 1000;
             this.renderForm(this.VerifyEmailForm, this.FieldsForm.verify_email);
         }
@@ -237,8 +250,13 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
 
         // Если окно ввода PIN уже показано и снова приходит verify_email —
         // не скрываем и не перерисовываем его (иначе форма мгновенно закрывается).
-        if (module === "verify_email" &&
-            this.VerifyEmailForm && this.VerifyEmailForm.is(":visible")) {
+        if (module === "verify_email" && this.VerifyEmailForm && this.VerifyEmailForm.is(":visible")) {
+            const cooldown = Number(this.messageData?.getData?.("cooldown"));
+            if (Number.isFinite(cooldown) && cooldown > 0) {
+                this.CoolDownEmail = cooldown;
+                this.FieldsForm.verify_email[3].timer.time = this.CoolDownEmail * 1000;
+                this.renderForm(this.VerifyEmailForm, this.FieldsForm.verify_email);
+            }
             Overlay.Hide(null, 250);
             return;
         }
@@ -257,13 +275,12 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
                 break;
 
             case "verify_email":
-                // Если окно ввода PIN уже показано и активно — не перерисовываем его
-                // (иначе повторные verify_email-сообщения постоянно сбрасывают форму).
-                if (this.VerifyEmailForm && this.VerifyEmailForm.is(":visible")) {
-                    Overlay.Hide(null, 250);
-                    return;
+                {
+                    const cooldown = Number(this.messageData?.getData?.("cooldown"));
+                    if (Number.isFinite(cooldown) && cooldown >= 0) {
+                        this.CoolDownEmail = cooldown;
+                    }
                 }
-                this.CoolDownEmail = this.messageData?.getData?.("cooldown") ?? 60;
                 this.FieldsForm.verify_email[3].timer.time = this.CoolDownEmail * 1000;
                 this.CurrentForm = this.CreateVerifyEmailForm();
                 $(this.CurrentForm).show(300);
@@ -271,7 +288,10 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
                 break;
 
             case "send_verify_email":
-                this.CoolDownEmail = this.messageData?.getData?.("cooldown") ?? 60;
+                {
+                    const cooldown = Number(this.messageData?.getData?.("cooldown"));
+                    this.CoolDownEmail = (Number.isFinite(cooldown) && cooldown >= 0) ? cooldown : 60;
+                }
                 this.FieldsForm.verify_email[3].timer.time = this.CoolDownEmail * 1000;
                 // Гарантируем создание/обновление формы верификации
                 this.CurrentForm = this.CreateVerifyEmailForm();
@@ -448,7 +468,12 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
     render() { }
 
     GotoGame() {
-        if ('credentials' in navigator && Data.login) {
+        if (
+            'credentials' in navigator &&
+            Data.login &&
+            Data.login.login &&
+            Data.login.password
+        ) {
             const cred = new PasswordCredential({
                 id: Data.login.login,
                 name: Data.login.login,
@@ -500,6 +525,7 @@ window.LoginPageClass = class LoginPageClass extends BasePageClass {
     }
 
     Hide() {
+        super.Hide();
         $(this.CurrentForm).hide();
     }
 }

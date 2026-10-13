@@ -9,6 +9,10 @@ window.BasePageClass = class BasePageClass {
     $LeftMenu = null;
     $PlanetsList = null;
 
+    renderGeneration = 0;
+    requestScope = {};
+    pageActive = true;
+    ownedTimers = new Set();
 
     constructor() {
         this.$Layer = $("#layer");
@@ -75,7 +79,7 @@ window.BasePageClass = class BasePageClass {
             $("#MenuBtn").removeClass("menu-open");
             $("#MenuBtn").ToolTip('Показать Меню');
 
-            if(Dialog) Dialog.close();
+            if (Dialog) Dialog.close();
             Overlay.Show(null, 250, () => {
                 this.$Content.stop(true, true).fadeOut(250, () => {
                     this.$Content.Show = false;
@@ -183,8 +187,10 @@ window.BasePageClass = class BasePageClass {
 
         if (this.$TopNav.length === 0) this.initTopNav();
 
-        // Обновляем данные для таймера
-        this._topNavData = mData;
+        // Серверный response остаётся snapshot: расчётные значения не мутируют DTO.
+        const resourcesSnapshot = $.extend(true, {}, mData.Resources || {});
+        this._topNavData = { ...mData, Resources: resourcesSnapshot };
+        Data.Resources = resourcesSnapshot;
 
         // Запускаем таймер, если нужно
         if (startTicker) {
@@ -194,8 +200,6 @@ window.BasePageClass = class BasePageClass {
 
 
         const now = Date.now();
-
-        Data.Resources = mData.Resources;
 
         $.each(Data.Resources, (res, value) => {
             const $TopNavRes = this.getOrCreateTopNavItem(res);
@@ -402,7 +406,7 @@ window.BasePageClass = class BasePageClass {
         $("#planets-select")
             .planetselectmenu({
                 change: (event, data) => {
-                    if(Dialog) Dialog.close();
+                    if (Dialog) Dialog.close();
                     Overlay.Show(null, 250, () => {
                         //this.$Content.html($Content);
                         this.$Content.stop(true, true).fadeOut(250, () => {
@@ -430,9 +434,36 @@ window.BasePageClass = class BasePageClass {
             .addClass("ui-menu-icons planet-icons");
     }
 
-    async render() {
+    getRequestOptions(options = {}) {
+        return {
+            ...options,
+            scope: this.requestScope
+        };
+    }
 
+    isRenderCurrent(generation) {
+        return this.pageActive && generation === this.renderGeneration;
+    }
+
+    setPageTimeout(callback, delay) {
+        const timerId = setTimeout(() => {
+            this.ownedTimers.delete(timerId);
+            if (this.pageActive) callback();
+        }, delay);
+        this.ownedTimers.add(timerId);
+        return timerId;
+    }
+
+    clearPageTimeout(timerId) {
+        if (!timerId) return;
+        clearTimeout(timerId);
+        this.ownedTimers.delete(timerId);
+    }
+
+    async render(generation = this.renderGeneration) {
         await Lang.waitLangs();
+
+        if (!this.isRenderCurrent(generation)) return false;
 
         const top = this.messageData.data?.TopNav;
         const planets = this.messageData.data?.PlanetList;
@@ -449,61 +480,60 @@ window.BasePageClass = class BasePageClass {
             this.RenderLeftMenu();
         }
 
-
-        /*this.$Content.Show = true;
-        this.$Content.show();*/
+        return this.isRenderCurrent(generation);
     }
 
     Show(mode = "", data = null) {
-
         console.log("Show " + this.Name);
-        // Сохраняем данные из сообщения для использования в формах
+        this.pageActive = true;
+        const generation = ++this.renderGeneration;
+
         if (data) {
             this.messageData = data;
-
             Data.mode = data.mode;
-            this.render();
-            //console.log("Сохранены данные сообщения:", this.messageData);
+            Promise.resolve(this.render(generation)).catch(error => {
+                if (!this.isRenderCurrent(generation)) return;
+                console.error("Ошибка асинхронного render страницы:", error);
+                try { Overlay.Hide(); } catch (e) { }
+            });
         }
 
         this.$Layer.stop(true, true).fadeIn(250, () => {
             if (this.$Content.Show) {
                 Overlay.Hide();
-            } else
+            } else {
                 this.$Content.stop(true, true).fadeIn(250, () => {
+                    if (!this.pageActive) return;
                     this.$Content.Show = true;
                     Overlay.Hide();
-                })
-
+                });
+            }
         });
-        //this.$LeftMenu.show();
-
-        /*
-        
-                GameLayer.RenderLeftMenu(mode);
-        
-                Layer.Show();*/
-        /*this.$Content.fadeIn(250, () => {
-            console.log("GameLayer Show");
-        });*/
     }
 
     Hide() {
-        if(Dialog) Dialog.close();
+        this.pageActive = false;
+        ++this.renderGeneration;
 
-        //this.$Content.fadeOut(250);
+        if (window.WS?.cancelScope) {
+            window.WS.cancelScope(this.requestScope);
+        }
+        this.requestScope = {};
+        for (const timerId of this.ownedTimers) {
+            clearTimeout(timerId);
+        }
+        this.ownedTimers.clear();
+        if (typeof this.stopTopNavTicker === "function") {
+            this.stopTopNavTicker();
+        }
+
+        if (Dialog) Dialog.close();
+
         this.$Content.stop(true, true).fadeOut(250, () => {
             this.$Content.Show = false;
             Overlay.Hide();
             this.$Content.empty();
-        })
-
-        //this.$Layer.stop(true, true).fadeOut(250);
-        // Удаляем DOM-узлы страницы, чтобы customElements отключились (disconnectedCallback вызовется)
-        // if (this.$Content) {
-        // либо remove только содержимого, либо весь контейнер в зависимости от архитектуры
-        // this.$Content.empty();
-        //}
+        });
     }
 
     createForm(FieldsForm, id = "Form", mode, action, classname = null) {
@@ -528,7 +558,12 @@ window.BasePageClass = class BasePageClass {
 
 
             Overlay.Show(null, 250, () => {
-                Data.login = { login: formData.login, password: formData.password }
+                if (formData.login !== undefined && formData.password !== undefined) {
+                    Data.login = {
+                        login: formData.login,
+                        password: formData.password
+                    };
+                }
                 this.Hide();
                 WS.Submit(mode, action, formData);
             });
@@ -684,10 +719,12 @@ window.BasePageClass = class BasePageClass {
 
                 // обновляем обработчик
                 if (onInput) {
-                    var events = $._data(el, "events"); // #myElement — пример, здесь может быть любой другой
-                    console.log(events); // И вот они, все события на ладони!
-
-                    $(el).off("input.form").on("input.form", onInput);
+                    $(el).off("input.form focus.form click.form");
+                    if (type === "button" || type === "submit") {
+                        $(el).on("click.form", onInput);
+                    } else {
+                        $(el).on("input.form focus.form", onInput);
+                    }
                 }
 
                 // обновляем маску
@@ -789,7 +826,11 @@ window.BasePageClass = class BasePageClass {
         if (type === "number") {
             this.initNumericInput($input, options, onInput);
         } else if (onInput) {
-            $input.on("input.form focus.form", onInput);
+            if (type === "button" || type === "submit") {
+                $input.on("click.form", onInput);
+            } else {
+                $input.on("input.form focus.form", onInput);
+            }
         }
 
         return $input;

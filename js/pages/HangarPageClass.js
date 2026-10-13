@@ -3,6 +3,33 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
 
     Name = "HangarPageClass";
 
+    stopHangarUpdates() {
+        for (const item of Object.values(this.$Content?.Items || {})) {
+            item[0].stopHangarSimulation();
+            item[0].stopTicker();
+        }
+        for (const queue of Object.values(this.$Content?.Queues?.Items || {})) {
+            queue[0].stopTicker();
+        }
+        const timer = this.$Content?.Queues?.QueueTimer;
+        if (timer?._boundRender) {
+            document.removeEventListener("GameTick", timer._boundRender);
+            timer.EventActive = false;
+        }
+        if (this._renderButtons) $(document).off("GameTick", this._renderButtons);
+    }
+
+    Show(mode = "", data = null) {
+        // Останавливаем старый snapshot до await Lang в render().
+        this.stopHangarUpdates();
+        super.Show(mode, data);
+    }
+
+    Hide() {
+        this.stopHangarUpdates();
+        super.Hide();
+    }
+
     constructor() {
 
         console.log("constructor HangarPageClass");
@@ -301,25 +328,27 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
             }
         }
 
-        $.each(items, (id, item) => {
+        $.each(items, (id, serverItem) => {
+
+            const item = {
+                ...serverItem,
+                CountQueue: this.messageData.data.Page?.CountQueue ?? 0,
+                MaxQueue: this.messageData.data.Page?.MaxQueue ?? 0,
+                working: this.messageData.data.Page?.IsHangarBuild ?? 0
+            };
 
             if (!existing[id]) {
-                item.CountQueue = this.messageData.data.Page?.CountQueue ?? 0;
-                item.MaxQueue = this.messageData.data.Page?.MaxQueue ?? 0;
-                item.working = this.messageData.data.Page?.IsHangarBuild ?? 0;
 
                 this.$Content.Items[id] = $("<game-build>");
                 this.$Content.Items[id][0].images = (id > 400) ? "defenses" : "fleets";
-                this.$Content.Items[id][0].data = item;
+                this.$Content.Items[id][0].applyHangarSnapshot(item, this.messageData.data.Page.QueueList, this);
                 this.$Content.Types[item.type].append(this.$Content.Items[id].hide());
                 this.$Content.Items[id].show(0);
             } else {
                 // Обновляем данные существующего            
-                item.CountQueue = this.messageData.data.Page?.CountQueue ?? 0;
-                item.MaxQueue = this.messageData.data.Page?.MaxQueue ?? 0;
-                item.working = this.messageData.data.Page?.IsHangarBuild ?? 0;
-                this.$Content.Items[id][0].data = item;
+                this.$Content.Items[id][0].applyHangarSnapshot(item, this.messageData.data.Page.QueueList, this);
             }
+            this.$Content.Items[id][0].startTicker();
 
 
         });
@@ -370,7 +399,8 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
 
         let index = 0;
         // Создание элементов для очереди
-        $.each(queues, (id, queue) => {
+        $.each(queues, (id, serverQueue) => {
+            const queue = { ...serverQueue };
             const build = $("<game-build>");
             build[0].type = "queues";
             build[0].images = (queue.id > 400) ? "defenses" : "fleets";
@@ -398,16 +428,17 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
         // 1️⃣ Удаляем те, которых больше нет в списке
         for (const id in existing) {
             if (!(id in queues)) {
-                existing[id].fadeOut(250, () => {
-                    existing[id].remove();
-                    delete existing[id];
-                })
+                const retired = existing[id];
+                retired[0].stopTicker();
+                delete existing[id];
+                retired.fadeOut(250, () => retired.remove());
             }
         }
 
         // 2️⃣ Добавляем новые или обновляем существующие
         let index = 0;
-        $.each(queues, (id, queue) => {
+        $.each(queues, (id, serverQueue) => {
+            const queue = { ...serverQueue };
             this.$Content.Queues.QueueTimer.allEndTime = queue.end_time;
             if (!existing[id]) {
                 // Новый элемент
@@ -425,6 +456,7 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
                 existing[id][0].data = queue;
                 existing[id].fadeIn(250);
             }
+            this.$Content.Queues.Items[id][0].startTicker();
             index++;
         });
 
@@ -490,14 +522,15 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
         this.$Content.Queues.QueueTimer.Timer.text(secondToTime(Math.max(0, Math.round(this.$Content.Queues.QueueTimer.allEndTime - GameServerTime.now()))));
     }
 
-    async render() {
+    async render(generation = this.renderGeneration) {
 
-        await super.render();
+        if (!await super.render(generation)) return;
 
         this.renderQueues();
         this.renderButtons();
         this.renderTypes();
         this.renderItems();
+        $(document).off("GameTick", this._renderButtons).on("GameTick", this._renderButtons);
 
 
 

@@ -12,6 +12,7 @@ class GameBuild extends HTMLElement {
 
     EventActive = false;
     _boundRender = null;
+    _hangarSimulation = null;
 
 
     constructor() {
@@ -49,6 +50,42 @@ class GameBuild extends HTMLElement {
 
     get data() {
         return this._data;
+    }
+
+    applyHangarSnapshot(buildData, queues, page) {
+        // Новый snapshot полностью заменяет baseline и локальный прогресс.
+        this._data = { ...buildData };
+        this._hangarSimulation = {
+            page,
+            generation: page.renderGeneration,
+            queues: Object.values(queues || {})
+                .filter(queue => Number(queue.id) === Number(buildData.id))
+                .map(queue => ({ ...queue }))
+        };
+        this.render();
+    }
+
+    stopHangarSimulation() {
+        this._hangarSimulation = null;
+    }
+
+    getHangarDisplayCount() {
+        const baseline = Number(this._data?.count) || 0;
+        const simulation = this._hangarSimulation;
+        if (!simulation || !simulation.page.isRenderCurrent(simulation.generation)) {
+            return baseline;
+        }
+
+        const now = GameServerTime.now();
+        return simulation.queues.reduce((count, queue) => {
+            const duration = Number(queue.time);
+            if (!(duration > 0)) return count;
+            // count в snapshot — оставшаяся партия, start_time — начало
+            // первой ещё не учтённой сервером единицы этой партии.
+            const produced = Math.max(0, Math.min(Number(queue.count),
+                Math.floor((now - Number(queue.start_time)) / duration)));
+            return count + produced;
+        }, baseline);
     }
 
 
@@ -450,26 +487,13 @@ class GameBuild extends HTMLElement {
 
         $(this).addClass(this._type);
 
-        let count = this._data.count ?? 0;
+        let count = this._hangarSimulation ? this.getHangarDisplayCount() : (this._data.count ?? 0);
         if ((this._images === 'fleets' || this._images === 'defenses') && (this._type === 'queues' || this._type === 'over_queues')) {
             if (this._data.status == "active" || this._type === 'over_queues')
-                count = Math.max(0, Math.floor((this._data.end_time - GameServerTime.now() - 0.001) / this._data.time)) + 1;
+                count = Math.max(0, Math.min(this._data.count,
+                    Math.ceil((this._data.end_time - GameServerTime.now()) / this._data.time)));
 
             else count = this._data.count;
-
-            if (!this.ItemDataCount) this.ItemDataCount = {};
-
-            if (this._data.count > count && Page.$Content.Items && Page.$Content.Items[this._data.id]) {
-                if (
-                    !this.ItemDataCount[this._data.id] ||
-                    Page.$Content.Items[this._data.id][0].data.count > this.ItemDataCount[this._data.id] + this._data.count - count
-                )
-                    this.ItemDataCount[this._data.id] = Page.$Content.Items[this._data.id][0].data.count;
-
-
-                Page.$Content.Items[this._data.id][0].data.count = this.ItemDataCount[this._data.id] + this._data.count - count;
-            }
-
         }
         //console.log(count);
         this.Header.Number.text((this._images === 'builds' || this._images === 'techs') ? this._data.level : count);
@@ -634,8 +658,11 @@ class GameBuild extends HTMLElement {
 
     connectedCallback() {
         this.render();
+        this.startTicker();
+    }
 
-        if (!this.EventActive) {
+    startTicker() {
+        if (this.isConnected && !this.EventActive) {
             this.EventActive = true;
             // сохраняем связанный метод для правильного удаления
             this._boundRender = this.render.bind(this);
@@ -643,16 +670,22 @@ class GameBuild extends HTMLElement {
         }
     }
 
+    stopTicker() {
+        if (this._boundRender) {
+            document.removeEventListener("GameTick", this._boundRender);
+        }
+        this._boundRender = null;
+        this.EventActive = false;
+    }
+
     disconnectedCallback() {
+        this.stopTicker();
+        this.stopHangarSimulation();
         this.Buttons?.Up?.off("click");
         this.Buttons?.Down?.off("click");
         this.Buttons?.Info?.off("click");
         this.Buttons?.Cancel?.off("click");
         this.Buttons?.Max?.off("click");
-        if (this.EventActive && this._boundRender) {
-            document.removeEventListener("GameTick", this._boundRender);
-            this.EventActive = false;
-        }
     }
 }
 

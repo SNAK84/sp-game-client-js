@@ -259,11 +259,9 @@ window.ResearchsPageClass = class ResearchsPageClass extends BasePageClass {
         this.$Content.Queues.QueueTimer.Timer.text(secondToTime(Math.max(0, Math.round(this.$Content.Queues.QueueTimer.allEndTime - GameServerTime.now()))));
     }
 
-    async render() {
+    async render(generation = this.renderGeneration) {
 
-        await Lang.waitLangs();
-
-        super.render();
+        if (!await super.render(generation)) return;
         //Overlay.Hide("#Content");
         console.log("ResearchPageClass render");
 

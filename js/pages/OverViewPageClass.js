@@ -2,6 +2,8 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
 
 
     Name = "OverViewPageClass";
+    flyingFleetsTimer = null;
+    flyingFleetRows = new Map();
 
     constructor() {
 
@@ -82,6 +84,177 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
             this.$Content.Queues[Type][0].images = (Type === "Build") ? "builds" : (Type === "Tech") ? "techs" : (queue.id > 400) ? "defenses" : "fleets";
             this.$Content.Queues[Type][0].data = queue;
         });
+    }
+
+    normalizeFlyingFleets() {
+        const fleets = this.messageData.data.Page?.FlyingFleets || [];
+        return Array.isArray(fleets) ? fleets : Object.values(fleets);
+    }
+
+    formatFleetCoordinate(coordinate) {
+        if (!coordinate) return "—";
+
+        if (Number(coordinate.type) === 1) {
+            const objectNames = { 1: "Планета", 2: "Обломки", 3: "Луна" };
+            const objectName = objectNames[Number(coordinate.objectType)] || "Орбита";
+            return `[${coordinate.galaxy}:${coordinate.system}:${coordinate.orbit}] ${objectName}`;
+        }
+        if (Number(coordinate.type) === 2) {
+            return `[${coordinate.galaxy}:${coordinate.system}] ${number_format(Number(coordinate.distance) || 0, 0)} / ${number_format(Number(coordinate.angle) || 0, 1)}°`;
+        }
+        if (Number(coordinate.type) === 3) return `Флот #${coordinate.fleetId}`;
+        return "—";
+    }
+
+    formatFleetDuration(seconds) {
+        const total = Math.max(0, Math.ceil(Number(seconds) || 0));
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const secs = total % 60;
+        return [hours, minutes, secs].map(value => String(value).padStart(2, "0")).join(":");
+    }
+
+    getFleetLabel(items, id, fallback) {
+        const item = Array.isArray(items)
+            ? items.find(entry => Number(entry.id) === Number(id))
+            : null;
+        if (!item) return fallback;
+        const translated = item.lang ? Lang[item.lang] : "";
+        return translated && translated !== item.lang ? translated : (item.key || fallback);
+    }
+
+    getOverviewRouteLeg(fleet) {
+        const routeLeg = fleet.route_leg || {};
+        const arrivesAt = Number(routeLeg.arrives_at);
+
+        return {
+            start: routeLeg.start || fleet.mission_start || fleet.segment_start,
+            target: routeLeg.target || fleet.mission_target || fleet.segment_end,
+            arrivesAt: Number.isFinite(arrivesAt) && arrivesAt > 0
+                ? arrivesAt
+                : Number(fleet.end_time),
+            estimated: Boolean(routeLeg.estimated),
+            isReturn: routeLeg.direction === "return" || Boolean(fleet.is_return)
+        };
+    }
+
+    formatOverviewCoordinate(coordinate) {
+        if (!coordinate) return "—";
+        if (Number(coordinate.type) === 1) {
+            return `[${coordinate.galaxy}:${coordinate.system}:${coordinate.orbit}]`;
+        }
+        if (Number(coordinate.type) === 2) {
+            return `[${coordinate.galaxy}:${coordinate.system}] ${number_format(Number(coordinate.distance) || 0, 0)}`;
+        }
+        if (Number(coordinate.type) === 3) return `Флот #${coordinate.fleetId}`;
+        return "—";
+    }
+
+    createFlyingFleetsOverview() {
+        this.$Content.FlyingFleets = $("<section>").addClass("box OverviewFleetEvents");
+        this.$Content.FlyingFleets.Header = $("<button>", { type: "button" })
+            .addClass("OverviewFleetEventsHeader")
+            .on("click.overview-fleets", () => this.setActiveMode("fleets"));
+        this.$Content.FlyingFleets.Title = $("<span>").text("Передвижения флотов");
+        this.$Content.FlyingFleets.Count = $("<span>").addClass("OverviewFleetEventsCount");
+        this.$Content.FlyingFleets.List = $("<div>").addClass("OverviewFleetEventsList");
+        this.$Content.FlyingFleets.Header.append(
+            this.$Content.FlyingFleets.Title,
+            this.$Content.FlyingFleets.Count
+        );
+        this.$Content.FlyingFleets.append(
+            this.$Content.FlyingFleets.Header,
+            this.$Content.FlyingFleets.List
+        );
+        this.$Content.FlyingFleets.insertAfter(this.$Content.Name);
+    }
+
+    renderFlyingFleetsOverview() {
+        if (!this.$Content?.FlyingFleets) this.createFlyingFleetsOverview();
+
+        this.clearPageTimeout(this.flyingFleetsTimer);
+        this.flyingFleetsTimer = null;
+        this.flyingFleetRows.clear();
+        this.$Content.FlyingFleets.List.empty();
+
+        const fleets = this.normalizeFlyingFleets();
+        this.$Content.FlyingFleets.Count.text(fleets.length);
+
+        if (!fleets.length) {
+            this.$Content.FlyingFleets.List.append(
+                $("<div>").addClass("OverviewFleetEventsEmpty").text("Нет передвижений флотов")
+            );
+            return;
+        }
+
+        for (const fleet of fleets) {
+            const isIncoming = Boolean(fleet.is_incoming);
+            const isHostile = Boolean(fleet.is_hostile);
+            const routeLeg = this.getOverviewRouteLeg(fleet);
+            const missionName = this.getFleetLabel(
+                this.messageData.data.Page?.FleetMissions,
+                fleet.mission,
+                `Миссия #${fleet.mission}`
+            );
+            const $countdown = $("<strong>").addClass("OverviewFleetEventCountdown");
+            const arrivalLabel = Number.isFinite(routeLeg.arrivesAt) && routeLeg.arrivesAt > 0
+                ? `${routeLeg.estimated ? "≈ " : ""}${formatTimestamp(routeLeg.arrivesAt, "timedate")}`
+                : "—";
+            $countdown.ToolTip(`Прибытие: ${arrivalLabel}`);
+
+            const fullRoute = `${this.formatFleetCoordinate(routeLeg.start)} → ${this.formatFleetCoordinate(routeLeg.target)}`;
+            const $route = $("<span>")
+                .addClass("OverviewFleetEventRoute")
+                .text(`${this.formatOverviewCoordinate(routeLeg.start)} → ${this.formatOverviewCoordinate(routeLeg.target)}`)
+                .ToolTip(fullRoute);
+            const $row = $("<button>", { type: "button" })
+                .addClass("OverviewFleetEvent")
+                .toggleClass("Returning", routeLeg.isReturn)
+                .toggleClass("Incoming", isIncoming)
+                .toggleClass("Hostile", isIncoming && isHostile)
+                .toggleClass("Friendly", isIncoming && !isHostile)
+                .on("click.overview-fleet", () => {
+                    if (!isIncoming) this.setActiveMode("fleets");
+                })
+                .append(
+                    $("<span>").addClass("OverviewFleetEventTime").append($countdown),
+                    $("<span>").addClass("OverviewFleetEventBody").append(
+                        $("<span>").addClass("OverviewFleetEventTitle").text(
+                            isIncoming
+                                ? `${fleet.owner_name || "Чужой флот"} · ${missionName}`
+                                : `Флот #${fleet.id} · ${missionName}`
+                        ),
+                        $route
+                    ),
+                    $("<span>").addClass("OverviewFleetEventStatus").text(
+                        isIncoming ? "К вам" : (routeLeg.isReturn ? "Возврат" : "К цели")
+                    )
+                );
+
+            this.$Content.FlyingFleets.List.append($row);
+            this.flyingFleetRows.set(Number(fleet.id), {
+                endTime: routeLeg.arrivesAt,
+                estimated: routeLeg.estimated,
+                $countdown
+            });
+        }
+
+        this.updateFlyingFleetsClock();
+    }
+
+    updateFlyingFleetsClock() {
+        const now = GameServerTime.now();
+        for (const row of this.flyingFleetRows.values()) {
+            const remaining = Math.max(0, row.endTime - now);
+            row.$countdown.text(
+                remaining > 0
+                    ? `${row.estimated ? "≈ " : ""}${this.formatFleetDuration(remaining)}`
+                    : "Событие"
+            );
+        }
+
+        if (!this.pageActive || this.flyingFleetRows.size === 0) return;
+        this.flyingFleetsTimer = this.setPageTimeout(() => this.updateFlyingFleetsClock(), 1000);
     }
 
     CreateData() {
@@ -229,13 +402,14 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         this.$Content.Planet.Image.attr("style", "background:url('/images/planets/overview/" + this.messageData.data.Page?.PlanetImage + ".png') no-repeat;background-size:100%");
     }
 
-    async render() {
+    async render(generation = this.renderGeneration) {
 
         if (Dialog) Dialog.close();
 
-        await super.render();
+        if (!await super.render(generation)) return;
 
         this.renderData();
+        this.renderFlyingFleetsOverview();
         this.renderQueues();
 
 

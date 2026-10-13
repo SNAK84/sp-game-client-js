@@ -1,7 +1,7 @@
 class ToolTipClass {
 	static $Tip = null;   // общий <tool-tip>
 
-	fade = 100;
+	fade = 250;
 	fadeRun = false;
 	fadeOut = false;
 
@@ -14,6 +14,7 @@ class ToolTipClass {
 
 	LastCursorX = 0;
 	LastCursorY = 0;
+	hideTimer = null;
 
 
 	constructor() {
@@ -25,6 +26,10 @@ class ToolTipClass {
 		this.initResizeObserver();
 		this.initMutationObserver();
 		this.updatePositionOnResize();
+		this.$Tip
+			.off("mouseenter.tooltip mouseleave.tooltip")
+			.on("mouseenter.tooltip", () => this.cancelHide())
+			.on("mouseleave.tooltip", () => this.scheduleHide());
 	}
 
 	bindEvents(object) {
@@ -42,7 +47,7 @@ class ToolTipClass {
 			$(object)
 				.off("mouseenter.tooltip").on("mouseenter.tooltip", (e) => this.show(e))
 				.off("mousemove.tooltip").on("mousemove.tooltip", (e) => this.move(e))
-				.off("mouseleave.tooltip").on("mouseleave.tooltip", () => this.hide());
+				.off("mouseleave.tooltip").on("mouseleave.tooltip", () => this.scheduleHide());
 		}
 	}
 
@@ -99,13 +104,12 @@ class ToolTipClass {
 			return true;
 		}
 
-		// Плавная смена текста
-		this.fadeOut = true;
-		this.fadeRun = true;
-
-		if (fast) {
+		if (fast || !this.$Tip.is(":visible")) {
 			this.RenderText(newContent);
 		} else {
+			// Плавно меняем содержимое только уже открытого tooltip.
+			this.fadeOut = true;
+			this.fadeRun = true;
 			this.$Tip.fadeOut(this.fade, () => {
 				this.fadeOut = false;
 
@@ -165,6 +169,7 @@ class ToolTipClass {
 	}
 
 	show(e) {
+		this.cancelHide();
 		this.parent = e.currentTarget;
 
 
@@ -174,13 +179,13 @@ class ToolTipClass {
 		if (!this.Render(this.parent, false, e))
 			return;
 
-		//this.setPosition(e);
+		this.setPosition();
 
 		if (!this.fadeRun) {
 			this.fadeRun = true;
 			this.$Tip.fadeIn(this.fade, () => {
 				this.fadeRun = false;
-				//this.setPosition(e);
+				this.setPosition();
 			});
 		} //else
 		//this.setPosition(e);
@@ -207,10 +212,31 @@ class ToolTipClass {
 	}
 
 	hide() {
+		this.cancelHide();
 		this.fadeOut = true;
+		this.fadeRun = false;
 		this.$Tip.stop(true, true).fadeOut(this.fade, () => {
 			this.fadeOut = false;
 		});
+	}
+
+	cancelHide() {
+		if (this.hideTimer) {
+			clearTimeout(this.hideTimer);
+			this.hideTimer = null;
+		}
+	}
+
+	scheduleHide() {
+		if (!$(this.parent).data("tooltip-css")?.interactive) {
+			this.hide();
+			return;
+		}
+
+		this.cancelHide();
+		this.hideTimer = setTimeout(() => {
+			if (!this.$Tip.is(":hover")) this.hide();
+		}, 120);
 	}
 
 	setPosition() {
@@ -231,10 +257,15 @@ class ToolTipClass {
 		if (left < scrollLeft + 10) left = scrollLeft + 10;
 		if (left + tipW > winW + scrollLeft - 10) left = winW + scrollLeft - tipW - 10;
 
-		// сначала сверху
-		let top = this.LastCursorY - tipH - 20;
-		if (top < scrollTop + 20) top = this.LastCursorY + 20; // если нет места сверху, снизу
+		let top;
+		if (this.css?.placement === "cursor") {
+			top = this.LastCursorY - tipH / 2;
+		} else {
+			top = this.LastCursorY - tipH - 20;
+			if (top < scrollTop + 20) top = this.LastCursorY + 20;
+		}
 		if (top + tipH > winH + scrollTop - 20) top = winH + scrollTop - tipH - 20;
+		if (top < scrollTop + 20) top = scrollTop + 20;
 
 		this.css['top'] = top;
 		this.css['left'] = left;
@@ -251,7 +282,10 @@ class ToolTipClass {
 				this.$Tip.css(prop, "");
 			}
 		}
-		if (this.css) this.$Tip.css(this.css);
+		if (this.css) {
+			const { interactive, placement, ...styles } = this.css;
+			this.$Tip.css(styles);
+		}
 	}
 
 	// --- Автопозиция при resize ---

@@ -1,5 +1,27 @@
 const MS_PER_HOUR = 3600000;
 
+// Единая граница клиентских игровых enum. Значения не смешиваются между доменами.
+window.GameConstants = Object.freeze({
+    CoordinateType: Object.freeze({ OBJECT: 1, POINT: 2, FLEET: 3 }),
+    ObjectType: Object.freeze({ PLANET: 1, MOON: 3, DEBRIS: 2 }),
+    FleetMissionType: Object.freeze({
+        ATTACK: 1,
+        GROUP_ATTACK: 3,
+        DEFEND: 5,
+        DESTROY: 7,
+        TRANSPORT: 10,
+        RELOCATE: 11,
+        RECYCLE: 12,
+        COLONIZE: 15,
+        SPY: 20,
+        RESEARCH: 25,
+        OBSERVE: 30,
+        MERGE: 35,
+        EXPEDITION: 40
+    }),
+    FleetStatus: Object.freeze({ ACTIVE: 'active', QUEUED: 'queued' })
+});
+
 setInterval(() => {
     document.dispatchEvent(new Event("GameTick"));
 }, 1000);
@@ -161,6 +183,7 @@ const ShowPage = {
     _pageInstances: {},    // className -> instance
     _loading: {},          // className -> Promise загрузки
     current: null,         // текущий экземпляр страницы
+    _navigationVersion: 0,
 
     /**
      * Показать страницу по module (например "overview")
@@ -168,6 +191,7 @@ const ShowPage = {
      * @param {object|null} data
      */
     async Show(module, data = null) {
+        const navigationVersion = ++this._navigationVersion;
         const safeData = data ?? {};
         window.Mode = safeData.mode ?? module ?? "";
 
@@ -187,6 +211,7 @@ const ShowPage = {
         let PageClass = this._pageClasses[className] ?? window[className] ?? null;
         if (!PageClass) {
             PageClass = await this._loadPageClass(module, className);
+            if (navigationVersion !== this._navigationVersion) return;
             if (!PageClass) {
                 console.error("Не удалось загрузить класс страницы:", className);
                 return;
@@ -207,10 +232,11 @@ const ShowPage = {
             }
         }*/
 
-        // Делай текущим и вызывай Show
+        // Делай текущим и вызывай Show только для последней навигации.
+        if (navigationVersion !== this._navigationVersion) return;
         if (!Page || Page.Name !== className)
             Page = new PageClass();//this._pageInstances[className];
-                try {
+        try {
             Page.Show?.(module, safeData);
         } catch (e) {
             console.error("Ошибка при вызове Page.Show():", e);
@@ -451,7 +477,7 @@ class TimerController {
         TimerController._register(this);
 
         // Первое обновление
-        //this._updateDisplay();
+        this._updateDisplay();
     }
 
     /** Обновление настроек */
@@ -627,6 +653,9 @@ class ServerTime {
 
 class GameEventsClass extends EventTarget {
     emit(name, detail = {}) {
+        if (name === "SendServer" && detail.scope === undefined && typeof Page !== "undefined" && Page?.requestScope) {
+            detail = { ...detail, scope: Page.requestScope };
+        }
         var event = $.Event(name, { detail });
         $(this).trigger(event);
         return this;
@@ -806,7 +835,7 @@ class WebSocketClass {
 
     reconnect = false;
 
-    constructor(url = "wss://spserver.snak84.ru") {
+    constructor(url = "wss://server.sp-game.ru") {
 
         this.url = url;
 
@@ -820,6 +849,12 @@ class WebSocketClass {
         this.sendPing = 0;
 
         this.messageQueue = []; // очередь сообщений при обрыве
+        this.requestCallbacks = new Map();
+        this.requestTimeout = 15000;
+        this.latestRequests = new Map();
+        this.ignoredRequestIds = new Set();
+        this.requestSequence = 0;
+        this.cancelledScopes = new WeakSet();
 
         // ✅ Создаём сервис пинга
         this.pingService = new PingService(this);
@@ -831,13 +866,35 @@ class WebSocketClass {
         this.connect();
 
         GameEvents.on("SendServer", (e) => {
-            const { mode, action, NotOverlay, data } = e.detail;
+            const {
+                mode,
+                action,
+                NotOverlay,
+                data,
+                onSuccess,
+                onError,
+                scope,
+                latestKey,
+                timeout,
+                kind
+            } = e.detail;
+            const submit = () => {
+                if (scope && !this.isScopeActive(scope)) return;
+                this.Submit(mode, action, data, {
+                    onSuccess,
+                    onError,
+                    scope,
+                    latestKey,
+                    timeout,
+                    kind
+                });
+            };
             // Показываем Overlay, если это не ping/handshake/reconnect
             if (mode !== "connect" && action !== "ping" && action !== "handshake" && action !== "reconnect" && !NotOverlay) {
-                Overlay.Show(null, 250, () => this.Submit(mode, action, data));
-                //this.waitOverlayAction = hide || action; // запоминаем, при каком action нужно будет скрыть
-            } else
-                this.Submit(mode, action, data);
+                Overlay.Show(null, 250, submit);
+            } else {
+                submit();
+            }
         });
     }
 
@@ -905,7 +962,11 @@ class WebSocketClass {
 
             clearInterval(this.heartbeatInterval);
             this.heartbeatInterval = null;
-
+            this.pingService.stop();
+            this.rejectPendingRequests({
+                code: "DISCONNECT",
+                message: "Соединение с сервером закрыто."
+            });
 
             Overlay.Show();
             // Переподключение
@@ -950,16 +1011,138 @@ class WebSocketClass {
         }
     }
 
-    Submit(mode, action, data) {
+    Submit(mode, action, data, options = null) {
+        if (typeof options === "function") {
+            options = { onSuccess: options };
+        }
+        options = options || {};
+
         const msg = new Message()
             .setMode(mode)
             .setAction(action);
 
-        $.each(data, (name, value) => {
+        $.each(data || {}, (name, value) => {
             msg.setData(name, value);
         });
 
+        const entry = {
+            requestId: msg.requestId,
+            sequence: ++this.requestSequence,
+            onSuccess: typeof options.onSuccess === "function" ? options.onSuccess : null,
+            onError: typeof options.onError === "function" ? options.onError : null,
+            scope: options.scope || null,
+            latestKey: options.latestKey || null,
+            kind: options.kind || "read",
+            timeout: Number.isFinite(Number(options.timeout))
+                ? Math.max(0, Number(options.timeout))
+                : this.requestTimeout,
+            timer: null,
+            handledLocally: Boolean(options.onSuccess || options.onError || options.latestKey)
+        };
+
+        if (!this.isScopeActive(entry.scope)) {
+            return;
+        }
+
+        if (entry.latestKey) {
+            const latestBucket = this.getLatestBucket(entry.scope);
+            const previousRequestId = latestBucket.get(entry.latestKey);
+            if (previousRequestId) {
+                this.finishRequest(previousRequestId, "CANCELLED", {
+                    code: "CANCELLED",
+                    message: "Запрос заменён более новым запросом."
+                }, false, true);
+            }
+            latestBucket.set(entry.latestKey, msg.requestId);
+        }
+
+        this.requestCallbacks.set(msg.requestId, entry);
+        if (entry.timeout > 0) {
+            entry.timer = setTimeout(() => {
+                this.finishRequest(msg.requestId, "ERROR", {
+                    code: "TIMEOUT",
+                    message: "Сервер не ответил вовремя."
+                }, true, true);
+            }, entry.timeout);
+        }
+
         this.send(msg);
+    }
+
+    getLatestBucket(scope) {
+        const key = scope || null;
+        let bucket = this.latestRequests.get(key);
+        if (!bucket) {
+            bucket = new Map();
+            this.latestRequests.set(key, bucket);
+        }
+        return bucket;
+    }
+
+    isScopeActive(scope) {
+        return !scope || !this.cancelledScopes.has(scope);
+    }
+
+    cancelScope(scope) {
+        if (!scope) return;
+        this.cancelledScopes.add(scope);
+        for (const entry of [...this.requestCallbacks.values()]) {
+            if (entry.scope === scope) {
+                this.finishRequest(entry.requestId, "CANCELLED", {
+                    code: "CANCELLED",
+                    message: "Владелец запроса закрыт."
+                }, false, true);
+            }
+        }
+    }
+
+    rememberIgnoredRequest(requestId) {
+        this.ignoredRequestIds.add(requestId);
+        if (this.ignoredRequestIds.size > 300) {
+            this.ignoredRequestIds.delete(this.ignoredRequestIds.values().next().value);
+        }
+    }
+
+    finishRequest(requestId, status, payload, invokeCallback = true, rememberIgnored = false) {
+        const entry = this.requestCallbacks.get(requestId);
+        if (!entry) return false;
+
+        this.requestCallbacks.delete(requestId);
+        if (entry.timer) clearTimeout(entry.timer);
+
+        if (entry.latestKey) {
+            const latestBucket = this.getLatestBucket(entry.scope);
+            if (latestBucket.get(entry.latestKey) === requestId) {
+                latestBucket.delete(entry.latestKey);
+            }
+            if (latestBucket.size === 0) {
+                this.latestRequests.delete(entry.scope || null);
+            }
+        }
+
+        if (rememberIgnored) this.rememberIgnoredRequest(requestId);
+
+        if (invokeCallback && this.isScopeActive(entry.scope)) {
+            try {
+                if (status === "SUCCESS") {
+                    entry.onSuccess?.(payload, entry);
+                } else {
+                    entry.onError?.(payload, entry);
+                }
+            } catch (error) {
+                console.error("Ошибка request callback:", error);
+            }
+        }
+
+        return true;
+    }
+
+    rejectPendingRequests(error) {
+        const requestIds = [...this.requestCallbacks.keys()];
+        this.messageQueue = this.messageQueue.filter(msg => !requestIds.includes(msg.requestId));
+        for (const requestId of requestIds) {
+            this.finishRequest(requestId, "ERROR", error, true, true);
+        }
     }
 
     handleMessage(msg) {
@@ -1032,6 +1215,25 @@ class WebSocketClass {
 
 
 
+        const request = this.requestCallbacks.get(msg.requestId);
+        if (request) {
+            const handledLocally = request.handledLocally;
+            if (msg.status === "ok") {
+                this.finishRequest(msg.requestId, "SUCCESS", msg, true, handledLocally);
+            } else {
+                try { Overlay.Hide(); } catch (e) { }
+                this.finishRequest(msg.requestId, "ERROR", {
+                    code: msg.error?.code || "SERVER_ERROR",
+                    message: msg.error?.message || "Сервер вернул ошибку.",
+                    response: msg
+                }, true, handledLocally);
+            }
+            if (handledLocally) return;
+        }
+
+        // Ответы отменённых/просроченных запросов не должны попасть в новый UI.
+        if (this.ignoredRequestIds.has(msg.requestId)) return;
+
         // --- ERROR HANDLING --- //
         if (msg.status === "error") {
             try { Overlay.Hide(); } catch (e) { }
@@ -1039,11 +1241,9 @@ class WebSocketClass {
                 console.warn("❌ Ошибка авторизации:", msg.error);
                 msg.mode = "login";
             } else {
-                Dialog.ErrorLoad(`${msg.error?.code}: ${msg.error?.message}`);
+                Dialog.ErrorLoad(String(msg.error?.code || "") + ": " + String(msg.error?.message || ""));
             }
         }
-
-
 
         // --- HIDE OVERLAY LOGIC по ранее сохраненному ожиданию --- //
         /*if (this.waitOverlayAction && msg.action === this.waitOverlayAction) {
@@ -1110,5 +1310,4 @@ $(document).ready(() => {
     });
 
 });
-
 

@@ -2046,7 +2046,7 @@ tr:hover th.beryl_fon {
     text-align: center;
     font-size: 11px;
     max-width: 90%;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: transform 0.2s ease;
 }
 
 .tip.show {
@@ -2216,7 +2216,7 @@ icon-selector[vertical] {
 
 .NavType:hover {
     /*opacity: 0.9;*/
-    filter: brightness(0.8);
+    filter: brightness(1)  contrast(1);
     border: 0;
     box-shadow: none;
 }
@@ -2260,9 +2260,10 @@ icon-selector[vertical] {
     margin: 0;
     border: 0;
     box-shadow: none;
-    filter: brightness(0.5);
+    filter: brightness(1) contrast(0.8);
 }
 
+/*
 .Mission_ATTACK {
     background: url("/images/icons/mission_icon.png") -0 0 no-repeat;
 }
@@ -2271,11 +2272,11 @@ icon-selector[vertical] {
     background: url("/images/icons/mission_icon.png") -40px 0 no-repeat;
 }
 
-.Mission_DESTROY {
+.Mission_DEFEND {
     background: url("/images/icons/mission_icon.png") -80px 0 no-repeat;
 }
 
-.Mission_DEFEND {
+.Mission_DESTROY {
     background: url("/images/icons/mission_icon.png") -120px 0 no-repeat;
 }
 
@@ -2287,26 +2288,101 @@ icon-selector[vertical] {
     background: url("/images/icons/mission_icon.png") -200px 0 no-repeat;
 }
 
-.Mission_COLONIZE {
+.Mission_RECYCLE {
     background: url("/images/icons/mission_icon.png") -240px 0 no-repeat;
 }
 
-.Mission_RECYCLE {
+.Mission_COLONIZE {
     background: url("/images/icons/mission_icon.png") -280px 0 no-repeat;
 }
 
-.Mission_MERGE {
+.Mission_SPY {
     background: url("/images/icons/mission_icon.png") -320px 0 no-repeat;
 }
 
-.Mission_SPY,
-.Mission_OBSERVE {
+.Mission_RESEARCH {
     background: url("/images/icons/mission_icon.png") -360px 0 no-repeat;
 }
 
-.Mission_EXPEDITION {
+.Mission_OBSERVE {
     background: url("/images/icons/mission_icon.png") -400px 0 no-repeat;
 }
+
+.Mission_MERGE {
+    background: url("/images/icons/mission_icon.png") -440px 0 no-repeat;
+}
+
+.Mission_EXPEDITION {
+    background: url("/images/icons/mission_icon.png") -480px 0 no-repeat;
+}*/
+
+/* Миссии: цвет через mask из белого sprite */
+.FleetMissionPanel .NavType {
+    width: auto;
+    border: 1px solid var(--color-input-border);
+}
+.FleetMissionPanel .NavType:hover {
+    border: 1px solid var(--color-border);
+    box-shadow: 0 0 10px 2px var(--color-box-shadow);
+    border-radius: 5px;
+    background: var(--color-box-bg);
+
+}
+
+
+.FleetMissionPanel .NavType[selected] {
+    filter: brightness(1.2) contrast(1.5); /* убираем влияние фильтра кнопки */
+    opacity: 1;
+    border: 1px solid var(--color-border);
+    /*box-shadow: 0 0 10px 2px var(--color-box-shadow);*/
+    background: var(--color-box-bg);
+    border-radius: 5px;
+}
+
+.FleetMissionPanel .NavMissionImg {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    /*box-shadow: none;
+    /*filter: none !important;
+    background: none !important;*/
+
+    background-color: var(--mission-color, #9aa6b2);
+
+    -webkit-mask-image: url("/images/icons/mission_icon.png");
+    mask-image: url("/images/icons/mission_icon.png");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 520px 40px; /* 13 иконок по 40px */
+    mask-size: 520px 40px;
+    -webkit-mask-position: var(--mission-pos, 0px) 0;
+    mask-position: var(--mission-pos, 0px) 0;
+}
+
+/* Позиция в спрайте + цвет */
+.FleetMissionPanel .Mission_ATTACK       { --mission-pos:   0px; --mission-color: #ff5252; } /* атака */
+.FleetMissionPanel .Mission_GROUP_ATTACK { --mission-pos: -40px; --mission-color: #ff1744; } /* групповая атака */
+.FleetMissionPanel .Mission_DEFEND       { --mission-pos: -80px; --mission-color: #4079ff; } /* оборона */
+.FleetMissionPanel .Mission_DESTROY      { --mission-pos:-120px; --mission-color: #ff3d00; } /* уничтожение */
+
+.FleetMissionPanel .Mission_TRANSPORT    { --mission-pos:-160px; --mission-color: #ffca28; } /* транспорт */
+.FleetMissionPanel .Mission_RELOCATE     { --mission-pos:-200px; --mission-color: #ff8a65; } /* передислокация */
+.FleetMissionPanel .Mission_RECYCLE      { --mission-pos:-239px; --mission-color: #ffab00; } /* переработка */
+.FleetMissionPanel .Mission_COLONIZE     { --mission-pos:-280px; --mission-color: #66bb6a; } /* колонизация */
+
+.FleetMissionPanel .Mission_SPY          { --mission-pos:-320px; --mission-color: #90a4ae; } /* шпионаж */
+.FleetMissionPanel .Mission_RESEARCH     { --mission-pos:-360px; --mission-color: #b388ff; } /* исследование */
+.FleetMissionPanel .Mission_OBSERVE      { --mission-pos:-400px; --mission-color: #26c6da; } /* наблюдение */
+.FleetMissionPanel .Mission_MERGE        { --mission-pos:-440px; --mission-color: #b0bec5; } /* объединение */
+.FleetMissionPanel .Mission_EXPEDITION   { --mission-pos:-480px; --mission-color: #26a69a; } /* экспедиция */
+
+
+/* выбранная миссия */
+.FleetMissionPanel .NavType[selected] .NavMissionImg {
+    filter: drop-shadow(0 0 4px rgba(255,255,255,.6));
+
+}
+
 
 .InputNavigation {
     width: calc(5ch + 10px);
@@ -2432,6 +2508,156 @@ icon-selector[vertical] {
     margin: 6px auto;
 }
 
+.OverviewFleetEvents {
+    display: block;
+    width: min(600px, calc(100% - 12px), calc(100vw - 12px));
+    box-sizing: border-box;
+    margin: 6px auto;
+    overflow: hidden;
+}
+
+.OverviewFleetEventsHeader {
+    width: calc(100% - 8px);
+    /*margin: 0 auto;*/
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /*padding: 7px 10px;*/
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+    color: var(--color-info-text);
+    cursor: pointer;
+}
+
+.OverviewFleetEventsCount {
+    min-width: 22px;
+    padding: 1px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    color: var(--color-text);
+    text-align: center;
+}
+
+.OverviewFleetEventsList {
+    display: grid;
+}
+
+.OverviewFleetEvent {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr) 50px;
+    gap: 7px;
+    align-items: center;
+    width: calc(100% - 8px);
+    /*min-height: 32px;*/
+    padding: 3px 8px;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+    background: transparent;
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+}
+
+.OverviewFleetEvent:last-child {
+    border-bottom: 0;
+}
+
+.OverviewFleetEvent:hover {
+    background: color-mix(in srgb, var(--color-info-bg) 45%, transparent);
+}
+
+.OverviewFleetEventTime,
+.OverviewFleetEventBody {
+    min-width: 0;
+}
+
+.OverviewFleetEventTime {
+    display: grid;
+    justify-items: center;
+}
+
+.OverviewFleetEventBody {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.OverviewFleetEventCountdown {
+    color: var(--color-success-text);
+}
+
+.OverviewFleetEvent.Returning .OverviewFleetEventCountdown {
+    color: var(--color-warning-text);
+}
+
+.OverviewFleetEvent.Incoming {
+    cursor: default;
+}
+
+.OverviewFleetEvent.Incoming.Friendly .OverviewFleetEventCountdown,
+.OverviewFleetEvent.Incoming.Friendly .OverviewFleetEventTitle {
+    color: var(--color-success-text);
+}
+
+.OverviewFleetEvent.Incoming.Hostile .OverviewFleetEventCountdown,
+.OverviewFleetEvent.Incoming.Hostile .OverviewFleetEventTitle,
+.OverviewFleetEvent.Incoming.Hostile .OverviewFleetEventStatus {
+    color: var(--color-danger-text);
+}
+
+.OverviewFleetEventStatus {
+    opacity: 0.72;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.OverviewFleetEventTitle,
+.OverviewFleetEventRoute {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.OverviewFleetEventTitle {
+    color: var(--color-info-text);
+}
+
+.OverviewFleetEventsEmpty {
+    padding: 9px;
+    text-align: center;
+    opacity: 0.72;
+}
+
+@media (max-width: 480px) {
+    .OverviewFleetEvents {
+        margin-left: 0;
+        margin-right: auto;
+    }
+
+    .OverviewFleetEvent {
+        grid-template-columns: 68px minmax(0, 1fr) 42px;
+        gap: 4px;
+        padding: 3px 5px;
+    }
+
+    .OverviewFleetEventBody {
+        gap: 5px;
+    }
+
+    .OverviewFleetEventCountdown,
+    .OverviewFleetEventTitle,
+    .OverviewFleetEventRoute,
+    .OverviewFleetEventStatus {
+        font-size: 11px;
+    }
+}
+
 .BuildsPage,
 .ResearchsPage,
 .ShipyardPage {
@@ -2445,6 +2671,438 @@ icon-selector[vertical] {
     flex-direction: column;
     gap: 8px;
     align-items: center;
+}
+
+.FleetFlights {
+    box-sizing: border-box;
+    width: min(680px, calc(100% - 8px));
+    overflow: visible;
+}
+
+.FleetFlightsTitle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    color: var(--color-info-text);
+    font-size: 13px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.FleetFlightsCount {
+    min-width: 17px;
+    padding: 1px 5px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    line-height: 14px;
+    text-align: center;
+}
+
+.FleetFlightsList {
+    display: grid;
+    justify-items: stretch;
+}
+
+.FleetFlightCard {
+    box-sizing: border-box;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 8px 7px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.FleetFlightCard:last-child {
+    border-bottom: 0;
+}
+
+.FleetFlightSummary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+}
+
+.FleetFlightMissionStart,
+.FleetFlightMissionTarget {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text);
+    font-size: 11px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.FleetFlightFleet {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.FleetFlightFleet {
+    justify-self: center;
+    cursor: help;
+}
+
+.FleetFlightTooltip {
+    display: grid;
+    gap: 5px;
+    text-align: left;
+}
+
+.FleetFlightTooltipTitle {
+    color: var(--color-info-text);
+    font-size: 11px;
+}
+
+.FleetFlightTooltipSection {
+    display: grid;
+    gap: 2px;
+}
+
+.FleetFlightTooltipRow,
+.FleetFlightTooltipFuel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.FleetFlightTooltipRow span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.FleetFlightTooltipRow b,
+.FleetFlightTooltipFuel b {
+    color: var(--color-success-text);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.FleetFlightTooltipFuel {
+    margin-top: 2px;
+    padding-top: 5px;
+    border-top: 1px solid var(--color-border);
+}
+
+.FleetFlightTooltipEmpty {
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+.FleetFlightIdentity {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    justify-content: center;
+    min-width: 0;
+}
+
+.FleetFlightIdentity strong {
+    flex: 0 0 auto;
+    font-size: 12px;
+}
+
+.FleetFlightMissionName,
+.FleetFlightRemaining {
+    color: var(--color-success-text);
+}
+
+.FleetFlightCard.Returning .FleetFlightMissionName,
+.FleetFlightCard.Returning .FleetFlightRemaining {
+    color: var(--color-warning-text);
+}
+
+.FleetFlightMissionName {
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.FleetFlightTiming {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.FleetFlightTiming > span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.FleetFlightTiming > strong {
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.FleetFlightRoute {
+    min-width: 0;
+    margin-top: 4px;
+}
+
+.FleetFlightMissionFinish > * {
+    margin: 0;
+}
+
+.FleetFlightMissionTarget {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.FleetFlightMissionTarget {
+    justify-self: end;
+    text-align: right;
+}
+
+.FleetFlightTrack {
+    position: relative;
+    height: 11px;
+    margin: 3px 7px 0;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-input-bg-ng);
+    box-shadow: inset 0 0 3px var(--color-box-shadow-inset);
+}
+
+.FleetFlightTrackFill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: inherit;
+    background: var(--color-success-bg);
+}
+
+.Returning .FleetFlightTrackFill {
+    inset: 0 0 0 auto;
+    background: var(--color-warning-bg);
+}
+
+.FleetFlightTrackBoundaries {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.FleetFlightTrackBoundary {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--color-border);
+    box-shadow: 0 0 2px var(--color-box-shadow-inset);
+    pointer-events: auto;
+    transform: translateX(-50%);
+}
+
+.FleetFlightMarker {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    z-index: 2;
+    width: 12px;
+    height: 19px;
+    color: var(--color-success-text);
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 16px;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    text-shadow: 0 0 4px var(--color-success-text);
+}
+
+.Returning .FleetFlightMarker {
+    color: var(--color-warning-text);
+    text-shadow: 0 0 6px var(--color-warning-text);
+}
+
+.FleetFlightMissionFinish {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) auto minmax(0, max-content);
+    gap: 4px 10px;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+    margin-top: 4px;
+    color: var(--color-text-secondary);
+    font-size: 9px;
+}
+
+.FleetFlightMissionTiming {
+    justify-self: start;
+}
+
+.FleetFlightMissionRemaining {
+    color: var(--color-info-text);
+}
+
+.FleetFlightMissionFinish .FleetFlightArrival {
+    justify-self: end;
+    text-align: right;
+}
+
+.FleetFlightCommandsButton {
+    justify-self: center;
+    max-width: 100%;
+    margin: 0;
+    padding: 1px 7px;
+    overflow: hidden;
+    border: 1px solid var(--color-input-border);
+    border-radius: 4px;
+    background: var(--color-input-bg);
+    color: var(--color-info-text);
+    font: inherit;
+    line-height: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.FleetFlightCommandsButton[aria-expanded="true"] {
+    border-color: var(--color-info-text);
+    background: var(--color-input-bg-ng);
+}
+
+.FleetFlightCommands {
+    display: grid;
+    gap: 2px;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid var(--color-border);
+}
+
+.FleetFlightCommandRow {
+    display: grid;
+    grid-template-columns: 18px minmax(90px, 1fr) minmax(100px, 1.2fr) auto auto;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: var(--color-text-secondary);
+    font-size: 9px;
+}
+
+.FleetFlightCommandRow.Active {
+    background: var(--color-input-bg-ng);
+    color: var(--color-text);
+}
+
+.FleetFlightCommandRow.Completed {
+    opacity: 0.58;
+}
+
+.FleetFlightCommandRow.Completed .FleetFlightCommandPosition {
+    color: var(--color-success-text);
+}
+
+.FleetFlightCommandPosition {
+    color: var(--color-info-text);
+    text-align: center;
+}
+
+.FleetFlightCommandName,
+.FleetFlightCommandTarget {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.FleetFlightCommandTime,
+.FleetFlightCommandReturn {
+    white-space: nowrap;
+}
+
+.FleetFlightCommandReturn {
+    color: var(--color-warning-text);
+}
+
+.FleetFlightCommandsEmpty {
+    color: var(--color-text-secondary);
+    font-size: 9px;
+    text-align: center;
+}
+
+.FleetFlightsEmpty {
+    padding: 10px;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .FleetFlights {
+        width: calc(100% - 16px);
+        max-width: none;
+    }
+
+    .FleetFlightCard {
+        padding: 5px 6px 6px;
+    }
+
+    .FleetFlightIdentity {
+        gap: 4px;
+    }
+
+    .FleetFlightCommandRow {
+        grid-template-columns: 16px minmax(75px, 1fr) minmax(80px, 1fr) auto;
+        gap: 4px;
+    }
+
+    .FleetFlightCommandReturn {
+        display: none;
+    }
+
+}
+
+@media (max-width: 420px) {
+    .FleetFlights {
+        align-self: flex-start;
+        width: calc(100% - 16px);
+        max-width: none;
+    }
+
+    .FleetFlightCommandRow {
+        grid-template-columns: 16px minmax(0, 1fr) auto;
+    }
+
+    .FleetFlightSummary {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 2px 4px;
+    }
+
+    .FleetFlightMissionFinish {
+        gap: 3px 7px;
+    }
+
+    .FleetFlightTiming > span {
+        font-size: 8px;
+    }
+
+    .FleetFlightCommandTarget {
+        display: none;
+    }
 }
 
 .FleetsPage .InfoFleet {
@@ -2499,6 +3157,27 @@ icon-selector[vertical] {
     margin: 6px;
 }
 
+#sendPanel>.FleetMissionDataPanel {
+    margin: 0;
+}
+
+.FleetMissionDataPanel {
+    position: relative;
+}
+
+.FleetMissionDataPanel>*:not(overlay) {
+    margin: 6px;
+}
+
+.FleetMissionDataPanel>overlay {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding-top: 102px;
+    border-radius: 5px;
+}
+
 .FleetInfoPanel {
     display: grid;
     grid-template-columns: max-content 1fr;
@@ -2520,12 +3199,99 @@ icon-selector[vertical] {
 .FleetCoordsPanel {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    /*gap: 8px;*/
     align-items: start;
 }
 
 .FleetCoordsPanel>div:first-child,
 .FleetCoordsPanel>icon-selector {
+    grid-column: 1 / -1;
+}
+
+.FleetCoordinateTypeSelector {
+    width: 100%;
+    margin: 6px 0 10px;
+    gap: 6px;
+}
+
+.FleetCoordinateTypeSelector .NavType {
+    width: 82px;
+    min-height: 58px;
+    padding: 5px 4px;
+    align-items: center;
+    color: var(--color-text);
+    border: 1px solid var(--color-input-border);
+    border-radius: 5px;
+}
+
+.FleetCoordinateTypeSelector .NavType:hover,
+.FleetCoordinateTypeSelector .NavType[selected] {
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-box-bg);
+    box-shadow: 0 0 8px 1px var(--color-box-shadow);
+    filter: brightness(1.15) contrast(1);
+}
+
+.FleetCoordinateTypeIcon {
+    width: 44px;
+    height: 36px;
+    color: var(--color-info-text);
+    font-size: 32px;
+    line-height: 36px;
+}
+
+.FleetObjectTypePanel {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 5px;
+    border-top: 1px solid var(--color-input-border);
+}
+
+.FleetObjectTypePanel icon-selector {
+    margin: 3px 0 7px;
+}
+
+.FleetObjectTypePanel .NavType {
+    width: 70px;
+    align-items: center;
+}
+
+.FleetCoordinateSubTitle {
+    align-self: flex-start;
+}
+
+.FleetOwnPlanetPanel {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    text-align: left;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 6px 0;
+}
+
+.FleetOwnPlanetPanel>span {
+    white-space: nowrap;
+}
+
+.FleetOwnPlanetSelect {
+    width: calc(100% - 20px);
+    min-width: 0;
+    max-width: calc(100% - 20px);
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.FleetCoordsPanel>.OrbitBlock {
+    grid-column: 1 / -1;
+}
+
+.FleetCoordsPanel>.FleetTargetBlock {
     grid-column: 1 / -1;
 }
 
@@ -2622,9 +3388,9 @@ icon-selector[vertical] {
 
 /* === Панель миссий === */
 .FleetMissionPanel {
-    padding: 8px;
-    max-width: 300px;
-    /*    background: var(--color-panel-bg, rgba(0,0,0,0.1));
+    padding: 4px;
+    /*max-width: 300px;
+        background: var(--color-panel-bg, rgba(0,0,0,0.1));
     border-radius: 6px;
     border: 1px solid var(--color-border);*/
 }
@@ -2639,6 +3405,99 @@ icon-selector[vertical] {
     justify-content: center;
     gap: 4px;
     padding: 4px;
+}
+
+/* === Настройки полёта === */
+.FleetFlightSettingsPanel {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+}
+
+.FleetRangeHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.FleetFuelHeader {
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
+}
+
+.FleetRangeValue {
+    min-width: 6ch;
+    color: var(--color-info-text);
+    font-weight: 700;
+    text-align: right;
+}
+
+.FleetRangeInput {
+    --fleet-range-thumb-size: 18px;
+    --fleet-range-track-size: 5px;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--fleet-range-thumb-size);
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    cursor: pointer;
+    background: linear-gradient(to right,
+        var(--color-info-text) 0%,
+        var(--color-info-text) var(--fleet-range-progress, 0%),
+        var(--color-border) var(--fleet-range-progress, 0%),
+        var(--color-border) 100%) center /
+        calc(100% - var(--fleet-range-thumb-size)) var(--fleet-range-track-size) no-repeat;
+}
+
+.FleetRangeInput:focus-visible {
+    outline: 1px solid var(--color-info-text);
+    outline-offset: 2px;
+}
+
+.FleetRangeInput::-webkit-slider-runnable-track {
+    height: var(--fleet-range-track-size);
+    border: 0;
+    border-radius: var(--fleet-range-track-size);
+    background: transparent;
+}
+
+.FleetRangeInput::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    width: var(--fleet-range-thumb-size);
+    height: var(--fleet-range-thumb-size);
+    margin-top: calc((var(--fleet-range-track-size) - var(--fleet-range-thumb-size)) / 2);
+    border: 2px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-info-text);
+}
+
+.FleetRangeInput::-moz-range-track {
+    height: var(--fleet-range-track-size);
+    border: 0;
+    border-radius: var(--fleet-range-track-size);
+    background: var(--color-border);
+}
+
+.FleetRangeInput::-moz-range-thumb {
+    box-sizing: border-box;
+    width: var(--fleet-range-thumb-size);
+    height: var(--fleet-range-thumb-size);
+    border: 2px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-info-text);
+}
+
+.FleetRangeInput:disabled {
+    opacity: 0.45;
+    cursor: default;
 }
 
 /* === Панель ресурсов === */
@@ -2718,6 +3577,15 @@ icon-selector[vertical] {
 
 .FleetAllResBtn {
     min-width: 116px;
+}
+
+.FleetLoadStatus {
+    padding: 6px 8px;
+    border: 1px solid var(--color-warning-bg);
+    border-radius: 4px;
+    color: var(--color-danger-text, var(--color-warning-text));
+    background: var(--color-warning-bg);
+    font-size: 0.85em;
 }
 
 @media screen and (max-width: 760px) {
@@ -2837,12 +3705,222 @@ icon-selector[vertical] {
     transform: translate(-50%, -50%);
 }
 
+.GalaxySystemInfo,
+.GalaxyLegend {
+    position: absolute;
+    z-index: 60;
+    display: grid;
+    gap: 4px;
+    padding: 8px 10px;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    backdrop-filter: blur(3px);
+}
+
+.GalaxySystemInfo {
+    top: 10px;
+    left: 10px;
+    min-width: 190px;
+}
+
+.GalaxySystemInfoTitle {
+    padding-bottom: 4px;
+    color: var(--color-info-text);
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.GalaxySystemInfoRow {
+    display: grid;
+    grid-template-columns: minmax(80px, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    font-size: 12px;
+}
+
+.GalaxySystemInfoLabel {
+    color: var(--color-text);
+    opacity: 0.72;
+}
+
+.GalaxySystemInfoValue {
+    color: var(--color-info-text);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.GalaxyLegend {
+    right: 10px;
+    bottom: 10px;
+}
+
+.GalaxyLegendItem {
+    display: grid;
+    grid-template-columns: 18px auto;
+    gap: 7px;
+    align-items: center;
+    font-size: 11px;
+}
+
+.GalaxyLegendMark {
+    width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    border-radius: 50%;
+}
+
+.GalaxyLegendPlanet {
+    background: #4ea5ff;
+    box-shadow: 0 0 7px rgba(78, 165, 255, 0.8);
+}
+
+.GalaxyLegendAsteroids {
+    border: 3px dotted rgba(190, 190, 190, 0.9);
+}
+
+.GalaxyLegendAsteroidSector {
+    border: 1px solid rgba(91, 205, 230, 0.32);
+    background: rgba(91, 205, 230, 0.16);
+    box-shadow: inset 0 0 5px rgba(91, 205, 230, 0.22);
+}
+
+.GalaxyLegendGas {
+    border: 3px solid rgba(70, 110, 255, 0.8);
+}
+
+.GalaxyLegendFleet {
+    border-radius: 2px;
+    background: rgb(70, 225, 255);
+    box-shadow: 0 0 7px rgba(70, 225, 255, 0.9);
+    clip-path: polygon(100% 50%, 0 100%, 24% 50%, 0 0);
+}
+
+.GalaxyLegendEdge {
+    border: 2px dashed rgba(90, 180, 255, 0.85);
+}
+
+.GalaxyLegendExpedition {
+    border: 2px dotted rgba(190, 110, 255, 0.95);
+}
+
 .Galaxy .PlanetName {
     position: absolute;
     z-index: 50;
     cursor: pointer;
     transition: transform 0.05s linear;
     padding: 2px;
+    pointer-events: auto;
+}
+
+.Galaxy .GalaxyPlayerName {
+    color: var(--color-info-text);
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+    padding: 2px 5px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-bg) 84%, transparent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(2px);
+}
+
+.Galaxy .GalaxyPlanetName {
+    color: var(--color-text);
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+    padding: 3px 6px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+    backdrop-filter: blur(2px);
+}
+
+.Galaxy .PlanetName:hover .GalaxyPlayerName,
+.Galaxy .PlanetName:hover .GalaxyPlanetName {
+    border-color: var(--color-info-text);
+    filter: brightness(1.12);
+}
+
+.Galaxy .PlanetName.OwnPlanet .GalaxyPlayerName,
+.Galaxy .PlanetName.OwnPlanet .GalaxyPlanetName {
+    border-color: rgba(100, 225, 255, 0.72);
+    box-shadow: 0 0 9px rgba(65, 190, 255, 0.28), 0 2px 8px rgba(0, 0, 0, 0.38);
+}
+
+.GalaxyPlanetTooltip {
+    display: grid;
+    gap: 6px;
+    min-width: 180px;
+}
+
+.GalaxyPlanetTooltipTitle {
+    color: var(--color-info-text);
+    font-weight: 600;
+}
+
+.GalaxyPlanetTooltipOwner {
+    color: var(--color-text);
+}
+
+.GalaxyPlanetTooltipDetails {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 3px 12px;
+    padding: 5px 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.GalaxyPlanetTooltipDetailLabel {
+    color: var(--color-text);
+    opacity: 0.72;
+}
+
+.GalaxyPlanetTooltipDetailValue {
+    color: var(--color-info-text);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.GalaxyPlayerActive {
+    color: var(--color-success-text);
+}
+
+.GalaxyPlayerRecent {
+    color: var(--color-warning-text);
+}
+
+.GalaxyPlanetTooltipMissions {
+    display: grid;
+    /*grid-template-columns: repeat(2, minmax(0, 1fr));*/
+    gap: 3px;
+}
+
+.GalaxyPlanetTooltipMission {
+    color: var(--color-success-text);
+}
+
+.GalaxyPlanetTooltipAction {
+    color: var(--color-warning-text);
+}
+
+@media (max-width: 720px) {
+    .GalaxySystemInfo {
+        max-width: calc(100% - 20px);
+        min-width: 160px;
+    }
+
+    .GalaxySystemInfoRow:nth-child(n + 6) {
+        display: none;
+    }
+
+    .GalaxyLegend {
+        display: none;
+    }
 }
 
 

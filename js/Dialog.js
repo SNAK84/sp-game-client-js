@@ -43,10 +43,26 @@ class DialogClass {
     }
 
     centerDialog() {
+        const { width: viewportWidth } = this.getViewportSize();
+        const maxDialogWidth = Math.max(0, viewportWidth - 20);
+        const currentWidth = this.dialogDiv.getBoundingClientRect().width;
+        if (currentWidth > maxDialogWidth) {
+            this.minWidth = Math.min(Number(this.minWidth) || 0, maxDialogWidth);
+            this.dialogDiv.style.width = maxDialogWidth + 'px';
+            this.dialogDiv.style.minWidth = maxDialogWidth + 'px';
+        }
+
         const pos = this.calculatePosition();
 
         this.dialogDiv.style.top = pos.top + 'px';
         this.dialogDiv.style.left = pos.left + 'px';
+    }
+
+    getViewportSize() {
+        return {
+            width: window.visualViewport?.width || window.innerWidth,
+            height: window.visualViewport?.height || window.innerHeight
+        };
     }
 
     create(
@@ -144,12 +160,13 @@ class DialogClass {
             this.dragOffsetY = e.clientY - rect.top;
             document.onmousemove = (ev) => {
                 if (!this.dragging) return;
+                const viewport = this.getViewportSize();
                 let newLeft = ev.clientX - this.dragOffsetX;
                 let newTop = ev.clientY - this.dragOffsetY;
 
                 // Ограничение по экрану
-                newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - rect.width));
-                newTop = Math.max(0, Math.min(newTop, window.innerHeight - rect.height));
+                newLeft = Math.max(0, Math.min(newLeft, viewport.width - rect.width));
+                newTop = Math.max(0, Math.min(newTop, viewport.height - rect.height));
 
                 this.dialogDiv.style.left = newLeft + 'px';
                 this.dialogDiv.style.top = newTop + 'px';
@@ -177,12 +194,13 @@ class DialogClass {
 
             document.onmousemove = (ev) => {
                 if (!this.resizing) return;
+                const viewport = this.getViewportSize();
                 let newWidth = this.startWidth + (ev.clientX - this.startX);
                 let newHeight = this.startHeight + (ev.clientY - this.startY);
 
                 // Ограничения
-                newWidth = Math.max(this.minWidth, Math.min(newWidth, window.innerWidth - rect.left));
-                newHeight = Math.max(this.minHeight, Math.min(newHeight, window.innerHeight - rect.top));
+                newWidth = Math.max(this.minWidth, Math.min(newWidth, viewport.width - rect.left));
+                newHeight = Math.max(this.minHeight, Math.min(newHeight, viewport.height - rect.top));
 
                 this.dialogDiv.style.width = newWidth + 'px';
                 this.dialogDiv.style.height = newHeight + 'px';
@@ -211,11 +229,12 @@ class DialogClass {
     calculatePosition() {
 
         const rectDialog = this.dialogDiv.getBoundingClientRect();
+        const viewport = this.getViewportSize();
 
         // Если не задано — центр по экрану
         if (!this.position || !this.position.of) {
-            const top = Math.max((window.innerHeight - rectDialog.height) / 3, 10);
-            const left = Math.max((window.innerWidth - rectDialog.width) / 2, 10);
+            const top = Math.max((viewport.height - rectDialog.height) / 3, 10);
+            const left = Math.max((viewport.width - rectDialog.width) / 2, 10);
             return { top, left };
         }
 
@@ -223,8 +242,8 @@ class DialogClass {
         if (!targetEl) {
             // fallback на центр
             return {
-                top: Math.max((window.innerHeight - rectDialog.height) / 3, 10),
-                left: Math.max((window.innerWidth - rectDialog.width) / 2, 10)
+                top: Math.max((viewport.height - rectDialog.height) / 3, 10),
+                left: Math.max((viewport.width - rectDialog.width) / 2, 10)
             };
         }
 
@@ -257,8 +276,8 @@ class DialogClass {
         let top = anchorY - offsetY;
 
         // clamp to viewport with margin 10
-        left = Math.max(10, Math.min(left, window.innerWidth - rectDialog.width - 10));
-        top = Math.max(10, Math.min(top, window.innerHeight - rectDialog.height - 10));
+        left = Math.max(10, Math.min(left, viewport.width - rectDialog.width - 10));
+        top = Math.max(10, Math.min(top, viewport.height - rectDialog.height - 10));
 
         return { top, left };
     }
@@ -285,7 +304,11 @@ class DialogClass {
 
         //if (this.minWidth > window.innerWidth) this.minWidth = window.innerWidth - 40;
 
-        this.minWidth = Math.max(this.minWidth || 0, Math.ceil(rectTitle.width + 50));
+        const maxDialogWidth = Math.max(0, this.getViewportSize().width - 20);
+        this.minWidth = Math.min(
+            maxDialogWidth,
+            Math.max(Number(this.minWidth) || 0, Math.ceil(rectTitle.width + 50))
+        );
         this.minHeight = Math.max(this.minHeight || 0, Math.ceil(rectTitle.height + rectContent.height + rectButtons.height + 40));
 
         // apply minWidth (this likely changes layout)
@@ -348,38 +371,44 @@ class DialogClass {
 
 
     ErrorLoad(msg, error = false, reload = false) {
+        const content = document.createElement("div");
+        content.style.textAlign = "center";
+        content.style.color = "red";
+        content.style.whiteSpace = "pre-line";
+        content.textContent = String(msg ?? "");
+
         this.create(
-            `<div style="text-align:center; color:red;">${msg.replace(/\n/g, '<br>')}</div>`,
-            `Ошибка${error ? ` №${error}` : ''}`,
+            content,
+            "Ошибка" + (error ? " №" + error : ""),
             [{
                 text: Lang.Close,
-                action: () => {
-                    this.close();
-                    if (typeof callback === 'function') callback();
-                }
+                action: () => this.close()
             }],
             {
                 overlay: true,
                 escEnabled: false,
                 width: 350,
                 drag: true,
-                position: { my: 'center center', of: "document" }
+                position: { my: "center center", of: "document" }
             }
         );
-
-
-
     }
 
     error(message, errorCode, callback) {
+        const content = document.createElement("div");
+        content.style.textAlign = "center";
+        content.style.color = "red";
+        content.style.whiteSpace = "pre-line";
+        content.textContent = String(message ?? "");
+
         this.create(
-            `<div style="text-align:center; color:red;">${message}</div>`,
-            `Ошибка${errorCode ? ` №${errorCode}` : ''}`,
+            content,
+            "Ошибка" + (errorCode ? " №" + errorCode : ""),
             [{
-                text: 'Закрыть',
+                text: "Закрыть",
                 action: () => {
                     this.close();
-                    if (typeof callback === 'function') callback();
+                    if (typeof callback === "function") callback();
                 }
             }],
             false
