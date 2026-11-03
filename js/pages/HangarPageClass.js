@@ -17,6 +17,7 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
             timer.EventActive = false;
         }
         if (this._renderButtons) $(document).off("GameTick", this._renderButtons);
+        this.$Content?.off(".hangarOrder");
     }
 
     Show(mode = "", data = null) {
@@ -54,6 +55,7 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
             if (action === "max") {
                 const count = this.getMaxConstructibleElements(id, e.detail.Price);
                 this.$Content.Items[id][0].Input.val(count);
+                this.renderButtons();
                 return;
             }
             if (action === "info") {
@@ -90,18 +92,28 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
     }
 
     getSelectElements() {
-        let count = 0;
-        $.each(this.$Content.Items, (id, build) => {
-            count += build[0]?.Input.val();
-        });
+        return this.getOrderSelection().count;
+    }
 
-        return count;
+    getOrderSelection() {
+        const selection = { items: [], count: 0, costs: { 901: 0, 902: 0, 903: 0 } };
+        $.each(this.$Content.Items || {}, (id, build) => {
+            const count = Number(build[0]?.Input?.val()) || 0;
+            if (!Number.isFinite(count) || count <= 0) return;
+            selection.items.push({ id, count });
+            selection.count += count;
+            $.each(build[0]._data.costResources || {}, (resourceId, price) => {
+                selection.costs[resourceId] = (selection.costs[resourceId] || 0) + Number(price) * count;
+            });
+        });
+        return selection;
     }
 
     clearSelectElements() {
         $.each(this.$Content.Items, (id, build) => {
             build[0].Input.val(0);
         });
+        this.renderButtons();
     }
 
     buildSelectElements() {
@@ -112,6 +124,8 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
                 if (count > 0) items[id] = count;
             }
         });
+
+        if (!Object.keys(items).length) return;
 
         GameEvents.emit("SendServer", {
             mode: Data.mode,
@@ -208,25 +222,28 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
     }
 
     CreateButtons() {
-        //this.$Content.Buttons = {};
-        this.$Content.Buttons = $("<div>").addClass("Buttons").hide();
-
-        this.$Content.Buttons.Build = this.createButton(
-            "ButtonsBuild", Lang.build.build, this.buildSelectElements.bind(this), false, null, 'btn-success');
-
-        //this._clearSelectElements = this.clearSelectElements.bind(this);
-        this.$Content.Buttons.Clear = this.createButton(
-            "ButtonsBuild", Lang.build.Clear, this.clearSelectElements.bind(this), false, null, 'btn-warning');
-
-
-        this.$Content.Buttons.append(this.$Content.Buttons.Build, this.$Content.Buttons.Clear);
-
-
-        this.$Content.append(this.$Content.Buttons);
-
+        const panel = this.$Content.Buttons = $("<section>").addClass("box Buttons HangarOrderPanel")
+            .attr("aria-label", Lang.hangarOrder.Title);
+        panel.Details = $("<div>").addClass("HangarOrderDetails").attr("id", "HangarOrderDetails").hide();
+        panel.List = $("<div>").addClass("HangarOrderList");
+        panel.Details.append(panel.List);
+        panel.Summary = $("<button>", { type: "button", "aria-expanded": "false", "aria-controls": "HangarOrderDetails" })
+            .addClass("HangarOrderSummary").on("click.hangarOrder", () => {
+                const expanded = panel.Summary.attr("aria-expanded") !== "true";
+                panel.Summary.attr("aria-expanded", String(expanded));
+                panel.Details.toggle(expanded);
+            });
+        panel.Costs = $("<div>").addClass("HangarOrderCosts");
+        panel.CostItems = {};
+        const info = $("<div>").addClass("HangarOrderInfo").append(panel.Summary, panel.Costs);
+        panel.Build = this.createButton("HangarOrderBuild", Lang.hangarOrder.Build,
+            this.buildSelectElements.bind(this), true, null, 'btn-success');
+        panel.Clear = this.createButton("HangarOrderClear", Lang.hangarOrder.Clear,
+            this.clearSelectElements.bind(this), true, null, 'btn-warning');
+        const actions = $("<div>").addClass("HangarOrderActions").append(panel.Clear, panel.Build);
+        panel.append(panel.Details, $("<div>").addClass("HangarOrderMain").append(info, actions));
+        this.$Content.append(panel);
         this._renderButtons = this.renderButtons.bind(this);
-        $(document).off("GameTick", this._renderButtons).on("GameTick", this._renderButtons);
-
     }
 
     renderButtons() {
@@ -234,15 +251,48 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
             this.CreateButtons();
         }
 
-        let count = this.getSelectElements();
-        if (count > 0) {
-            this.$Content.Buttons.fadeIn(250);
-        } else {
-
-            this.$Content.Buttons.fadeOut(250);
-
+        const panel = this.$Content.Buttons;
+        const selection = this.getOrderSelection();
+        const empty = selection.count <= 0;
+        panel.Build.prop("disabled", empty).val(Lang.hangarOrder.Build + (empty ? "" : " · " + number_format(selection.count)));
+        panel.Clear.prop("disabled", empty);
+        panel.Summary.prop("disabled", empty).text(
+            Lang.hangarOrder.Selected + ": " + number_format(selection.count) + " " + Lang.hangarOrder.Units
+            + " · " + Lang.hangarOrder.Types + ": " + selection.items.length
+        );
+        if (empty) {
+            panel.Summary.attr("aria-expanded", "false");
+            panel.Details.hide();
         }
-
+        for (const id of Object.keys(panel.CostItems)) {
+            if (!(id in selection.costs)) {
+                panel.CostItems[id].remove();
+                delete panel.CostItems[id];
+            }
+        }
+        $.each(selection.costs, (id, amount) => {
+            if (!panel.CostItems[id]) {
+                panel.CostItems[id] = $("<span>").addClass("ResBox icon" + id);
+                panel.Costs.append(panel.CostItems[id]);
+            }
+            const label = Lang.tech[id] + ": " + number_format(amount);
+            panel.CostItems[id].text(humanNumber(amount, true))
+                .attr("aria-label", label).ToolTip(label);
+        });
+        // Выбор меняет значения существующих строк, а не весь DOM состава.
+        const key = JSON.stringify(selection.items);
+        if (panel.selectionKey !== key) {
+            panel.selectionKey = key;
+            const existing = new Map(panel.List.children().get().map(row => [Number(row.dataset.elementId), row]));
+            for (const item of selection.items) {
+                let $row = existing.has(Number(item.id)) ? $(existing.get(Number(item.id))) : null;
+                if (!$row) panel.List.append($row = $("<div>").addClass("HangarOrderItem").attr("data-element-id", item.id).append($("<span>"), $("<span>")));
+                $row.children().eq(0).text(Lang.tech[item.id]);
+                $row.children().eq(1).text("× " + number_format(item.count));
+                existing.delete(Number(item.id));
+            }
+            existing.forEach(row => $(row).remove());
+        }
     }
 
     CreateTypes() {
@@ -334,7 +384,7 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
                 ...serverItem,
                 CountQueue: this.messageData.data.Page?.CountQueue ?? 0,
                 MaxQueue: this.messageData.data.Page?.MaxQueue ?? 0,
-                working: this.messageData.data.Page?.IsHangarBuild ?? 0
+                working: Boolean(this.messageData.data.Page?.IsHangarBuild || serverItem.siloDismantling)
             };
 
             if (!existing[id]) {
@@ -527,9 +577,11 @@ window.HangarPageClass = class HangarPageClass extends BasePageClass {
         if (!await super.render(generation)) return;
 
         this.renderQueues();
-        this.renderButtons();
         this.renderTypes();
         this.renderItems();
+        this.renderButtons();
+        this.$Content.off(".hangarOrder").on("input.hangarOrder change.hangarOrder",
+            ".TypeBox game-build input[type=number]", this._renderButtons);
         $(document).off("GameTick", this._renderButtons).on("GameTick", this._renderButtons);
 
 

@@ -1,6 +1,7 @@
 window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
     Name = "GalaxyPageClass";
+    phalanxTimer = null;
 
     // Параметры зума
     zoom = 0.00001;
@@ -18,10 +19,23 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     starSprites = {};
     gasGiantSprites = {};
     gasGiantRingSprites = {};
+    debrisSprite = null;
     ResourceSites = [];
+    SpaceDebris = [];
     FlyingFleets = [];
+    SensorContacts = [];
+    sensorContactPositions = new Map();
     resourceSitesByOrbit = {};
     resourceSiteTypes = Object.freeze({ GAS_GIANT: 1, ASTEROID_SECTOR: 2 });
+    // Обозначения Nova. Клиент отображает только статусы, присланные сервером.
+    playerStatusLabels = Object.freeze({
+        noob: { short: "н", label: "Новичок" },
+        strong: { short: "с", label: "Сильный игрок" },
+        vacation: { short: "РО", label: "Режим отпуска" },
+        banned: { short: "бан", label: "Заблокирован" },
+        inactive: { short: "i", label: "Неактивен более 7 дней" },
+        longinactive: { short: "I", label: "Неактивен более 28 дней" }
+    });
 
 
     asteroidBelts = {};
@@ -31,6 +45,16 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     };
 
     SystemShow = false;
+    navigationTarget = null;
+    freeOrbits = [];
+    freeOrbitIds = new Set();
+    freeOrbitsOpen = false;
+    selectedFreeOrbit = null;
+    mapObjects = [];
+    selectedMapObject = null;
+    mapPress = null;
+    mapPressMoved = false;
+    suppressMapClickUntil = 0;
 
     // === Сенсорное управление ===
     isTouching = false;
@@ -39,6 +63,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     lastTouchCenter = { x: 0, y: 0 };
     renderVersion = 0;
     zoomAnimationFrameId = null;
+    zoomAnimationVersion = 0;
 
     constructor() {
         super();
@@ -58,9 +83,46 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         this.$System = this.createDiv("", "System", "system box").hide();
         this.$System.append(this.canvas);
 
-        this.$SystemInfo = this.createDiv("", "GalaxySystemInfo", "GalaxySystemInfo box");
-        this.$Legend = this.createDiv("", "GalaxyLegend", "GalaxyLegend box");
+        this.$SystemInfo = $("<details>", { id: "GalaxySystemInfo", class: "GalaxySystemInfo box" });
+        this.$Legend = $("<details>", { id: "GalaxyLegend", class: "GalaxyLegend box" });
         this.$System.append(this.$SystemInfo, this.$Legend);
+
+        this.$FreeOrbits = this.createDiv("", "", "GalaxyFreeOrbits");
+        this.$FreeOrbitsToggle = $("<button>", {
+            type: "button", text: "Свободные орбиты", class: "GalaxyFreeOrbitsToggle",
+            "aria-expanded": "false", "aria-controls": "GalaxyFreeOrbitsBody"
+        }).on("click.galaxyFreeOrbits", () => {
+            if (this.pageActive && this.SystemShow) this.setFreeOrbitsOpen(!this.freeOrbitsOpen);
+        });
+        this.$FreeOrbitsBody = this.createDiv("", "GalaxyFreeOrbitsBody", "GalaxyFreeOrbitsBody box").hide();
+        this.$FreeOrbitList = this.createDiv("", "", "GalaxyFreeOrbitList")
+            .attr({ role: "group", "aria-label": "Свободные орбиты" });
+        this.$FreeOrbitSelection = this.createDiv("", "", "GalaxyFreeOrbitSelection");
+        this.$FreeOrbitsBody.append(this.$FreeOrbitList, this.$FreeOrbitSelection);
+        this.$FreeOrbits.append(this.$FreeOrbitsToggle, this.$FreeOrbitsBody);
+        this.$System.append(this.$FreeOrbits);
+
+        // Карточка принадлежит странице, не общему hover-tooltip.
+        this.$ObjectMenuBody = $("<div>", { class: "GalaxyObjectMenuBody" });
+        this.$ObjectMenu = $("<section>", {
+            id: "GalaxyObjectMenu", class: "GalaxyObjectMenu box", role: "dialog",
+            "aria-modal": "false", "aria-label": "Объект системы"
+        }).hide().append(
+            $("<button>", { type: "button", class: "GalaxyObjectMenuClose", text: "×", "aria-label": "Закрыть карточку" })
+                .on("click.galaxy", () => this.closeObjectMenu(true)),
+            this.$ObjectMenuBody
+        );
+        this.$System.append(this.$ObjectMenu);
+        $(document).off("click.galaxyObjectMenu keydown.galaxyObjectMenu")
+            .on("click.galaxyObjectMenu", (event) => {
+                if (this.selectedMapObject && !this.$ObjectMenu[0].contains(event.target)) this.closeObjectMenu();
+            }).on("keydown.galaxyObjectMenu", (event) => {
+                if (event.key === "Escape" && this.selectedMapObject) {
+                    event.preventDefault();
+                    this.closeObjectMenu(true);
+                }
+            });
+        $(window).off("resize.galaxyObjectMenu").on("resize.galaxyObjectMenu", () => this.positionObjectMenu());
 
         this.$Content.addClass("Galaxy").append(this.$System);
 
@@ -75,11 +137,27 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
         // === События ===
 
-        $(this.canvas).off("wheel.canvas").on("wheel.canvas", (e) => this.onWheel(e));
+        // Подписи находятся над canvas, а общий tooltip — вне карты.
+        // Колёсик должен масштабировать карту и над ними, но не другие страницы.
+        this.wheelHandler = (event) => {
+            if (!this.pageActive || !this.SystemShow || !this.$Content.Show) return;
+            const system = this.$System[0];
+            const overSystem = system.contains(event.target);
+            const overOwnTooltip = ToolTip.$Tip[0].contains(event.target)
+                && system.contains(ToolTip.parent);
+            if (!overSystem && !overOwnTooltip) return;
+            if (overSystem && event.target.closest(".GalaxySystemInfo, .GalaxyLegend, .GalaxyFreeOrbitsBody")) return;
+            const body = event.target.closest(".GalaxyObjectMenuBody");
+            if (body && body.scrollHeight > body.clientHeight) return;
+            this.onWheel(event);
+        };
+        this.$System[0].addEventListener("wheel", this.wheelHandler, { passive: false });
+        ToolTip.$Tip[0].addEventListener("wheel", this.wheelHandler, { passive: false });
         $(this.canvas).off("mousedown.canvas").on("mousedown.canvas", (e) => this.onMouseDown(e));
         $(this.canvas).off("mouseup.canvas").on("mouseup.canvas", (e) => this.onMouseUp(e));
         $(this.canvas).off("mouseleave.canvas").on("mouseleave.canvas", (e) => this.onMouseUp(e));
         $(this.canvas).off("mousemove.canvas").on("mousemove.canvas", (e) => this.onMouseMove(e));
+        $(this.canvas).off("click.canvas").on("click.canvas", (event) => this.onMapClick(event));
 
 
 
@@ -133,6 +211,8 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     // === Начало касания ===
     onTouchStart(e) {
         if (e.touches.length === 1) {
+            this.mapPress = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            this.mapPressMoved = false;
             // Однопальцевое перемещение
             this.isDragging = true;
             this.canvas.style.cursor = "grabbing";
@@ -140,6 +220,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             this.dragStart.x = touch.clientX - this.offset.x;
             this.dragStart.y = touch.clientY - this.offset.y;
         } else if (e.touches.length === 2) {
+            this.mapPressMoved = true;
             e.preventDefault();
             this.isTouching = true;
             this.isDragging = false;
@@ -163,6 +244,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         if (e.touches.length === 1 && this.isDragging) {
             // перемещение одним пальцем
             const touch = e.touches[0];
+            this.trackMapPress(touch);
             this.offset.x = touch.clientX - this.dragStart.x;
             this.offset.y = touch.clientY - this.dragStart.y;
             this.limitPan();
@@ -199,6 +281,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     // === Завершение касания ===
     onTouchEnd(e) {
         if (e.touches.length === 0) {
+            if (this.mapPressMoved) this.suppressMapClickUntil = performance.now() + 500;
             this.isDragging = false;
             this.isTouching = false;
             this.canvas.style.cursor = "grab";
@@ -214,11 +297,13 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
     // === Масштабирование колесиком ===
     onWheel(event) {
+        const wheel = event.originalEvent || event;
+        if (!Number.isFinite(wheel.deltaY) || wheel.deltaY === 0) return;
         event.preventDefault();
         this.cancelZoomAnimation();
         const zoomFactor = 1.1;
         const oldZoom = this.zoom;
-        if (event.originalEvent.deltaY < 0) this.zoom *= zoomFactor;
+        if (wheel.deltaY < 0) this.zoom *= zoomFactor;
         else this.zoom /= zoomFactor;
         this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom));
 
@@ -226,8 +311,8 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - rect.left - this.canvas.width / 2;
         const mouseY = event.clientY - rect.top - this.canvas.height / 2;
-        this.offset.x -= mouseX * (this.zoom / oldZoom - 1);
-        this.offset.y -= mouseY * (this.zoom / oldZoom - 1);
+        this.offset.x -= (mouseX - this.offset.x) * (this.zoom / oldZoom - 1);
+        this.offset.y -= (mouseY - this.offset.y) * (this.zoom / oldZoom - 1);
 
         this.limitPan();
     }
@@ -235,6 +320,8 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     // === Перемещение мышью ===
     onMouseDown(e) {
         if (e.button !== 0) return;
+        this.mapPress = { x: e.clientX, y: e.clientY };
+        this.mapPressMoved = false;
         this.isDragging = true;
         this.canvas.style.cursor = "grabbing";
         this.dragStart.x = e.clientX - this.offset.x;
@@ -257,7 +344,11 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     }
 
     onMouseMove(e) {
-        if (!this.isDragging) return;
+        if (!this.isDragging) {
+            this.canvas.style.cursor = this.findMapObject(e) ? "pointer" : "grab";
+            return;
+        }
+        this.trackMapPress(e);
 
         const now = performance.now();
         const dx = e.clientX - this.lastDrag.x;
@@ -273,6 +364,40 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         this.velocity.y = dy / dt;
 
         this.lastDrag = { x: e.clientX, y: e.clientY, time: now };
+    }
+
+    trackMapPress(point) {
+        if (this.mapPress && Math.hypot(point.clientX - this.mapPress.x, point.clientY - this.mapPress.y) > 6) {
+            this.mapPressMoved = true;
+        }
+    }
+
+    registerMapObject(kind, id, x, y, radius, extra = {}) {
+        this.mapObjects.push({ kind, id: Number(id),
+            x: this.canvas.width / 2 + this.offset.x + x * this.zoom,
+            y: this.canvas.height / 2 + this.offset.y + y * this.zoom,
+            radius: Math.max(12, radius * this.zoom), ...extra });
+    }
+
+    findMapObject(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return null;
+        const x = (event.clientX - rect.left) * this.canvas.width / rect.width;
+        const y = (event.clientY - rect.top) * this.canvas.height / rect.height;
+        // В обратном порядке отрисовки: флот/планета поверх пояса и обломков.
+        return this.mapObjects.slice().reverse().find(object => {
+            const distance = Math.hypot(x - object.x, y - object.y);
+            const hit = distance <= object.radius && distance >= (object.innerRadius || 0);
+            const label = object.label;
+            return hit || (label && x >= label.left && x <= label.right && y >= label.top && y <= label.bottom);
+        }) || null;
+    }
+
+    onMapClick(event) {
+        if (!this.pageActive || !this.SystemShow || this.mapPressMoved || performance.now() < this.suppressMapClickUntil) return;
+        const object = this.findMapObject(event);
+        if (object) this.openObjectMenu(object.kind, object.id, event);
+        else this.closeObjectMenu();
     }
 
     // === Ограничение перемещения (границы панорамирования) ===
@@ -461,9 +586,17 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
                 ? { distance: Number(orbit.distance), angle }
                 : null;
         }
+        if ([4, 5].includes(Number(coordinate.objectType))) {
+            const site = this.ResourceSites.find(site => Number(site.id) === Number(coordinate.siteId));
+            if (!site) return null;
+            const direction = Number(site.rotation) === 0 ? -1 : 1;
+            const angle = Number(site.anchor_angle) + direction * (Number(atTime) - Number(site.position_time)) / 3600
+                * Number(site.speed) * (Number(this.SpeedPlanets) / 24);
+            return { distance: Number(orbit.distance), angle: ((angle % 360) + 360) % 360 };
+        }
 
         const planet = (this.Planets || []).find(item =>
-            Number(item.planet) === Number(coordinate.orbit)
+            Number(item.planet) === Number(coordinate.orbit) && Number(item.planet_type) === 1
         );
         if (!planet) return null;
 
@@ -509,76 +642,157 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         };
     }
 
-    drawFlyingFleets(ctx, serverNow) {
-        for (const fleet of this.FlyingFleets) {
-            const startTime = Number(fleet.start_time);
-            const endTime = Number(fleet.end_time);
-            if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime <= startTime) {
-                continue;
+    isFleetStationary(fleet) {
+        return Boolean(fleet.blocked_reason) || ["OBSERVE", "DEFEND", "RESEARCH"].includes(fleet.command?.key);
+    }
+
+    placeFleetMarker(x, y, labelWidth, occupied) {
+        const halfWidth = Math.max(12, labelWidth / 2) + 4;
+        const bounds = (x, y) => ({ left: x - halfWidth, right: x + halfWidth, top: y - 28, bottom: y + 14 });
+        const fits = box => box.left >= 4 && box.right <= this.canvas.width - 4
+            && box.top >= 4 && box.bottom <= this.canvas.height - 4
+            && !occupied.some(other => box.left < other.right && box.right > other.left
+                && box.top < other.bottom && box.bottom > other.top);
+        let position = { x, y };
+        // Ищем ближайшее свободное место только для значка/подписи, не для координат флота.
+        search: for (let radius = 0; radius <= 192; radius += 24) {
+            for (let step = 0; step < (radius ? 8 : 1); step++) {
+                const angle = -Math.PI / 2 + step * Math.PI / 4;
+                const candidate = { x: x + Math.cos(angle) * radius, y: y + Math.sin(angle) * radius };
+                if (fits(bounds(candidate.x, candidate.y))) {
+                    position = candidate;
+                    break search;
+                }
             }
+        }
+        occupied.push(bounds(position.x, position.y));
+        return position;
+    }
 
-            const start = this.getFleetCoordinatePhysicalPoint(fleet.segment_start, startTime);
-            const end = this.getFleetCoordinatePhysicalPoint(fleet.segment_end, endTime);
-            if (!start || !end) continue;
+    drawFleetPath(ctx, start, end, color) {
+        ctx.beginPath();
+        for (let step = 0; step <= 24; step++) {
+            const point = this.mapFleetPhysicalPoint(this.interpolateFleetPhysicalPoint(start, end, step / 24));
+            if (step === 0) ctx.moveTo(point.x, point.y);
+            else ctx.lineTo(point.x, point.y);
+        }
+        ctx.setLineDash([5, 6].map(value => this.screenToWorld(value)));
+        ctx.strokeStyle = color.replace("0.95", "0.42");
+        ctx.lineWidth = this.screenToWorld(1.3);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
 
-            const progress = Math.max(0, Math.min(1, (serverNow - startTime) / (endTime - startTime)));
-            const isIncoming = Boolean(fleet.is_incoming);
-            const color = isIncoming
-                ? (fleet.is_hostile ? "rgba(255,90,90,0.95)" : "rgba(110,235,125,0.95)")
-                : (fleet.is_return ? "rgba(255,190,85,0.95)" : "rgba(70,225,255,0.95)");
-            const fleetLabel = isIncoming
-                ? `${fleet.owner_name || "Чужой флот"} #${fleet.id}`
-                : `Флот #${fleet.id}`;
-
-            ctx.save();
-            ctx.beginPath();
-            for (let step = 0; step <= 24; step++) {
-                const point = this.mapFleetPhysicalPoint(
-                    this.interpolateFleetPhysicalPoint(start, end, step / 24)
-                );
-                if (step === 0) ctx.moveTo(point.x, point.y);
-                else ctx.lineTo(point.x, point.y);
-            }
-            ctx.setLineDash([5, 6].map(value => this.screenToWorld(value)));
-            ctx.strokeStyle = color.replace("0.95", "0.42");
-            ctx.lineWidth = this.screenToWorld(1.3);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            const current = this.mapFleetPhysicalPoint(
-                this.interpolateFleetPhysicalPoint(start, end, progress)
-            );
-            const next = this.mapFleetPhysicalPoint(
-                this.interpolateFleetPhysicalPoint(start, end, Math.min(1, progress + 0.002))
-            );
-            const direction = Math.atan2(next.y - current.y, next.x - current.x);
-            const markerSize = this.screenToWorld(8);
-
-            ctx.translate(current.x, current.y);
-            ctx.rotate(direction);
-            ctx.beginPath();
+    drawFleetMarker(ctx, point, direction, stationary, fleetLabel, color) {
+        const markerSize = this.screenToWorld(8);
+        ctx.save();
+        ctx.translate(point.x, point.y);
+        ctx.rotate(direction);
+        ctx.beginPath();
+        if (stationary) {
+            ctx.rect(-markerSize * .65, -markerSize * .7, markerSize * .45, markerSize * 1.4);
+            ctx.rect(markerSize * .2, -markerSize * .7, markerSize * .45, markerSize * 1.4);
+        } else {
             ctx.moveTo(markerSize, 0);
             ctx.lineTo(-markerSize * 0.75, markerSize * 0.62);
             ctx.lineTo(-markerSize * 0.35, 0);
             ctx.lineTo(-markerSize * 0.75, -markerSize * 0.62);
-            ctx.closePath();
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = this.screenToWorld(7);
-            ctx.fill();
+        }
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = this.screenToWorld(7);
+        ctx.fill();
+        ctx.rotate(-direction);
+        ctx.shadowBlur = 0;
+        ctx.font = `600 ${this.screenToWorld(11)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.lineWidth = this.screenToWorld(3);
+        ctx.strokeStyle = "rgba(3,10,20,0.9)";
+        ctx.strokeText(fleetLabel, 0, -this.screenToWorld(10));
+        ctx.fillStyle = color;
+        ctx.fillText(fleetLabel, 0, -this.screenToWorld(10));
+        ctx.restore();
+    }
 
-            ctx.rotate(-direction);
-            ctx.shadowBlur = 0;
-            ctx.font = `600 ${this.screenToWorld(11)}px sans-serif`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "bottom";
-            ctx.lineWidth = this.screenToWorld(3);
-            ctx.strokeStyle = "rgba(3,10,20,0.9)";
-            ctx.strokeText(fleetLabel, 0, -this.screenToWorld(10));
-            ctx.fillStyle = color;
-            ctx.fillText(fleetLabel, 0, -this.screenToWorld(10));
+    drawFlyingFleets(ctx, serverNow) {
+        const orbitalSlots = new Map();
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const occupied = this.$System.find(".GalaxyPlanetCaption").get().map(element => {
+            const rect = element.getBoundingClientRect();
+            return { left: (rect.left - canvasRect.left) * this.canvas.width / canvasRect.width,
+                right: (rect.right - canvasRect.left) * this.canvas.width / canvasRect.width,
+                top: (rect.top - canvasRect.top) * this.canvas.height / canvasRect.height,
+                bottom: (rect.bottom - canvasRect.top) * this.canvas.height / canvasRect.height,
+                visible: rect.width > 0 && rect.height > 0 };
+        }).filter(box => box.visible);
+        for (const fleet of this.FlyingFleets) {
+            // Защита от старого snapshot: скрыта сама экспедиция, но не MOVE к ней/обратно.
+            if (fleet.command?.key === "EXPEDITION") continue;
+            const stationary = this.isFleetStationary(fleet);
+            const startTime = Number(fleet.start_time);
+            const endTime = Number(fleet.end_time);
+            if (!stationary && (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime <= startTime)) {
+                continue;
+            }
+
+            const start = this.getFleetCoordinatePhysicalPoint(fleet.segment_start, stationary ? serverNow : startTime);
+            const end = stationary ? start : this.getFleetCoordinatePhysicalPoint(fleet.segment_end, endTime);
+            if (!start || !end) continue;
+
+            const progress = stationary ? 0 : Math.max(0, Math.min(1, (serverNow - startTime) / (endTime - startTime)));
+            const isIncoming = Boolean(fleet.is_incoming);
+            const color = isIncoming
+                ? (fleet.is_hostile ? "rgba(255,90,90,0.95)" : "rgba(110,235,125,0.95)")
+                : (fleet.blocked_reason || fleet.is_return ? "rgba(255,190,85,0.95)" : "rgba(70,225,255,0.95)");
+            const fleetLabel = isIncoming
+                ? `${fleet.owner_name || "Чужой флот"} #${fleet.id}`
+                : (fleet.name || `Флот #${fleet.id}`);
+
+            ctx.save();
+            ctx.strokeStyle = color.replace("0.95", "0.42");
+            ctx.lineWidth = this.screenToWorld(1.3);
+            if (!stationary) this.drawFleetPath(ctx, start, end, color);
+
+            const current = this.mapFleetPhysicalPoint(
+                this.interpolateFleetPhysicalPoint(start, end, progress)
+            );
+            const anchor = { ...current };
+            // Только визуальное смещение: не перекрываем планету/луну и
+            // разделяем стоящие у одной орбиты флоты. Физический anchor неизменен.
+            if (stationary && Number(fleet.segment_start?.type) === 1
+                && [1, 3].includes(Number(fleet.segment_start.objectType))) {
+                const orbit = Number(fleet.segment_start.orbit);
+                const slot = orbitalSlots.get(orbit) || 0;
+                orbitalSlots.set(orbit, slot + 1);
+                current.x -= this.screenToWorld(40);
+                current.y -= this.screenToWorld(12 + slot * 30);
+            }
+            // Название над маркером тоже является целью клика.
+            const labelWidth = Math.max(44, fleetLabel.length * 7);
+            const preferredX = this.canvas.width / 2 + this.offset.x + current.x * this.zoom;
+            const preferredY = this.canvas.height / 2 + this.offset.y + current.y * this.zoom;
+            const { x: markerX, y: markerY } = this.placeFleetMarker(preferredX, preferredY, labelWidth, occupied);
+            current.x += this.screenToWorld(markerX - preferredX);
+            current.y += this.screenToWorld(markerY - preferredY);
+            if (Math.hypot(current.x - anchor.x, current.y - anchor.y) > .001) {
+                ctx.beginPath();
+                ctx.moveTo(anchor.x, anchor.y);
+                ctx.lineTo(current.x, current.y);
+                ctx.stroke();
+            }
+            this.registerMapObject("fleet", fleet.id, current.x, current.y, this.screenToWorld(12), {
+                label: { left: markerX - labelWidth / 2, right: markerX + labelWidth / 2, top: markerY - 25, bottom: markerY - 8 }
+            });
+            const next = this.mapFleetPhysicalPoint(
+                this.interpolateFleetPhysicalPoint(start, end, Math.min(1, progress + 0.002))
+            );
+            const direction = stationary ? 0 : Math.atan2(next.y - anchor.y, next.x - anchor.x);
+            this.drawFleetMarker(ctx, current, direction, stationary, fleetLabel, color);
             ctx.restore();
         }
+        return occupied;
     }
 
 
@@ -590,8 +804,9 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
         // Орбитальные координаты масштабируются через ctx.scale(this.zoom),
         // поэтому backing buffer соответствует viewport, а не диаметру мира.
-        this.canvas.width = width;
-        this.canvas.height = height;
+        // Даже присваивание прежнего размера очищает backing buffer canvas.
+        if (this.canvas.width !== width) this.canvas.width = width;
+        if (this.canvas.height !== height) this.canvas.height = height;
 
     }
 
@@ -603,6 +818,12 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         this.starSprites = this.starSprites || {};
         this.gasGiantSprites = this.gasGiantSprites || {};
         this.gasGiantRingSprites = this.gasGiantRingSprites || {};
+        if (!this.debrisSprite) {
+            const image = new Image();
+            promises.push(new Promise(resolve => { image.onload = resolve; image.onerror = resolve; }));
+            image.src = "/images/planets/galaxy/debris-ring-v2.png";
+            this.debrisSprite = image;
+        }
 
         // === Загрузка планет ===
         for (const p of planets) {
@@ -689,6 +910,15 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     generateAsteroidBelt(orbitId, options) {
 
         const { radius, beltWidth, sites = [] } = options;
+        const motionSite = sites.find(
+            (site) => Number(site.site_type) === this.resourceSiteTypes.ASTEROID_SECTOR
+        ) || null;
+        const previous = this.asteroidBelts[orbitId];
+        if (previous?.radius === radius && previous.beltWidth === beltWidth) {
+            // Меняем authoritative опору движения, но не случайные частицы/фазу.
+            previous.motionSite = motionSite;
+            return;
+        }
 
         const baseDensity = 0.25;
         // Тысячи отдельных drawImage на каждом кадре блокируют UI при смене
@@ -723,10 +953,8 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             });
         }
 
-        const motionSite = sites.find(
-            (site) => Number(site.site_type) === this.resourceSiteTypes.ASTEROID_SECTOR
-        ) || null;
         this.asteroidBelts[orbitId] = {
+            radius,
             asteroids,
             motionSite,
             beltWidth,
@@ -873,6 +1101,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             ctx.fillStyle = "rgba(183, 231, 242, 0.72)";
             ctx.fillText(`С${site.sector}`, x, y);
             ctx.restore();
+            this.registerMapObject("sector", site.id, x, y, this.screenToWorld(13));
         }
     }
 
@@ -909,7 +1138,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             ringRotation: ((((Number(orbitId) || 0) * 37) % 31) - 15) * Math.PI / 180,
             // Fallback для старого server response. При наличии site угол на
             // каждом кадре рассчитывается из server time.
-            deg: Math.random() * 360
+            deg: this.gasGiants[orbitId]?.deg ?? Math.random() * 360
         };
     }
 
@@ -957,6 +1186,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         const rad = (angle * Math.PI) / 180;
         const x = giant.radius * Math.cos(rad);
         const y = giant.radius * Math.sin(rad);
+        this.registerMapObject("gas", giant.orbitId, x, y, radius + this.screenToWorld(5));
 
         // Дальняя половина отдельного ring-спрайта рисуется за планетой.
         const hasRingSprite = this.drawGasGiantRingHalf(giant, x, y, diameter, false);
@@ -1013,6 +1243,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         const h = this.canvas.height;
         const cx = w / 2;
         const cy = h / 2;
+        this.mapObjects = [];
 
         ctx.clearRect(0, 0, w, h);
 
@@ -1071,8 +1302,8 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             } else if (orbit.type == 2) {
                 ctx.beginPath();
                 ctx.arc(0, 0, rad, 0, 2 * Math.PI);
-                ctx.strokeStyle = "rgba(0,0,255,0.55)";
-                ctx.lineWidth = this.screenToWorld(1.8);
+                ctx.strokeStyle = "rgba(104,151,207,0.36)";
+                ctx.lineWidth = this.screenToWorld(1.1);
                 ctx.stroke();
 
                 const giant = this.gasGiants?.[orbit.orbit];
@@ -1091,19 +1322,31 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
                 ctx.restore();
 
             } else {
+                const isFree = this.freeOrbitsOpen && this.freeOrbitIds.has(Number(orbit.orbit));
+                const isSelected = isFree && Number(orbit.orbit) === this.selectedFreeOrbit;
+                ctx.save();
                 ctx.beginPath();
                 ctx.arc(0, 0, rad, 0, 2 * Math.PI);
-                ctx.strokeStyle = "rgba(180,215,255,0.22)";
-                ctx.lineWidth = this.screenToWorld(0.85);
+                ctx.strokeStyle = isSelected ? "rgba(130,235,145,0.95)"
+                    : isFree ? "rgba(102,187,106,0.45)" : "rgba(180,215,255,0.22)";
+                ctx.lineWidth = this.screenToWorld(isSelected ? 2.2 : isFree ? 1.1 : 0.85);
+                if (isSelected) {
+                    ctx.shadowColor = "rgba(102,187,106,0.65)";
+                    ctx.shadowBlur = 6;
+                }
                 ctx.stroke();
+                ctx.restore();
             }
         }
+
+        this.drawSpaceDebris(ctx);
 
         // === Получаем текущее серверное время ===
         const serverNow = GameServerTime.now(); // float, например 1761326451.2070699
 
 
         for (const p of this.Planets) {
+            if (Number(p.planet_type) === 3) continue;
             const orbit = this.orbitMap[p.planet];
             if (!orbit) continue;
             const dist = this.orbitUeToPx(orbit.distance);
@@ -1123,8 +1366,10 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
             const diameter = this.screenToWorld(this.getPlanetSizePx(p.size));
             const radius = diameter / 2;
+            // Центральная область планеты имеет приоритет над кольцом обломков.
 
             const img = this.planetImages[p.image];
+            this.drawPlanetDebris(ctx, p, x, y, radius);
             ctx.save();
             ctx.beginPath();
             ctx.arc(x, y, radius + this.screenToWorld(p.OwnPlanet ? 3.5 : 2), 0, 2 * Math.PI);
@@ -1144,12 +1389,111 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             }
             ctx.restore();
 
+            this.registerMapObject("planet", p.id, x, y, radius + this.screenToWorld(3));
+            this.drawPlanetMoon(ctx, p, x, y, radius);
+
             this.renderPlanetsNamePosition(p, x, y, radius, cx, cy)
 
         }
 
-        this.drawFlyingFleets(ctx, serverNow);
+        const fleetLabels = this.drawFlyingFleets(ctx, serverNow);
+        this.drawSensorContacts(ctx, serverNow, fleetLabels);
 
+        ctx.restore();
+    }
+
+    drawSpaceDebris(ctx) {
+        for (const field of this.SpaceDebris) {
+            const position = this.mapFleetPhysicalPoint(field.coordinate);
+            if (!position || Number(field.metal) + Number(field.crystal) <= 0) continue;
+            const unit = this.screenToWorld(1);
+            ctx.save();
+            ctx.translate(position.x, position.y);
+            ctx.scale(unit, unit);
+            const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, 17);
+            glow.addColorStop(0, "rgba(170,190,215,.28)");
+            glow.addColorStop(1, "rgba(170,190,215,0)");
+            ctx.fillStyle = glow;
+            ctx.fillRect(-17, -17, 34, 34);
+            [[-7, -3, 4], [1, -6, 3], [6, 1, 4], [-3, 5, 3], [4, 7, 2]].forEach(([x, y, r], i) => {
+                ctx.beginPath();
+                ctx.moveTo(x - r, y);
+                ctx.lineTo(x - r / 3, y - r);
+                ctx.lineTo(x + r, y - r / 2);
+                ctx.lineTo(x + r / 2, y + r);
+                ctx.closePath();
+                ctx.fillStyle = i % 2 ? "#94bdd9" : "#bdad91";
+                ctx.fill();
+                ctx.strokeStyle = "rgba(220,230,240,.65)";
+                ctx.lineWidth = .6;
+                ctx.stroke();
+            });
+            ctx.font = "10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#d9e3ee";
+            ctx.shadowColor = "#000";
+            ctx.shadowBlur = 3;
+            ctx.fillText(Lang.debris.Title, 0, 25);
+            ctx.restore();
+            this.registerMapObject("space_debris", field.id, position.x, position.y, this.screenToWorld(15));
+        }
+    }
+
+    getPlanetMoon(planet) {
+        if (Number(planet.planet_type) !== 1) return null;
+        return this.Planets.find(item => Number(item.planet_type) === 3
+            && Number(item.galaxy) === Number(planet.galaxy) && Number(item.system) === Number(planet.system)
+            && Number(item.planet) === Number(planet.planet)) || null;
+    }
+
+    drawPlanetMoon(ctx, planet, x, y, radius) {
+        const moon = this.getPlanetMoon(planet);
+        if (!moon) return;
+        const moonRadius = this.screenToWorld(6);
+        const moonX = x + radius + moonRadius + this.screenToWorld(5);
+        const moonY = y - radius * .6;
+        const image = this.planetImages[moon.image];
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#abb5bd";
+        ctx.fill();
+        if (this.isImageLoaded(image)) ctx.drawImage(image, moonX - moonRadius, moonY - moonRadius, moonRadius * 2, moonRadius * 2);
+        ctx.strokeStyle = moon.OwnPlanet ? "#64e1ff" : "#aebed0";
+        ctx.lineWidth = this.screenToWorld(1);
+        ctx.stroke();
+        ctx.restore();
+        // Смещение только визуальное: физические координаты остаются координатами планеты.
+        this.registerMapObject("planet", moon.id, moonX, moonY, moonRadius);
+    }
+
+    drawPlanetDebris(ctx, planet, x, y, radius) {
+        if (Number(planet.planet_type) !== 1
+            || !(Number(planet.Debris?.metal || 0) + Number(planet.Debris?.crystal || 0) > 0)) return;
+        // Графический слой принадлежит планете: тот же x/y, без отдельной скорости.
+        // Прозрачный центр занимает около 70% диаметра спрайта.
+        // Фрагменты располагаются снаружи планеты и её рамки, не под ними.
+        const outerRadius = (radius + this.screenToWorld(6)) / 0.7;
+        const width = outerRadius * 2;
+        this.registerMapObject("debris", planet.id, x, y, outerRadius + this.screenToWorld(3), {
+            innerRadius: (radius + this.screenToWorld(3)) * this.zoom
+        });
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.globalAlpha = 0.92;
+        if (this.isImageLoaded(this.debrisSprite)) {
+            ctx.drawImage(this.debrisSprite, -outerRadius, -outerRadius, width, width);
+        } else {
+            ctx.fillStyle = "#c3a989";
+            for (let i = 0; i < 20; i++) {
+                const angle = i * Math.PI * 2 / 20;
+                const orbitRadius = radius + this.screenToWorld(6 + i % 3);
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle) * orbitRadius, Math.sin(angle) * orbitRadius,
+                    this.screenToWorld(0.8 + (i % 3) * 0.2), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
         ctx.restore();
     }
 
@@ -1197,10 +1541,12 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         const startZoom = this.zoom;
         const delta = targetZoom - startZoom;
         const startTime = performance.now();
-        const renderVersion = this.renderVersion;
+        // Snapshot той же системы не отменяет zoom. Его жизненный цикл
+        // меняется только при отмене/замене анимации, смене системы и Hide.
+        const zoomVersion = this.zoomAnimationVersion;
 
         const animateZoom = (now) => {
-            if (renderVersion !== this.renderVersion) return;
+            if (zoomVersion !== this.zoomAnimationVersion) return;
 
             const progress = Math.min((now - startTime) / duration, 1);
             // плавная интерполяция (ease-out)
@@ -1221,7 +1567,8 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     }
 
     cancelZoomAnimation() {
-        if (this.zoomAnimationFrameId) {
+        ++this.zoomAnimationVersion;
+        if (this.zoomAnimationFrameId !== null) {
             cancelAnimationFrame(this.zoomAnimationFrameId);
             this.zoomAnimationFrameId = null;
         }
@@ -1250,6 +1597,17 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     }
 
     Hide() {
+        this.navigationTarget = null;
+        this.sensorContactPositions.clear();
+        this.phalanxPending = null;
+        this.stopPhalanxClock();
+        this.closeObjectMenu();
+        $(document).off("click.galaxyObjectMenu keydown.galaxyObjectMenu");
+        $(window).off("resize.galaxyObjectMenu");
+        this.setFreeOrbitsOpen(false);
+        this.$System[0].removeEventListener("wheel", this.wheelHandler);
+        ToolTip.$Tip[0].removeEventListener("wheel", this.wheelHandler);
+        if (this.$System[0].contains(ToolTip.parent)) ToolTip.hide();
         super.Hide();
         this.renderVersion += 1;
         this.stopAnimation();
@@ -1263,19 +1621,11 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             return false;
         }
 
-        this.smoothZoomTo(this.minZoom, 250);
-        this.stopAnimation();
-        this.SystemShow = false;
-        this.$System.stop(true, true).fadeOut(250, () => {
-            this.SystemShow = false;
-        });
-
         const target = e.currentTarget;
         const id = target.id;
 
-
-        let Galaxy = this.System.galaxy;
-        let System = this.System.system;
+        let Galaxy = Number(this.$Content.Navigation.Galaxy.Input.val());
+        let System = Number(this.$Content.Navigation.System.Input.val());
 
         switch (id) {
             case "NavigationGalaxyNext":
@@ -1291,27 +1641,53 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
                 System -= 1;
                 break;
             case "NavigationOrbit":
-                Galaxy = this.$Content.Navigation.Galaxy.Input.val();
-                System = this.$Content.Navigation.System.Input.val();
+            case "NavigationGalaxyInput":
+            case "NavigationSystemInput":
                 break;
             default:
                 return;
-                break;
         }
 
+        if (!Number.isFinite(Galaxy) || !Number.isFinite(System)) return;
+        Galaxy = Math.max(1, Math.min(this.MaxGalaxy, Math.trunc(Galaxy)));
+        System = Math.max(1, Math.min(this.MaxSystem, Math.trunc(System)));
+        this.$Content.Navigation.Galaxy.Input.val(Galaxy);
+        this.$Content.Navigation.System.Input.val(System);
+        this.renderNavigation();
 
-        Galaxy = Math.max(1, Math.min(this.MaxGalaxy, Galaxy));
-        System = Math.max(1, Math.min(this.MaxSystem, System));
+        const navigationTarget = `${Galaxy}:${System}`;
+        if (this.navigationTarget === navigationTarget
+            || (id !== "NavigationOrbit" && this.navigationTarget === null
+                && Number(this.System.galaxy) === Galaxy && Number(this.System.system) === System)) return;
+        this.navigationTarget = navigationTarget;
 
+        this.closeObjectMenu();
+        this.setFreeOrbitsOpen(false);
+        this.smoothZoomTo(this.minZoom, 250);
+        this.stopAnimation();
+        this.SystemShow = false;
+        this.$System.stop(true, true).fadeOut(250, () => {
+            this.SystemShow = false;
+        });
 
         GameEvents.emit("SendServer", {
             mode: "galaxy",
+            // Карта уже скрывается сама. Отправка не должна зависеть от
+            // callback общего Overlay, который может отменить фоновый render.
+            NotOverlay: true,
             //action: act,
             data: {
                 'galaxy': Galaxy,
                 'system': System
             },
-            onSuccess: (message) => ShowPage.Show(message.mode, message),
+            onSuccess: (message) => {
+                this.navigationTarget = null;
+                ShowPage.Show(message.mode, message);
+            },
+            onError: (error) => {
+                this.navigationTarget = null;
+                Dialog.ErrorLoad(error.message);
+            },
             ...this.getRequestOptions({ latestKey: "galaxy" })
         });
     }
@@ -1320,18 +1696,42 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         //this.$Content.Buttons = {};
         this.$Content.Navigation = $("<div>").addClass("Navigation");
 
+        const coordinateInput = (event) => {
+            this.renderNavigation();
+            // Кнопка сама применит поля: blur перед её click не должен делать
+            // лишний переход (особенно перед переходом стрелкой).
+            if (event.type === "blur" && !$(event.relatedTarget).is(
+                "#NavigationOrbit, #NavigationGalaxyBlock button, #NavigationSystemBlock button"
+            )) this.NavigationEvent(event);
+        };
+        const coordinateKeydown = (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            this.NavigationEvent(event);
+        };
+
+        const navigationButton = (id, icon, label, onClick = this.NavigationEvent.bind(this)) => {
+            const $button = $("<button>", {
+                type: "button", id, class: `btn-box ${icon}`, "aria-label": label
+            }).ToolTip(label, { "max-width": "220px", "pointer-events": "none" });
+            return $button.on(isTouch ? "confirmed-click.galaxy" : "click.galaxy", onClick);
+        };
+
         this.$Content.Navigation.Galaxy = this.createDiv("", "NavigationGalaxyBlock", "GalaxyBlock");
 
-        this.$Content.Navigation.Galaxy.Prev = this.createDiv(
-            "", "NavigationGalaxyPrev", 'btn-box btn-box-left', this.NavigationEvent.bind(this));
+        this.$Content.Navigation.Galaxy.Prev = navigationButton(
+            "NavigationGalaxyPrev", "btn-box-left", "Предыдущая галактика");
 
-        this.$Content.Navigation.Galaxy.Next = this.createDiv(
-            "", "NavigationGalaxyNext", 'btn-box btn-box-right', this.NavigationEvent.bind(this));
+        this.$Content.Navigation.Galaxy.Next = navigationButton(
+            "NavigationGalaxyNext", "btn-box-right", "Следующая галактика");
 
         this.$Content.Navigation.Galaxy.Input = this.createInput(
-            'number', 'NavigationGalaxyInput', '', "InputNumber", this.renderNavigation.bind(this), this.System.galaxy, { min: 1, max: () => this.MaxGalaxy });
+            'number', 'NavigationGalaxyInput', '', "InputNumber", coordinateInput, this.System.galaxy, { min: 1, max: () => this.MaxGalaxy });
+        this.$Content.Navigation.Galaxy.Input.attr("aria-label", "Номер галактики");
+        this.$Content.Navigation.Galaxy.Input.on("keydown.galaxy", coordinateKeydown);
 
         this.$Content.Navigation.Galaxy.append(
+            this.createDiv("Галактика", "", "GalaxyNavLabel"),
             this.$Content.Navigation.Galaxy.Prev,
             this.$Content.Navigation.Galaxy.Input,
             this.$Content.Navigation.Galaxy.Next
@@ -1340,16 +1740,19 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
         this.$Content.Navigation.System = this.createDiv("", "NavigationSystemBlock", "SystemBlock");
 
-        this.$Content.Navigation.System.Prev = this.createDiv(
-            "", "NavigationSystemPrev", 'btn-box btn-box-left', this.NavigationEvent.bind(this));
+        this.$Content.Navigation.System.Prev = navigationButton(
+            "NavigationSystemPrev", "btn-box-left", "Предыдущая система");
 
-        this.$Content.Navigation.System.Next = this.createDiv(
-            "", "NavigationSystemNext", 'btn-box btn-box-right', this.NavigationEvent.bind(this));
+        this.$Content.Navigation.System.Next = navigationButton(
+            "NavigationSystemNext", "btn-box-right", "Следующая система");
 
         this.$Content.Navigation.System.Input = this.createInput(
-            'number', 'NavigationSystemInput', '', "InputNumber", this.renderNavigation.bind(this), this.System.system, { min: 1, max: () => this.MaxSystem });
+            'number', 'NavigationSystemInput', '', "InputNumber", coordinateInput, this.System.system, { min: 1, max: () => this.MaxSystem });
+        this.$Content.Navigation.System.Input.attr("aria-label", "Номер системы");
+        this.$Content.Navigation.System.Input.on("keydown.galaxy", coordinateKeydown);
 
         this.$Content.Navigation.System.append(
+            this.createDiv("Система", "", "GalaxyNavLabel"),
             this.$Content.Navigation.System.Prev,
             this.$Content.Navigation.System.Input,
             this.$Content.Navigation.System.Next
@@ -1357,9 +1760,18 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
         this.$Content.Navigation.Buttons = this.createDiv("", "NavigationButtonsBlock", "ButtonsBlock");
 
-        this.$Content.Navigation.Buttons.Orbit = this.createDiv(
-            "", "NavigationOrbit", 'btn-box btn-box-orbit', this.NavigationEvent.bind(this));
-        this.$Content.Navigation.Buttons.append(this.$Content.Navigation.Buttons.Orbit)
+        this.$Content.Navigation.Buttons.Orbit = navigationButton(
+            "NavigationOrbit", "btn-box-orbit", "Показать систему");
+        this.$Content.Navigation.Buttons.Fit = navigationButton(
+            "NavigationFit", "GalaxyMapFit", "Центрировать карту", () => {
+            this.offset.x = 0;
+            this.offset.y = 0;
+            this.calculateZoomFit();
+        });
+        this.$Content.Navigation.Buttons.append(
+            this.createDiv("Карта", "", "GalaxyNavLabel"),
+            this.$Content.Navigation.Buttons.Orbit, this.$Content.Navigation.Buttons.Fit
+        );
 
         this.$Content.Navigation.append(this.$Content.Navigation.Galaxy, this.$Content.Navigation.System, this.$Content.Navigation.Buttons);
 
@@ -1392,6 +1804,78 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         return new Intl.NumberFormat("ru-RU", { maximumFractionDigits }).format(number);
     }
 
+    getFreeOrbits() {
+        const occupied = new Set((this.Planets || []).map(planet => Number(planet.planet)));
+        // GalaxyOrbits: EMPTY=0. Тип орбиты не заменяет проверку
+        // занятости: в старых системах реальная планета могла остаться на EMPTY.
+        return (this.Orbits || []).filter(orbit => {
+            const id = Number(orbit.orbit);
+            return Number.isInteger(id) && id > 0 && id <= Number(this.System.max_orbits)
+                && Number(orbit.type) === 0
+                && !occupied.has(id);
+        }).sort((a, b) => Number(a.orbit) - Number(b.orbit));
+    }
+
+    setFreeOrbitsOpen(open) {
+        if (open) this.closeObjectMenu();
+        this.freeOrbitsOpen = Boolean(open);
+        if (!this.freeOrbitsOpen) this.selectedFreeOrbit = null;
+        this.$FreeOrbitsToggle.attr("aria-expanded", String(this.freeOrbitsOpen));
+        this.$FreeOrbitsBody.toggle(this.freeOrbitsOpen);
+        this.renderFreeOrbitSelection();
+    }
+
+    renderFreeOrbits() {
+        this.freeOrbits = this.getFreeOrbits();
+        this.freeOrbitIds = new Set(this.freeOrbits.map(orbit => Number(orbit.orbit)));
+        if (!this.freeOrbitIds.has(this.selectedFreeOrbit)) this.selectedFreeOrbit = null;
+        const existing = new Map(this.$FreeOrbitList.children().get().map(button => [Number(button.dataset.orbit), button]));
+        for (const [index, orbit] of this.freeOrbits.entries()) {
+            const id = Number(orbit.orbit);
+            const $button = existing.has(id) ? $(existing.get(id)) : $("<button>", {
+                type: "button", text: id, class: "GalaxyFreeOrbitButton",
+                "data-orbit": id, "aria-label": `Свободная орбита ${id}`
+            }).on("click.galaxyFreeOrbits", () => {
+                if (!this.freeOrbitsOpen || !this.freeOrbitIds.has(id)) return;
+                this.selectedFreeOrbit = id;
+                this.renderFreeOrbitSelection();
+            });
+            if (this.$FreeOrbitList[0].children[index] !== $button[0]) this.$FreeOrbitList[0].insertBefore($button[0], this.$FreeOrbitList[0].children[index] || null);
+            existing.delete(id);
+        }
+        existing.forEach(button => $(button).remove());
+        this.renderFreeOrbitSelection();
+    }
+
+    renderFreeOrbitSelection() {
+        this.$FreeOrbitList.find(".GalaxyFreeOrbitButton").each((_, button) => {
+            const selected = Number(button.dataset.orbit) === this.selectedFreeOrbit;
+            $(button).toggleClass("selected", selected).attr("aria-pressed", String(selected));
+        });
+        if (!this.$FreeOrbitSelection.children().length) {
+            this.$FreeOrbitSelection.append(
+                this.createDiv("", "", "GalaxyFreeOrbitTitle"),
+                $("<button>", { type: "button", text: "Колонизировать",
+                    class: "GalaxyPlanetTooltipMission Mission_COLONIZE GalaxyFreeOrbitColonize" })
+                    .on("click.galaxyFreeOrbits", () => {
+                        const id = this.selectedFreeOrbit;
+                        const mission = (this.FleetMissions || []).find(item => item.key === "COLONIZE");
+                        if (!mission || !this.freeOrbitsOpen || !this.getFreeOrbits().some(item => Number(item.orbit) === id)) return;
+                        this.openFleetTarget({ galaxy: Number(this.System.galaxy), system: Number(this.System.system), planet: id, planet_type: 1 }, Number(mission.id));
+                    }),
+                this.createDiv("Доступность миссии проверяется для выбранного флота", "", "GalaxyFreeOrbitHint")
+            );
+        }
+        const orbit = this.freeOrbits.find(item => Number(item.orbit) === this.selectedFreeOrbit);
+        const mission = (this.FleetMissions || []).find(item => item.key === "COLONIZE");
+        this.$FreeOrbitSelection.find(".GalaxyFreeOrbitTitle").text(orbit
+            ? `Свободная орбита [${this.System.galaxy}:${this.System.system}:${orbit.orbit}]`
+            : this.freeOrbits.length ? "Выберите орбиту" : "В системе нет свободных орбит");
+        this.$FreeOrbitSelection.find(".GalaxyFreeOrbitColonize").toggle(Boolean(orbit))
+            .attr("data-mission-id", mission?.id).prop("disabled", !mission);
+        this.$FreeOrbitSelection.find(".GalaxyFreeOrbitHint").toggle(Boolean(orbit));
+    }
+
     renderSystemInfo() {
         if (!this.$SystemInfo || !this.$Legend) return;
 
@@ -1408,16 +1892,30 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
                 this.createDiv(value, "", "GalaxySystemInfoValue")
             );
 
-        this.$SystemInfo.empty().append(
-            this.createDiv(`Система ${this.System.galaxy}:${this.System.system}`, "", "GalaxySystemInfoTitle"),
-            row("Звезда", `${star.type || this.System.star_type || "—"}`),
-            row("Температура", `${this.formatGalaxyNumber(star.temperature, 0)} K`),
-            row("Масса", `${this.formatGalaxyNumber(star.mass)} M☉`),
-            row("Радиус", `${this.formatGalaxyNumber(star.radius)} R☉`),
-            row("Светимость", `${this.formatGalaxyNumber(star.luminosity)} L☉`),
-            row("Планеты", `${orbits.occupied ?? this.Planets.length} / ${orbits.ordinary ?? this.System.max_orbits ?? "—"}`),
-            row("Вращение", direction)
-        );
+        if (!this.$SystemInfo.children().length) this.$SystemInfo.append($("<summary>").append(
+            this.createDiv("", "", "GalaxySystemInfoTitle"),
+            this.createDiv("", "", "GalaxySystemInfoSubtitle")
+        ), this.createDiv("", "", "GalaxySystemInfoBody"));
+        this.$SystemInfo.find(".GalaxySystemInfoTitle").text(
+            this.System.name
+                ? `${this.System.name} · ${this.System.galaxy}:${this.System.system}`
+                : `Система ${this.System.galaxy}:${this.System.system}`);
+        this.$SystemInfo.find(".GalaxySystemInfoSubtitle").text(`Звезда ${star.type || this.System.star_type || "—"} · ${orbits.occupied ?? this.Planets.length} / ${orbits.ordinary ?? this.System.max_orbits ?? "—"} планет`);
+        const values = [
+            ["Звезда", `${star.name ? `${star.name} · ` : ""}${star.type || this.System.star_type || "—"}`],
+            ["Температура", `${this.formatGalaxyNumber(star.temperature, 0)} K`],
+            ["Масса", `${this.formatGalaxyNumber(star.mass)} M☉`],
+            ["Радиус", `${this.formatGalaxyNumber(star.radius)} R☉`],
+            ["Светимость", `${this.formatGalaxyNumber(star.luminosity)} L☉`],
+            ["Планеты", `${orbits.occupied ?? this.Planets.length} / ${orbits.ordinary ?? this.System.max_orbits ?? "—"}`],
+            ["Вращение", direction]
+        ];
+        const $body = this.$SystemInfo.find(".GalaxySystemInfoBody");
+        values.forEach(([label, value], index) => {
+            let $row = $body.children().eq(index);
+            if (!$row.length) $body.append($row = row(label, value));
+            $row.find(".GalaxySystemInfoValue").text(value);
+        });
 
         const legendItem = (className, label) =>
             this.createDiv("", "", "GalaxyLegendItem").append(
@@ -1425,20 +1923,275 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
                 this.createDiv(label, "", "GalaxyLegendLabel")
             );
 
-        this.$Legend.empty().append(
-            legendItem("GalaxyLegendPlanet", "Планета"),
-            legendItem("GalaxyLegendAsteroids", "Пояс астероидов"),
-            legendItem("GalaxyLegendAsteroidSector", "Ресурсный сектор"),
-            legendItem("GalaxyLegendGas", "Газовый гигант"),
-            legendItem("GalaxyLegendFleet", "Свой флот"),
-            legendItem("GalaxyLegendEdge", "Граница системы"),
-            legendItem("GalaxyLegendExpedition", "Орбита экспедиции")
+        if (!this.$Legend.children().length) this.$Legend.append(
+            $("<summary>").text("Обозначения"),
+            this.createDiv("", "", "GalaxyLegendBody").append(
+                legendItem("GalaxyLegendPlanet", "Планета"),
+                legendItem("GalaxyLegendDebris", Lang.debris.Title),
+                legendItem("GalaxyLegendAsteroids", "Пояс астероидов"),
+                legendItem("GalaxyLegendAsteroidSector", "Ресурсный сектор"),
+                legendItem("GalaxyLegendGas", "Газовый гигант"),
+                legendItem("GalaxyLegendFleet", "Свой флот"),
+                legendItem("GalaxyLegendIncomingFleet", "Входящий флот"),
+                legendItem("GalaxyLegendEdge", "Граница системы"),
+                legendItem("GalaxyLegendExpedition", "Орбита экспедиции")
+            )
         );
+        this.$Legend.find(".GalaxyLegendDebris").next().text(Lang.debris.Title);
+    }
+
+    getObjectMenuData(kind, id) {
+        if (kind === "planet" || kind === "debris") {
+            const planet = (this.Planets || []).find(item => Number(item.id) === id);
+            if (kind === "debris" && !(Number(planet?.Debris?.metal || 0) + Number(planet?.Debris?.crystal || 0) > 0)) return null;
+            return planet || null;
+        }
+        if (kind === "space_debris") return this.SpaceDebris.find(item => Number(item.id) === id) || null;
+        if (kind === "fleet") return this.FlyingFleets.find(item => Number(item.id) === id) || null;
+        if (kind === "contact") return this.SensorContacts.find(item => Number(item.id) === id && Number(item.retainUntil) > GameServerTime.now()) || null;
+        if (kind === "gas") return this.gasGiants?.[id] || null;
+        if (kind === "sector") return this.ResourceSites.find(item => Number(item.id) === id) || null;
+        return null;
+    }
+
+    openObjectMenu(kind, id, event) {
+        event?.stopPropagation();
+        id = Number(id);
+        if (!this.pageActive || !this.SystemShow || !this.getObjectMenuData(kind, id)) return;
+        if (this.selectedMapObject?.kind === kind && this.selectedMapObject.id === id) {
+            this.closeObjectMenu();
+            return;
+        }
+        this.setFreeOrbitsOpen(false);
+        if (this.$System[0].contains(ToolTip.parent)) ToolTip.hide();
+        this.selectedMapObject = { kind, id };
+        this.objectMenuTrigger = event?.currentTarget || null;
+        this.objectMenuAnchor = {
+            x: event?.clientX || this.objectMenuTrigger?.getBoundingClientRect().right || this.$System[0].getBoundingClientRect().right - 300,
+            y: event?.clientY || this.objectMenuTrigger?.getBoundingClientRect().top || this.$System[0].getBoundingClientRect().top + 20
+        };
+        this.renderObjectMenu();
+        if (event?.detail === 0) this.$ObjectMenu.find("button").first().trigger("focus");
+    }
+
+    closeObjectMenu(restoreFocus = false) {
+        this.selectedMapObject = null;
+        this.$ObjectMenu?.hide();
+        this.$System.find(".GalaxyPlanetName").attr("aria-expanded", "false").removeClass("GalaxyPlanetSelected");
+        if (restoreFocus && this.objectMenuTrigger?.isConnected) this.objectMenuTrigger.focus({ preventScroll: true });
+    }
+
+    positionObjectMenu() {
+        if (!this.selectedMapObject || !this.$ObjectMenu?.is(":visible")) return;
+        const rect = this.$System[0].getBoundingClientRect();
+        const left = Math.max(0, rect.left) + 10;
+        const right = Math.min(innerWidth, rect.right) - 10;
+        const top = Math.max(0, rect.top) + 10;
+        const bottom = Math.min(innerHeight, rect.bottom) - 10;
+        this.$ObjectMenu.css("max-height", Math.max(100, bottom - top));
+        const width = this.$ObjectMenu.outerWidth();
+        const height = this.$ObjectMenu.outerHeight();
+        let x = this.objectMenuAnchor.x + 18;
+        if (x + width > right) x = this.objectMenuAnchor.x - width - 18;
+        x = Math.max(left, Math.min(right - width, x));
+        const y = Math.max(top, Math.min(bottom - height, this.objectMenuAnchor.y - 35));
+        this.$ObjectMenu.css({ left: x - rect.left, top: y - rect.top });
+    }
+
+    renderObjectMenu() {
+        if (!this.selectedMapObject) return;
+        const { kind, id } = this.selectedMapObject;
+        const object = this.getObjectMenuData(kind, id);
+        if (!object) { this.closeObjectMenu(); return; }
+        const key = `${kind}:${id}`;
+        const $existing = this.objectMenuKey === key ? this.$ObjectMenuBody.children().first() : null;
+        let $content;
+        if (kind === "planet") $content = this.createPlanetCard(object, $existing);
+        else if (kind === "debris") $content = this.createDebrisCard(object, $existing);
+        else if (kind === "space_debris") $content = this.createSpaceDebrisCard(object, $existing);
+        else if (kind === "fleet") $content = this.createFleetCard(object, $existing);
+        else if (kind === "contact") {
+            $content = this.createSensorContactCard(object, $existing);
+            this.cardField($content, "intercept", "button", "btn-info GalaxyPlanetTooltipPlayerAction", "Перехват")
+                .attr("type", "button").prop("disabled", !this.sensorContactFresh(object))
+                .off("click.galaxy").on("click.galaxy", () => this.openFleetTarget({ type: 3, fleetId: Number(object.id) }, 1));
+            this.$ObjectMenu.data("sensorFresh", this.sensorContactFresh(object));
+        }
+        else $content = this.createResourceSiteCard(kind, object, $existing);
+        if (!$existing) this.$ObjectMenuBody.empty().append($content);
+        this.objectMenuKey = key;
+        this.$ObjectMenu.css("display", "flex");
+        this.$System.find(".GalaxyPlanetName").each((_, element) => {
+            const selected = kind === "planet" && Number(element.dataset.planetId) === id;
+            $(element).attr("aria-expanded", String(selected)).toggleClass("GalaxyPlanetSelected", selected);
+        });
+        this.positionObjectMenu();
+    }
+
+    createDebrisCard(planet, $card = null) {
+        const coordinate = `[${planet.galaxy}:${planet.system}:${planet.planet}]`;
+        $card ||= $("<div>").addClass("GalaxyObjectCard DebrisTooltip");
+        this.cardField($card, "type", "div", "GalaxyObjectCardType", Lang.debris.Title);
+        this.cardField($card, "title", "div", "GalaxyObjectCardTitle", coordinate);
+        for (const [id, amount] of [[901, planet.Debris.metal], [902, planet.Debris.crystal]]) {
+            this.cardField($card, id, "div", `ResBox icon${id}`, `${Lang.tech[id]}: ${humanNumber(amount, true, 3)}`);
+        }
+        this.cardField($card, "recycle", "button", "GalaxyPlanetTooltipMission Mission_RECYCLE", Lang.debris.ChooseTarget)
+                .attr("type", "button").off("click.galaxy").on("click.galaxy", () => {
+                    const mission = (this.FleetMissions || []).find(item => item.key === "RECYCLE");
+                    this.openFleetTarget({ ...planet, planet_type: 2 }, mission?.id ?? null);
+                });
+        return $card;
+    }
+
+    createSpaceDebrisCard(field, $card = null) {
+        const point = field.coordinate;
+        $card ||= $("<div>", { class: "GalaxyObjectCard DebrisTooltip" });
+        this.cardField($card, "type", "div", "GalaxyObjectCardType", Lang.debris.Title);
+        this.cardField($card, "title", "div", "GalaxyObjectCardTitle", `[${point.galaxy}:${point.system}] ${number_format(point.distance, 2)} / ${number_format(point.angle, 2)}°`);
+        for (const [id, amount] of [[901, field.metal], [902, field.crystal]]) {
+            this.cardField($card, id, "div", `ResBox icon${id}`, `${Lang.tech[id]}: ${humanNumber(amount, true, 3)}`);
+        }
+        this.cardField($card, "recycle", "button", "GalaxyPlanetTooltipMission Mission_RECYCLE", Lang.debris.ChooseTarget)
+                .attr("type", "button").off("click.galaxy").on("click.galaxy", () => {
+                    const mission = (this.FleetMissions || []).find(item => item.key === "RECYCLE");
+                    this.openFleetTarget(point, mission?.id ?? null);
+                });
+        return $card;
+    }
+
+    createResourceSiteCard(kind, object, $card = null) {
+        const orbit = kind === "gas" ? object.orbitId : object.orbit;
+        const site = kind === "gas" ? object.site : object;
+        const survey = site?.survey;
+        $card ||= $("<div>", { class: "GalaxyObjectCard" });
+        this.cardField($card, "type", "div", "GalaxyObjectCardType", "Ресурсный объект");
+        this.cardField($card, "title", "div", "GalaxyObjectCardTitle", kind === "gas"
+                ? (site?.name || object.name || "Газовый гигант")
+                : `${site?.name || "Пояс астероидов"} · сектор ${object.sector}`);
+        this.cardField($card, "coordinates", "div", "GalaxyPlanetTooltipCoordinates", `[${this.System.galaxy}:${this.System.system}:${orbit}]`);
+        this.cardField($card, "survey", "div", "GalaxyObjectCardNote", survey
+                ? `Изучено: ${number_format(survey.coverage * 100, 2)}% · ${formatTimestamp(survey.observedAt, "datetime")}${survey.stale ? " · снимок устарел" : ""}`
+                : "Объект не обследован. Запасы неизвестны.");
+        for (const id of [901, 902, 903]) {
+            const amount = survey?.reserve?.[id] || 0;
+            this.cardField($card, id, "div", "ResBox icon" + id, `${Lang.tech[id]}: ${number_format(amount)} · личный известный резерв`).toggle(amount > 0);
+        }
+        const target = { type: 1, galaxy: Number(this.System.galaxy), system: Number(this.System.system),
+            orbit: Number(orbit), objectType: kind === "gas" ? 4 : 5, siteId: Number(site?.id) };
+        const action = (key, mission, label, visible) => this.cardField($card, key, "button", `GalaxyPlanetTooltipMission Mission_${mission}`, label)
+            .attr("type", "button").toggle(Boolean(visible)).off("click.galaxy")
+            .on("click.galaxy", () => this.openFleetTarget(target, ({ RESEARCH: 25, MINING: 50, RELOCATE: 11, CAPTURE: 45, SPY: 20 })[mission]));
+        action("surveyAction", "RESEARCH", "Обследовать", site);
+        const control = site?.control;
+        this.cardField($card, "control", "div", "GalaxyObjectCardNote", control ? `Контроль: ${control.ownerName}${control.isOwn ? " · ваша база" : ""}` : "Свободный ресурсный объект").toggle(Boolean(site?.basesEnabled));
+        action("mining", "MINING", "Добывать", site?.basesEnabled && (!control || control.isOwn) && survey?.coverage > 0);
+        action("base", control?.isOwn ? "RELOCATE" : "CAPTURE", control?.isOwn ? "Передислоцировать" : control ? "Захватить" : "Занять базу", site?.basesEnabled);
+        action("spy", "SPY", "Шпионить", site?.basesEnabled && control && !control.isOwn);
+        this.cardField($card, "hint", "small", "GalaxyObjectCardNote", site?.basesEnabled
+            ? "Добыча — в пределах обследованного резерва. Чужую базу добыча автоматически не атакует." : "Добыча и захват пока недоступны.");
+        return $card;
+    }
+
+    getSensorCourseLine(contact) {
+        if (typeof contact.course !== "number" || !Number.isFinite(contact.course)) return null;
+        const point = contact.position, angle = point.angle * Math.PI / 180;
+        const x = point.distance * Math.cos(angle), y = point.distance * Math.sin(angle);
+        const course = contact.course * Math.PI / 180, dx = Math.cos(course), dy = Math.sin(course);
+        const radius = Math.max(1, point.distance, Number(this.System?.max_distance) || 0,
+            ...(this.Orbits || []).map(orbit => Number(orbit.distance) || 0));
+        const projection = x * dx + y * dy;
+        const half = Math.sqrt(Math.max(0, projection * projection + radius * radius - x * x - y * y));
+        const polar = (x, y) => ({ distance: Math.hypot(x, y), angle: Math.atan2(y, x) * 180 / Math.PI });
+        // Концы — пересечения линии курса с краем отображения, НЕ цель/старт флота.
+        return { start: polar(x + dx * (-projection - half), y + dy * (-projection - half)),
+            end: polar(x + dx * (-projection + half), y + dy * (-projection + half)), next: polar(x + dx, y + dy) };
+    }
+
+    getSensorContactPosition(contact, now) {
+        const route = this.sensorContactRoute(contact);
+        const key = route ? `${contact.observedAt}:${route.startsAt}:${route.endsAt}` : null;
+        const previous = this.sensorContactPositions.get(Number(contact.id));
+        if (!route) {
+            this.sensorContactPositions.delete(Number(contact.id));
+            return contact.position;
+        }
+        // Потеря контакта замораживает уже показанную точку, а не откатывает её.
+        if (!this.sensorContactFresh(contact)) return previous?.key === key ? previous.position : contact.position;
+        const until = Math.min(Number(now), Number(contact.freshUntil), Number(route.endsAt));
+        const progress = Math.max(0, Math.min(1, (until - Number(route.startsAt)) / (Number(route.endsAt) - Number(route.startsAt))));
+        const position = this.interpolateFleetPhysicalPoint(route.motionStart, route.motionEnd, progress);
+        this.sensorContactPositions.set(Number(contact.id), { key, position });
+        return position;
+    }
+
+    drawSensorContacts(ctx, now, occupied = []) {
+        const retained = new Set(this.SensorContacts.filter(c => Number(c.retainUntil) > now).map(c => Number(c.id)));
+        for (const id of this.sensorContactPositions.keys()) if (!retained.has(id)) this.sensorContactPositions.delete(id);
+        // Уже открытая карточка тоже стареет без нового server response.
+        if (this.selectedMapObject?.kind === "contact") {
+            const contact = this.getObjectMenuData("contact", this.selectedMapObject.id);
+            if (!contact || this.$ObjectMenu.data("sensorFresh") !== this.sensorContactFresh(contact)) this.renderObjectMenu();
+        }
+        for (const contact of this.SensorContacts) {
+            if (Number(contact.retainUntil) <= now || this.FlyingFleets.some(f => Number(f.id) === Number(contact.id))) continue;
+            const fresh = this.sensorContactFresh(contact);
+            const color = fresh ? "rgba(234,196,90,0.95)" : "rgba(155,163,177,0.95)";
+            const route = this.sensorContactRoute(contact);
+            const position = this.getSensorContactPosition(contact, now);
+            const line = route ? { start: route.motionStart, end: route.motionEnd, next: route.motionEnd } : this.getSensorCourseLine(contact);
+            const current = this.mapFleetPhysicalPoint(position), anchor = { ...current };
+            const label = `${contact.owner_name || "Контакт"} #${contact.id}${fresh ? "" : " · отметка"}`;
+            const labelWidth = Math.max(44, label.length * 7);
+            const preferredX = this.canvas.width / 2 + this.offset.x + current.x * this.zoom;
+            const preferredY = this.canvas.height / 2 + this.offset.y + current.y * this.zoom;
+            const marker = this.placeFleetMarker(preferredX, preferredY, labelWidth, occupied);
+            current.x += this.screenToWorld(marker.x - preferredX);
+            current.y += this.screenToWorld(marker.y - preferredY);
+            ctx.save();
+            ctx.strokeStyle = color.replace("0.95", "0.42");
+            ctx.lineWidth = this.screenToWorld(1.3);
+            if (line) this.drawFleetPath(ctx, line.start, line.end, color);
+            if (Math.hypot(current.x - anchor.x, current.y - anchor.y) > .001) {
+                ctx.beginPath();ctx.moveTo(anchor.x, anchor.y);ctx.lineTo(current.x, current.y);ctx.stroke();
+            }
+            const next = line ? this.mapFleetPhysicalPoint(line.next) : anchor;
+            const direction = line ? Math.atan2(next.y - anchor.y, next.x - anchor.x) : 0;
+            this.drawFleetMarker(ctx, current, direction, !line, label, color);
+            ctx.restore();
+            this.registerMapObject("contact", contact.id, current.x, current.y, this.screenToWorld(12), {
+                label: { left: marker.x - labelWidth / 2, right: marker.x + labelWidth / 2, top: marker.y - 25, bottom: marker.y - 8 }
+            });
+        }
+    }
+
+    createFleetCard(fleet, $card = null) {
+        const mission = (this.FleetMissions || []).find(item => Number(item.id) === Number(fleet.mission));
+        const coordinate = point => point?.orbit ? `[${point.galaxy}:${point.system}:${point.orbit}]` : "—";
+        const state = fleet.blocked_reason ? `Приостановлен: ${fleet.blocked_reason}`
+            : this.isFleetStationary(fleet) ? "Стоянка / удержание"
+                : `${fleet.is_return ? "Возврат" : "К цели"} · прибытие на участок: ${formatTimestamp(fleet.end_time, "timedate")}`;
+        $card ||= $("<div>", { class: "GalaxyObjectCard" });
+        this.cardField($card, "type", "div", "GalaxyObjectCardType", fleet.is_incoming ? "Входящий флот" : "Свой флот");
+        this.cardField($card, "title", "div", "GalaxyObjectCardTitle", fleet.name || `Флот #${fleet.id}`);
+        this.cardField($card, "owner", "div", "", fleet.owner_name || "—");
+        this.cardField($card, "mission", "div", "", mission ? Lang[mission.lang] : "—");
+        this.cardField($card, "route", "div", "GalaxyObjectCardRoute", `${coordinate(fleet.mission_start)} → ${coordinate(fleet.mission_target)}`);
+        this.cardField($card, "state", "div", "GalaxyObjectCardNote", state);
+        this.cardField($card, "open", "button", "GalaxyPlanetTooltipPlayerAction", "Открыть страницу флота")
+                .attr("type", "button").toggle(Boolean(fleet.is_own)).off("click.galaxy").on("click.galaxy", () => {
+                    this.closeObjectMenu();
+                    GameEvents.emit("SendServer", { mode: "fleets" });
+                });
+        this.cardField($card, "intercept", "button", "btn-info GalaxyPlanetTooltipPlayerAction", "Перехват")
+            .attr("type", "button").toggle(!fleet.is_own && Boolean(fleet.is_incoming) && Number(fleet.command?.type) === 10 && !fleet.battle)
+            .off("click.galaxy").on("click.galaxy", () => this.openFleetTarget({ type: 3, fleetId: Number(fleet.id) }, 1));
+        return $card;
     }
 
     CreatePlanetsNames() {
         this.$Content.PlanetsNames = {};
-        for (const p of this.Planets) {
+        for (const p of this.Planets.filter(planet => Number(planet.planet_type) !== 3)) {
             /*const orbit = this.orbitMap[p.planet];
             if (!orbit) continue;*/
             //const dist = this.orbitUeToPx(orbit.distance);
@@ -1458,17 +2211,20 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             'PlanetName' + planet.planet,
             `PlanetName${planet.OwnPlanet ? " OwnPlanet" : ""}`
         );
-        $name.Player = this.createDiv(planet.UserName || "", "", "GalaxyPlayerName box");
-        $name.Planet = this.createDiv(planet.name, "", "GalaxyPlanetName box");
-        $name.append($name.Player, $name.Planet);
-        $name.Player.ToolTip(this.createPlayerTooltip(planet), { "max-width": "260px", placement: "cursor", interactive: true });
-        $name.Planet.ToolTip(this.createPlanetTooltip(planet), { "max-width": "260px", placement: "cursor", interactive: true });
-        $name.Planet.off(isTouch ? "confirmed-click.galaxy" : "click.galaxy")
-            .on(isTouch ? "confirmed-click.galaxy" : "click.galaxy", () => this.openFleetTarget(planet));
+        $name.Caption = $("<div>", { class: "GalaxyPlanetCaption" });
+        $name.Player = this.createDiv("", "", "GalaxyPlayerName");
+        $name.Planet = $("<button>", { type: "button", class: "GalaxyPlanetName", "data-planet-id": planet.id,
+            "aria-controls": "GalaxyObjectMenu", "aria-expanded": "false" })
+            .on("click.galaxy", event => this.openObjectMenu("planet", Number(event.currentTarget.dataset.planetId), event));
+        $name.Player.append($("<span>", { class: "GalaxyPlayerIcon mdi mdi-account", "aria-hidden": "true" }), this.createPlayerName(planet));
+        $name.Planet.append($("<span>", { class: "GalaxyPlanetOrbit" }), $("<span>", { class: "GalaxyPlanetLabel" }));
+        $name.Caption.append($name.Planet, $name.Player);
+        $name.append($name.Caption);
 
         this.$Content.PlanetsNames[planet.planet] = $name;
 
         this.$System.append($name);
+        this.renderPlanetsName(planet);
     }
 
     renderPlanetsNames() {
@@ -1476,12 +2232,14 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             this.CreatePlanetsNames();
         }
 
-        const existingPlanetIds = new Set(this.Planets.map(p => p.planet));
+        const planets = this.Planets.filter(planet => Number(planet.planet_type) !== 3);
+        const existingPlanetIds = new Set(planets.map(p => Number(p.planet)));
+        // Не теряем hover у подписи, которая осталась в новом snapshot.
+        for (const [orbit, $name] of Object.entries(this.$Content.PlanetsNames)) {
+            if (!existingPlanetIds.has(Number(orbit))) $name.hide();
+        }
 
-        // Скрываем подписи планет, которых больше нет
-        $(".PlanetName").hide();
-
-        for (const p of this.Planets) {
+        for (const p of planets) {
             /*const orbit = this.orbitMap[p.planet];
             if (!orbit) continue;*/
 
@@ -1503,92 +2261,307 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
         const $name = this.$Content.PlanetsNames[p.planet];
         $name.toggleClass("OwnPlanet", Boolean(p.OwnPlanet));
-        $name.Player.text(p.UserName || "");
-        $name.Planet.text(p.name);
-        $name.Player.ToolTip(this.createPlayerTooltip(p), { "max-width": "260px", placement: "cursor", interactive: true });
-        $name.Planet.ToolTip(this.createPlanetTooltip(p), { "max-width": "260px", placement: "cursor", interactive: true });
+        $name.Planet.attr("data-planet-id", p.id);
+        this.createPlayerName(p, $name.Player.find(".GalaxyPlayerLabel"));
+        $name.Planet.find(".GalaxyPlanetOrbit").text(p.planet);
+        $name.Planet.find(".GalaxyPlanetLabel").text(p.name);
+        $name.Planet.toggleClass("GalaxyPlanetActive", p.Activity?.status === "active")
+            .toggleClass("GalaxyPlanetRecent", p.Activity?.status === "recent");
+        this.renderPlanetDebris($name, p);
     }
 
-    createPlanetTooltip(planet) {
-        const $tooltip = this.createDiv("", "", "GalaxyPlanetTooltip");
+    renderPlanetDebris($name, planet) {
+        if (!$name.Debris) {
+            $name.Debris = $("<button>", { type: "button", class: "GalaxyDebris" })
+                .append($("<span>").addClass("GalaxyDebrisSymbol").attr("aria-hidden", "true"));
+            $name.append($name.Debris);
+        }
+        const debris = planet.Debris;
+        const metal = Math.max(0, Number(debris?.metal) || 0);
+        const crystal = Math.max(0, Number(debris?.crystal) || 0);
+        const visible = metal + crystal > 0;
+        $name.Debris.toggle(visible);
+        $name.Debris.off("click.galaxy confirmed-click.galaxy");
+        if (!visible) {
+            $name.Debris.removeData("tooltip");
+            if (ToolTip?.parent === $name.Debris[0]) ToolTip.hide();
+            return;
+        }
+        const coordinate = `[${planet.galaxy}:${planet.system}:${planet.planet}]`;
+        $name.Debris.attr("aria-label", `${Lang.debris.ChooseTarget} ${coordinate}`);
+        $name.Debris.on("click.galaxy", event => this.openObjectMenu("debris", planet.id, event));
+    }
+
+    createPlanetCard(planet, $tooltip = null) {
+        $tooltip ||= this.createDiv("", "", "GalaxyPlanetTooltip");
         const coordinates = `${planet.galaxy}:${planet.system}:${planet.planet}`;
         const missionIds = new Set(planet.AvailableMissions || []);
         const missions = (this.FleetMissions || []).filter((mission) =>
             missionIds.has(mission.id)
         );
 
-        $tooltip.append(
-            this.createDiv("Планета", "", "GalaxyPlanetTooltipTitle"),
-            this.createDiv(`${planet.name || "-"} [${coordinates}]`, "", "GalaxyPlanetTooltipOwner")
-        );
+        const field = (...args) => this.cardField(...args);
+        const $header = field($tooltip, "header", "div", "GalaxyPlanetTooltipHeader");
+        const image = this.planetImages[planet.image];
+        const imageSource = image?.src || (planet.image ? `/images/planets/galaxy/${planet.image}.png` : null);
+        field($header, "image", "img", "GalaxyPlanetTooltipImage").attr({ src: imageSource || undefined, alt: "" }).toggle(Boolean(imageSource));
+        const $heading = field($header, "heading", "div", "GalaxyPlanetTooltipHeading");
+        field($heading, "type", "div", "GalaxyPlanetTooltipType", Number(planet.planet_type) === 3 ? (planet.OwnPlanet ? "Своя луна" : "Луна") : (planet.OwnPlanet ? "Своя планета" : "Планета"));
+        field($heading, "title", "div", "GalaxyPlanetTooltipTitle", planet.name || "—");
+        field($heading, "coordinates", "div", "GalaxyPlanetTooltipCoordinates", `[${coordinates}]`);
+        const moon = this.getPlanetMoon(planet);
+        field($tooltip, "moon", "button", "GalaxyPlanetTooltipPlayerAction GalaxyPlanetMoonAction", `☾ ${moon?.name || "Луна"}`)
+            .attr("type", "button").toggle(Boolean(moon)).off("click.galaxy").on("click.galaxy", event => { if (moon) this.openObjectMenu("planet", moon.id, event); });
 
-        const $details = this.createDiv("", "", "GalaxyPlanetTooltipDetails");
-        const detail = (label, value) => $details.append(
-            this.createDiv(label, "", "GalaxyPlanetTooltipDetailLabel"),
-            this.createDiv(value, "", "GalaxyPlanetTooltipDetailValue")
-        );
-        detail("Владелец", planet.UserName || "—");
-        detail("Орбита", `${planet.planet} · ${this.formatGalaxyNumber(planet.distance, 0)} у.е.`);
-        detail("Диаметр", `${this.formatGalaxyNumber(planet.size, 0)} км`);
-        detail("Поля", this.formatGalaxyNumber(planet.fields, 0));
-        detail("Температура", `${this.formatGalaxyNumber(planet.temp_min, 0)}…${this.formatGalaxyNumber(planet.temp_max, 0)} °C`);
-        $tooltip.append($details);
-
-        if (missions.length) {
-            const $missions = this.createDiv("", "", "GalaxyPlanetTooltipMissions");
+        // Публичные сведения о планете — как в Nova. Физические параметры
+        // остаются в модели для canvas, но не раскрываются в карточке.
+        const $details = field($tooltip, "details", "div", "GalaxyPlanetTooltipDetails");
+        field($details, "ownerLabel", "div", "GalaxyPlanetTooltipDetailLabel", "Владелец");
+        const $owner = field($details, "owner", "div", "GalaxyPlanetTooltipDetailValue");
+        if (!$owner.children().length) $owner.append(this.createPlayerName(planet));
+        else this.createPlayerName(planet, $owner.children().first());
+        const statuses = (Array.isArray(planet.PlayerStatus) ? planet.PlayerStatus : [])
+            .filter(status => Object.hasOwn(this.playerStatusLabels, status));
+        field($details, "statusLabel", "div", "GalaxyPlanetTooltipDetailLabel", "Статус").toggle(Boolean(statuses.length));
+        field($details, "status", "div", "GalaxyPlanetTooltipStatus", this.playerStatusLabels[statuses.at(-1)]?.label || "").toggle(Boolean(statuses.length));
+        const active = planet.Activity?.status === "active" || planet.Activity?.status === "recent";
+        field($details, "activityLabel", "div", "GalaxyPlanetTooltipDetailLabel", "Активность").toggle(active);
+        field($details, "activity", "div", `GalaxyPlanetTooltipDetailValue ${planet.Activity?.status === "active" ? "GalaxyPlayerActive" : "GalaxyPlayerRecent"}`,
+            planet.Activity?.status === "active" ? "*" : `${planet.Activity?.minutes || 0} мин.`).toggle(active);
+        field($tooltip, "missionsLabel", "div", "GalaxyPlanetTooltipSection", "Доступные миссии").toggle(Boolean(missions.length));
+        const $missions = field($tooltip, "missions", "div", "GalaxyPlanetTooltipMissions").toggle(Boolean(missions.length));
             for (const mission of missions) {
-                $missions.append(this.createDiv(Lang[mission.lang], "", "GalaxyPlanetTooltipMission"));
+                field($missions, mission.id, "button", `GalaxyPlanetTooltipMission Mission_${mission.key}`, Lang[mission.lang])
+                    .attr({ type: "button", "data-mission-id": mission.id }).off("click.galaxy").on("click.galaxy", () => this.openFleetTarget(planet, mission.id));
             }
-            $tooltip.append($missions);
-        }
+        $missions.children().each((_, button) => { if (!missionIds.has(Number(button.dataset.missionId))) $(button).remove(); });
+        field($tooltip, "phalanx", "button", "GalaxyPlanetTooltipPlayerAction GalaxyPhalanxAction", `Сканировать фалангой · ${number_format(this.messageData.data.Page?.Phalanx?.cost || 0)} дейтерия`)
+            .attr("type", "button").toggle(Boolean(planet.PhalanxAvailable)).off("click.galaxy").on("click.galaxy", () => this.openPhalanx(planet));
 
-        $tooltip.append(this.createDiv("Нажмите, чтобы открыть отправку флота", "", "GalaxyPlanetTooltipAction"));
+        const isCurrentPlayer = Number(planet.owner_id) === Number(this.messageData.data.Page?.UserId);
+        const showPlayer = !isCurrentPlayer && Number(planet.owner_id) > 0;
+        field($tooltip, "actionsLabel", "div", "GalaxyPlanetTooltipSection", "Действия с игроком").toggle(showPlayer);
+        const $actions = field($tooltip, "actions", "div", "GalaxyPlanetTooltipPlayerActions").toggle(showPlayer);
+        field($actions, "player", "button", "GalaxyPlanetTooltipPlayerAction", "Об игроке")
+            .attr("type", "button").off("click.galaxy").on("click.galaxy", () => this.showPlayerCard(planet));
+            const state = planet.Friendship?.state || "none";
+            const labels = { none: "Предложить дружбу", outgoing: "Заявка отправлена", incoming: "Входящая заявка", friends: "У вас в друзьях" };
+        field($actions, "friend", "button", "GalaxyPlanetTooltipPlayerAction GalaxyFriendAction", labels[state] || labels.none)
+            .attr({ type: "button", "data-friendship": state }).off("click.galaxy").on("click.galaxy", () => state === "none" ? this.openFriendRequest(planet) : this.openFriends());
         return $tooltip;
     }
 
-    createPlayerTooltip(planet) {
-        const $tooltip = $("<table>", { class: "GalaxyPlayerTooltip", css: { width: "240px" } });
-        const $body = $("<tbody>");
-        const isCurrentPlayer = Number(planet.owner_id) === Number(this.messageData.data.Page?.UserId);
+    openPhalanx(planet) {
+        if (!this.pageActive || this.phalanxPending || !planet.PhalanxAvailable) return;
+        this.closeObjectMenu();
+        const $content = $("<section>").addClass("PhalanxScan");
+        Dialog.create($content, "Сенсорная фаланга", [
+            { text: "Сканировать снова · 5 000 дейтерия", class: ["btn-info"], action: () => this.scanPhalanx(planet, $content) },
+            { text: Lang.Close, class: ["btn-warning"], action: () => Dialog.close() }
+        ], { width: 680, overlay: true });
+        this.scanPhalanx(planet, $content);
+    }
 
-        $body.append($("<tr>").append($("<th>", { colspan: 2, text: `Игрок ${planet.UserName || "-"}` })));
-        if (planet.Activity?.status === "active") {
-            $body.append($("<tr>").append($("<td>", { colspan: 2, text: "Активен сейчас", class: "GalaxyPlayerActive" })));
-        } else if (planet.Activity?.status === "recent") {
-            $body.append($("<tr>").append($("<td>", {
-                colspan: 2,
-                text: `Активность ${planet.Activity.minutes} мин. назад`,
-                class: "GalaxyPlayerRecent"
-            })));
-        }
-        if (!isCurrentPlayer) {
-            const $profileButton = $("<button>", { type: "button", text: "Об игроке" })
-                .on("click", () => this.showPlayerCard(planet));
-            $body.append($("<tr>").append($("<td>").append($profileButton)));
-        }
+    scanPhalanx(planet, $content) {
+        if (!this.pageActive || this.phalanxPending || !$.contains(Dialog.dialogDiv, $content[0])) return;
+        this.stopPhalanxClock();
+        const token = crypto.randomUUID();
+        const pending = { token, $content, sourceId: Number(this.messageData.data.Page.Phalanx.sourceId) };
+        this.phalanxPending = pending;
+        $content.empty().append($("<p>").text("Сканирование принято в обработку…"));
+        const fail = message => {
+            if (this.phalanxPending !== pending) return;
+            this.phalanxPending = null;
+            clearTimeout(pending.timer); this.ownedTimers.delete(pending.timer);
+            if ($.contains(Dialog.dialogDiv, $content[0])) $content.empty().append($("<p>").addClass("red_text").text(message));
+        };
+        pending.timer = setTimeout(() => {
+            this.ownedTimers.delete(pending.timer);
+            fail("Ответ сканирования не получен. Запрос не повторяется автоматически; проверьте состояние соединения.");
+        }, 30000);
+        this.ownedTimers.add(pending.timer);
+        WS.Submit("galaxy", "PhalanxScan", { targetId: Number(planet.id), scanToken: token }, {
+            scope: this.requestScope, kind: "write", onError: error => fail(error.message),
+            // ACK не является результатом скана. Результат приходит в обычном ActualData.
+            onSuccess: () => {}
+        });
+    }
 
-        return $tooltip.append($body);
+    renderPhalanxScan() {
+        const pending = this.phalanxPending;
+        const scan = this.messageData.data.Page?.PhalanxScan;
+        if (!pending || scan?.token !== pending.token) return;
+        this.phalanxPending = null;
+        clearTimeout(pending.timer); this.ownedTimers.delete(pending.timer);
+        const $content = pending.$content;
+        if (!this.pageActive || !$.contains(Dialog.dialogDiv, $content[0])
+            || Number(this.messageData.data.PlanetList?.current_planet) !== pending.sourceId) return;
+        $content.empty();
+        if (scan.error) { $content.append($("<p>").addClass("red_text").text(scan.error)); return; }
+        const coordinate = (c, compact = false) => {
+            if (!c) return "—";
+            if (Number(c.type) === 1) {
+                const coords = `[${c.galaxy}:${c.system}:${c.orbit}]`;
+                return compact ? coords : `${coords} ${Number(c.objectType) === 5 && c.sector ? `Сектор пояса ${c.sector}`
+                    : { 1: "Планета", 2: "Обломки", 3: "Луна", 4: "Газовый гигант", 5: "Сектор пояса" }[c.objectType] || "Орбита"}`;
+            }
+            if (Number(c.type) === 3) return `Флот #${c.fleetId}`;
+            return `[${c.galaxy}:${c.system}] ${number_format(c.distance || 0)}${compact ? "" : ` / ${Number(c.angle || 0).toFixed(1)}°`}`;
+        };
+        $content.append($("<h3>").text(`${scan.targetName} ${coordinate(scan.coordinates)}`),
+            $("<p>").addClass("PhalanxScanNote").text(`Снимок на ${new Date(scan.scannedAt * 1000).toLocaleString("ru-RU")}. Стоимость: ${number_format(scan.cost)} дейтерия. Не обновляется без нового скана.`));
+        if (!scan.fleets?.length) $content.append($("<p>").text("Доступных для фаланги перелётов не обнаружено."));
+        const $list = $("<div>").addClass("OverviewFleetEventsList PhalanxFleetList");
+        for (const fleet of scan.fleets || []) {
+            const mission = this.messageData.data.Page.FleetMissions.find(item => Number(item.id) === Number(fleet.mission));
+            const missionName = Lang[mission?.lang] || "Перелёт";
+            const name = `${fleet.name || `Флот #${fleet.id}`} · ${fleet.ownerName}`;
+            const $tooltip = $("<div>").addClass("OverviewFleetTooltip").append(
+                $("<strong>").addClass("OverviewFleetTooltipTitle").text(`${name} · ${missionName}`),
+                $(this.createFleetCompositionTooltip(fleet))
+            );
+            const endsAt = Number(fleet.holdingUntil || fleet.arrivesAt);
+            const $countdown = $("<strong>").addClass("OverviewFleetEventCountdown")
+                .data({ endsAt, estimated: Boolean(fleet.estimated) })
+                .ToolTip(`${fleet.holdingUntil ? "Удержание до" : "Прибытие по снимку"}: ${endsAt > 0 ? `${fleet.estimated ? "≈ " : ""}${formatTimestamp(endsAt, "timedate")}` : "не определено"}`);
+            const $intercept = $("<span>").addClass("PhalanxIntercept")
+                .ToolTip("Атака на сам обнаруженный флот. Доступность и встреча будут проверены для выбранного флота.")
+                .append($("<button>", { type: "button", disabled: fleet.interceptable !== true, text: "Перехват", class: "PhalanxInterceptButton" })
+                    .on("click", () => { Dialog.close(); this.openFleetTarget({ type: 3, fleetId: Number(fleet.id) }, 1); }));
+            $list.append($("<article>").addClass("OverviewFleetEvent PhalanxFleet")
+                .toggleClass("Returning", Boolean(fleet.returning)).append(
+                    $("<span>").addClass("OverviewFleetEventTime").append(
+                        $countdown,
+                        $("<span>").addClass("OverviewFleetEventStatus").text(fleet.holdingUntil ? "Удержание" : fleet.returning ? "Возврат" : "К цели")
+                    ),
+                    $("<span>").addClass("OverviewFleetEventBody").append(
+                        $("<span>").addClass("OverviewFleetEventTitle").text(`${name} · ${missionName}`)
+                            .ToolTip($tooltip.prop("outerHTML"), { "max-width": "min(320px, calc(100vw - 24px))", "pointer-events": "none" }),
+                        $("<span>").addClass("OverviewFleetEventRoute PhalanxFleetRoute")
+                            .text(`${coordinate(fleet.from, true)} → ${coordinate(fleet.to, true)}`)
+                            .ToolTip(`${coordinate(fleet.from)} → ${coordinate(fleet.to)}`)
+                    ),
+                    $intercept
+                ));
+        }
+        $content.append($list);
+        this.updatePhalanxClock($content, true);
+        Dialog.dialogDiv.style.height = "auto";
+        Dialog.dialogDiv.style.minHeight = "0";
+        Dialog.centerDialog();
+    }
+
+    stopPhalanxClock() {
+        this.clearPageTimeout(this.phalanxTimer);
+        this.phalanxTimer = null;
+        if (ToolTip.parent?.closest?.(".PhalanxScan")) {
+            ToolTip.hide();
+            ToolTip.parent = null;
+        }
+    }
+
+    updatePhalanxClock($content, initial = false) {
+        this.clearPageTimeout(this.phalanxTimer);
+        this.phalanxTimer = null;
+        if (!this.pageActive || !$.contains(Dialog.dialogDiv, $content[0]) || (!initial && !$(Dialog.dialogDiv).is(":visible"))) {
+            this.stopPhalanxClock();
+            return;
+        }
+        const $clocks = $content.find(".OverviewFleetEventCountdown");
+        const now = GameServerTime.now();
+        $clocks.each((_, element) => {
+            const $clock = $(element);
+            const { endsAt, estimated } = $clock.data();
+            const remaining = endsAt - now;
+            $clock.text(!Number.isFinite(endsAt) || endsAt <= 0 ? "—" : remaining > 0
+                ? `${estimated ? "≈ " : ""}${this.formatFleetDuration(remaining)}` : "Событие");
+        });
+        if ($clocks.length) this.phalanxTimer = this.setPageTimeout(() => this.updatePhalanxClock($content), 1000);
+    }
+
+    async openFriendRequest(planet) {
+        this.closeObjectMenu();
+        ToolTip.hide();
+        const FriendPage = window.FriendsPageClass || await ShowPage._loadPageClass("friends", "FriendsPageClass");
+        if (!this.pageActive || !FriendPage) return;
+        FriendPage.openRequest({ userId: Number(planet.owner_id), name: planet.UserName,
+            coordinates: { galaxy: planet.galaxy, system: planet.system, orbit: planet.planet } }, {
+            scope: this.requestScope, maxLength: this.messageData.data.Page?.FriendRequestMaxLength || 500,
+            onSuccess: message => {
+                if (!this.pageActive) return;
+                const row = message.getData("Page")?.Friends?.find(friend => Number(friend.userId) === Number(planet.owner_id));
+                if (!row) return;
+                for (const item of this.Planets) if (Number(item.owner_id) === Number(planet.owner_id)) {
+                    item.Friendship = { id: row.id, state: row.accepted ? "friends" : (row.incoming ? "incoming" : "outgoing") };
+                }
+                this.renderObjectMenu();
+            }
+        });
+    }
+
+    openFriends() {
+        this.closeObjectMenu();
+        this.setActiveMode("friends");
+    }
+
+    createPlayerName(planet, $name = $("<span>", { class: "GalaxyPlayerLabel" })) {
+        const statuses = (Array.isArray(planet.PlayerStatus) ? planet.PlayerStatus : [])
+            .filter(status => Object.hasOwn(this.playerStatusLabels, status));
+        if (!$name.children().length) $name.append($("<span>", { class: "GalaxyPlayerUsername" }), $("<span>", { class: "GalaxyPlayerStatus" }));
+        $name.attr("class", "GalaxyPlayerLabel").find(".GalaxyPlayerUsername").text(planet.UserName || "—");
+        for (const status of statuses) $name.addClass(`GalaxyPlayer-${status}`);
+        const $status = $name.find(".GalaxyPlayerStatus");
+        $status.toggle(Boolean(statuses.length));
+        if (!$status.children().length) $status.append(document.createTextNode("("), $("<span>"), document.createTextNode(")"));
+        const $values = $status.children().first();
+        const old = new Map($values.children().get().map(element => [element.dataset.status, element]));
+        statuses.forEach((status, index) => {
+            const $value = old.has(status) ? $(old.get(status)) : $("<span>").attr("data-status", status);
+            $value.attr("class", `GalaxyPlayer-${status}`).text(`${index ? " " : ""}${this.playerStatusLabels[status].short}`);
+            if ($values[0].children[index] !== $value[0]) $values[0].insertBefore($value[0], $values[0].children[index] || null);
+            old.delete(status);
+        });
+        old.forEach(element => $(element).remove());
+        $name.attr("aria-label", [planet.UserName || "—", ...statuses.map(status => this.playerStatusLabels[status].label)].join(", "));
+        return $name;
     }
 
     showPlayerCard(planet) {
-        const $content = this.createDiv(planet.UserName || "-", "", "GalaxyPlayerCard");
+        this.closeObjectMenu();
+        ToolTip.hide();
+        const $content = this.createDiv("", "", "GalaxyPlayerCard").append(this.createPlayerName(planet));
         Dialog.create($content, "Об игроке", [{ text: Lang.Close, action: () => Dialog.close() }]);
     }
 
-    openFleetTarget(planet) {
+    openFleetTarget(planet, missionType = null) {
+        this.closeObjectMenu();
+        ToolTip.hide();
         Overlay.Show(null, 250, () => {
             this.$Content.stop(true, true).fadeOut(250, () => {
                 this.$Content.Show = false;
                 GameEvents.emit("SendServer", {
                     mode: "fleets",
                     data: {
-                        target: {
+                        target: Number(planet.type) === 3 ? { type: 3, fleetId: Number(planet.fleetId) }
+                            : Number(planet.type) === 2 ? { type: 2, galaxy: Number(planet.galaxy), system: Number(planet.system),
+                                distance: Number(planet.distance), angle: Number(planet.angle) } : {
                             type: 1,
                             galaxy: Number(planet.galaxy),
                             system: Number(planet.system),
-                            orbit: Number(planet.planet),
-                            objectType: 1
+                            orbit: Number(planet.orbit ?? planet.planet),
+                            objectType: Number(planet.objectType ?? planet.planet_type) || 1,
+                            ...(planet.siteId ? { siteId: Number(planet.siteId) } : {})
                         }
+                    },
+                    onSuccess: (message) => {
+                        // Контекст перехода UI, не поле Coordinate и не
+                        // изменение серверного протокола. Доступность миссии
+                        // затем проверяется сервером для выбранного Fleet.
+                        message.setData("Page", {
+                            ...message.getData("Page"),
+                            NavigationMissionType: missionType
+                        });
+                        ShowPage.Show(message.mode, message);
                     }
                 });
             });
@@ -1622,6 +2595,16 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
         const systemX = canvasOffsetX + planetX;
         const systemY = canvasOffsetY + planetY;
 
+        // Подпись крайней видимой планеты не должна обрезаться краем карты.
+        // Смещаем только текст, физическая позиция объекта остаётся прежней.
+        const viewWidth = this.$System.innerWidth();
+        const viewHeight = this.$System.innerHeight();
+        const labelHalfWidth = $name.Caption.outerWidth() * textScale / 2;
+        const labelShiftX = systemX >= 0 && systemX <= viewWidth
+            ? Math.max(labelHalfWidth + 6, Math.min(viewWidth - labelHalfWidth - 6, systemX)) - systemX
+            : 0;
+        const labelAbove = systemY + labelOffset + $name.Caption.outerHeight() * textScale > viewHeight - 6;
+
         $name.css({
             position: "absolute",
             left: `${systemX}px`,
@@ -1631,20 +2614,19 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             pointerEvents: "auto",
         });
 
-        $name.Player.css({
+        $name.Caption.css({
             position: "absolute",
-            left: "50%",
-            top: `${-labelOffset}px`,
-            transform: `translate(-50%, -100%) scale(${textScale})`,
-            transformOrigin: "bottom center",
+            left: `calc(50% + ${labelShiftX}px)`,
+            top: `${labelAbove ? -labelOffset : labelOffset}px`,
+            transform: `translate(-50%, ${labelAbove ? "-100%" : "0"}) scale(${textScale})`,
+            transformOrigin: labelAbove ? "bottom center" : "top center",
         });
-
-        $name.Planet.css({
+        $name.Debris?.css({
             position: "absolute",
-            left: "50%",
-            top: `${labelOffset}px`,
-            transform: `translate(-50%, 0) scale(${textScale})`,
-            transformOrigin: "top center",
+            left: `${radius * this.zoom + $name.Debris.outerWidth() / 2 + 3}px`,
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            transformOrigin: "center",
         });
     }
 
@@ -1653,16 +2635,32 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
     async render(generation = this.renderGeneration) {
         const renderVersion = ++this.renderVersion;
         if (!await super.render(generation)) return;
+        this.renderPhalanxScan();
 
-        this.stopAnimation(); // <-- Сначала останавливаем предыдущую анимацию
-        this.cancelZoomAnimation();
+        const nextSystem = this.messageData.data.Page?.System || {};
+        if (Number(this.System?.galaxy) !== Number(nextSystem.galaxy)
+            || Number(this.System?.system) !== Number(nextSystem.system)) {
+            this.sensorContactPositions.clear();
+            this.closeObjectMenu();
+            this.setFreeOrbitsOpen(false);
+        }
+        const preserveView = this.SystemShow
+            && Number(this.System?.galaxy) === Number(nextSystem.galaxy)
+            && Number(this.System?.system) === Number(nextSystem.system);
+
+        if (!preserveView) {
+            this.stopAnimation();
+            this.cancelZoomAnimation();
+        }
 
         this.System = this.messageData.data.Page?.System || {};
         this.SystemInfo = this.messageData.data.Page?.SystemInfo || {};
         this.Orbits = this.messageData.data.Page?.Orbits || [];
         this.Planets = this.messageData.data.Page?.Planets || [];
         this.ResourceSites = this.messageData.data.Page?.ResourceSites || [];
+        this.SpaceDebris = Object.values(this.messageData.data.Page?.SpaceDebris || {});
         const flyingFleets = this.messageData.data.Page?.FlyingFleets || [];
+        this.SensorContacts = Object.values(this.messageData.data.Page?.SensorContacts || {});
         this.FlyingFleets = Array.isArray(flyingFleets)
             ? flyingFleets
             : Object.values(flyingFleets);
@@ -1680,21 +2678,34 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
 
         this.SpeedPlanets = this.messageData.data.Page?.SpeedPlanets ?? 24;
         this.FleetMissions = this.messageData.data.Page?.FleetMissions ?? [];
-        this.asteroidBelts = {};
-        this.gasGiants = {};
+        if (!preserveView) {
+            this.asteroidBelts = {};
+            this.gasGiants = {};
+        }
+        for (const orbit of Object.keys(this.asteroidBelts)) {
+            if (this.orbitMap[orbit]?.type !== 1) delete this.asteroidBelts[orbit];
+        }
+        for (const orbit of Object.keys(this.gasGiants)) {
+            if (this.orbitMap[orbit]?.type !== 2) delete this.gasGiants[orbit];
+        }
 
         this.renderNavigation();
         this.renderPlanetsNames();
         this.renderSystemInfo();
+        this.renderFreeOrbits();
 
-        this.$Content.Navigation?.Galaxy.Input.val(this.System.galaxy);
-        this.$Content.Navigation?.System.Input.val(this.System.system);
+        // Ввод навигации — намерение игрока, а не состояние системы. Фоновый
+        // snapshot той же системы не должен стирать ещё не отправленные цифры.
+        if (!preserveView) {
+            this.$Content.Navigation?.Galaxy.Input.val(this.System.galaxy);
+            this.$Content.Navigation?.System.Input.val(this.System.system);
+        }
 
         this.renderNavigation();
 
         await this.loadPlanetImages(this.Planets);
 
-        if (renderVersion !== this.renderVersion) return;
+        if (renderVersion !== this.renderVersion || !this.isRenderCurrent(generation)) return;
 
 
         // вычисляем оптимальный размер canvas
@@ -1720,6 +2731,7 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
                     .find((item) => Number(item.site_type) === this.resourceSiteTypes.GAS_GIANT) || null;
                 this.generateGasGiant(orbit.orbit, {
                     radius: this.orbitUeToPx(orbit.distance),
+                    name: orbit.name || site?.name || "Газовый гигант",
                     site,
                     imageKey: this.getGasGiantImageKey(orbit.orbit, site?.visual_variant),
                     ringImageKey: this.getGasGiantRingKey(orbit.orbit, site?.ring_variant),
@@ -1732,16 +2744,24 @@ window.GalaxyPageClass = class GalaxyPageClass extends BasePageClass {
             }
         }
 
+        // Snapshot заменяет данные карточки; удалённый объект закрывает её.
+        this.renderObjectMenu();
+
         // центрируем изначально
-        this.offset.x = 0;
-        this.offset.y = 0;
+        if (!preserveView) {
+            this.offset.x = 0;
+            this.offset.y = 0;
+        }
 
         //await this.loadAsteroidSprites();
-        this.animate();
+        if (!this.animationFrameId) this.animate();
 
-        this.$System.stop(true, true).fadeIn(250, () => {
-            this.calculateZoomFit();
-            this.SystemShow = true;
-        });
+        if (!preserveView) {
+            this.$System.stop(true, true).fadeIn(250, () => {
+                if (renderVersion !== this.renderVersion || !this.isRenderCurrent(generation)) return;
+                this.calculateZoomFit();
+                this.SystemShow = true;
+            });
+        }
     }
 };

@@ -1,0 +1,20 @@
+{
+    "computer_tech": {
+        "atlas": "computer_tech-atlas.png",
+        "columns": 4,
+        "rows": 4,
+        "sourceFrame": 2,
+        "effect": "radar",
+        "frameCount": 64,
+        "duration": 30
+    },
+    "fleet_logistics_tech": {
+        "atlas": "fleet_logistics_tech-atlas.png",
+        "columns": 4,
+        "rows": 4,
+        "sourceFrame": 0,
+        "effect": "berths",
+        "frameCount": 64,
+        "duration": 30
+    }
+}

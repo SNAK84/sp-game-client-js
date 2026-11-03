@@ -95,8 +95,9 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         if (!coordinate) return "—";
 
         if (Number(coordinate.type) === 1) {
-            const objectNames = { 1: "Планета", 2: "Обломки", 3: "Луна" };
-            const objectName = objectNames[Number(coordinate.objectType)] || "Орбита";
+            const objectNames = { 1: "Планета", 2: "Обломки", 3: "Луна", 4: "Газовый гигант", 5: "Сектор пояса" };
+            const objectName = Number(coordinate.objectType) === 5 && coordinate.sector
+                ? `Сектор пояса ${coordinate.sector}` : objectNames[Number(coordinate.objectType)] || "Орбита";
             return `[${coordinate.galaxy}:${coordinate.system}:${coordinate.orbit}] ${objectName}`;
         }
         if (Number(coordinate.type) === 2) {
@@ -104,14 +105,6 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         }
         if (Number(coordinate.type) === 3) return `Флот #${coordinate.fleetId}`;
         return "—";
-    }
-
-    formatFleetDuration(seconds) {
-        const total = Math.max(0, Math.ceil(Number(seconds) || 0));
-        const hours = Math.floor(total / 3600);
-        const minutes = Math.floor((total % 3600) / 60);
-        const secs = total % 60;
-        return [hours, minutes, secs].map(value => String(value).padStart(2, "0")).join(":");
     }
 
     getFleetLabel(items, id, fallback) {
@@ -134,6 +127,9 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
                 ? arrivesAt
                 : Number(fleet.end_time),
             estimated: Boolean(routeLeg.estimated),
+            isHolding: ["holding", "expedition"].includes(routeLeg.direction),
+            isExpedition: routeLeg.direction === "expedition",
+            recallPending: routeLeg.direction === "recall_pending",
             isReturn: routeLeg.direction === "return" || Boolean(fleet.is_return)
         };
     }
@@ -148,6 +144,18 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         }
         if (Number(coordinate.type) === 3) return `Флот #${coordinate.fleetId}`;
         return "—";
+    }
+
+    hideFlyingFleetTooltip() {
+        if (window.ToolTip?.parent && this.$Content?.FlyingFleets?.[0]?.contains(ToolTip.parent)) {
+            ToolTip.hide();
+            ToolTip.parent = null;
+        }
+    }
+
+    Hide() {
+        this.hideFlyingFleetTooltip();
+        super.Hide();
     }
 
     createFlyingFleetsOverview() {
@@ -174,20 +182,32 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
 
         this.clearPageTimeout(this.flyingFleetsTimer);
         this.flyingFleetsTimer = null;
-        this.flyingFleetRows.clear();
-        this.$Content.FlyingFleets.List.empty();
+        const previousRows = this.flyingFleetRows;
+        this.flyingFleetRows = new Map();
+        const contactRows = new Map();
+        this.$Content.FlyingFleets.List.children(".SensorContactRow").each((_, row) => {
+            contactRows.set(Number($(row).data("contact")?.id), $(row));
+        });
+        const wantedRows = [];
 
         const fleets = this.normalizeFlyingFleets();
-        this.$Content.FlyingFleets.Count.text(fleets.length);
+        const known = new Set(fleets.map(fleet => Number(fleet.id)));
+        const contacts = Object.values(this.messageData.data.Page?.SensorContacts || {})
+            .filter(contact => !known.has(Number(contact.id)) && Number(contact.retainUntil) > GameServerTime.now());
+        this.$Content.FlyingFleets.Count.text(fleets.length + contacts.length);
 
-        if (!fleets.length) {
-            this.$Content.FlyingFleets.List.append(
-                $("<div>").addClass("OverviewFleetEventsEmpty").text("Нет передвижений флотов")
-            );
+        if (!fleets.length && !contacts.length) {
+            this.hideFlyingFleetTooltip();
+            if (!this.$Content.FlyingFleets.List.children(".OverviewFleetEventsEmpty").length) {
+                this.$Content.FlyingFleets.List.empty().append(
+                    $("<div>").addClass("OverviewFleetEventsEmpty").text("Нет передвижений флотов")
+                );
+            }
             return;
         }
 
         for (const fleet of fleets) {
+            const previous = previousRows.get(Number(fleet.id));
             const isIncoming = Boolean(fleet.is_incoming);
             const isHostile = Boolean(fleet.is_hostile);
             const routeLeg = this.getOverviewRouteLeg(fleet);
@@ -196,49 +216,67 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
                 fleet.mission,
                 `Миссия #${fleet.mission}`
             );
-            const $countdown = $("<strong>").addClass("OverviewFleetEventCountdown");
+            const $countdown = previous?.$countdown || $("<strong>").addClass("OverviewFleetEventCountdown");
             const arrivalLabel = Number.isFinite(routeLeg.arrivesAt) && routeLeg.arrivesAt > 0
                 ? `${routeLeg.estimated ? "≈ " : ""}${formatTimestamp(routeLeg.arrivesAt, "timedate")}`
                 : "—";
-            $countdown.ToolTip(`Прибытие: ${arrivalLabel}`);
+            $countdown.ToolTip(`${routeLeg.isExpedition ? "Окончание экспедиции" : routeLeg.isHolding ? "Окончание удержания" : "Прибытие"}: ${arrivalLabel}`);
 
             const fullRoute = `${this.formatFleetCoordinate(routeLeg.start)} → ${this.formatFleetCoordinate(routeLeg.target)}`;
-            const $route = $("<span>")
-                .addClass("OverviewFleetEventRoute")
+            const $route = (previous?.$route || $("<span>").addClass("OverviewFleetEventRoute"))
                 .text(`${this.formatOverviewCoordinate(routeLeg.start)} → ${this.formatOverviewCoordinate(routeLeg.target)}`)
                 .ToolTip(fullRoute);
-            const $row = $("<button>", { type: "button" })
-                .addClass("OverviewFleetEvent")
+            const $title = (previous?.$title || $("<span>").addClass("OverviewFleetEventTitle")).text(
+                isIncoming
+                    ? `${fleet.owner_name || "Чужой флот"} · ${missionName}`
+                    : `${fleet.name || `Флот #${fleet.id}`} · ${missionName}`
+            ).ToolTip(this.createFleetCompositionTooltip(fleet), {
+                "max-width": "min(320px, calc(100vw - 24px))",
+                "pointer-events": "none"
+            });
+            const $status = (previous?.$status || $("<span>").addClass("OverviewFleetEventStatus")).text(
+                routeLeg.isExpedition ? "Экспедиция" : routeLeg.isHolding ? "Удержание" : (routeLeg.recallPending ? "Отзыв" : (isIncoming ? "К вам" : (routeLeg.isReturn ? "Возврат" : "К цели")))
+            );
+            const $row = previous?.$row || $("<button>", { type: "button" }).addClass("OverviewFleetEvent").append(
+                $("<span>").addClass("OverviewFleetEventTime").append($countdown),
+                $("<span>").addClass("OverviewFleetEventBody").append($title, $route),
+                $status
+            );
+            $row
                 .toggleClass("Returning", routeLeg.isReturn)
+                .toggleClass("Holding", routeLeg.isHolding)
                 .toggleClass("Incoming", isIncoming)
                 .toggleClass("Hostile", isIncoming && isHostile)
                 .toggleClass("Friendly", isIncoming && !isHostile)
-                .on("click.overview-fleet", () => {
+                .off("click.overview-fleet confirmed-click.overview-fleet")
+                .on("click.overview-fleet confirmed-click.overview-fleet", () => {
                     if (!isIncoming) this.setActiveMode("fleets");
-                })
-                .append(
-                    $("<span>").addClass("OverviewFleetEventTime").append($countdown),
-                    $("<span>").addClass("OverviewFleetEventBody").append(
-                        $("<span>").addClass("OverviewFleetEventTitle").text(
-                            isIncoming
-                                ? `${fleet.owner_name || "Чужой флот"} · ${missionName}`
-                                : `Флот #${fleet.id} · ${missionName}`
-                        ),
-                        $route
-                    ),
-                    $("<span>").addClass("OverviewFleetEventStatus").text(
-                        isIncoming ? "К вам" : (routeLeg.isReturn ? "Возврат" : "К цели")
-                    )
-                );
+                });
 
-            this.$Content.FlyingFleets.List.append($row);
+            wantedRows.push($row[0]);
             this.flyingFleetRows.set(Number(fleet.id), {
                 endTime: routeLeg.arrivesAt,
                 estimated: routeLeg.estimated,
-                $countdown
+                $countdown, $route, $title, $status, $row
             });
         }
 
+        for (const contact of contacts) {
+            wantedRows.push(this.createSensorContactRow(contact, contactRows.get(Number(contact.id)))[0]);
+        }
+        // Не вынимаем прежние строки из DOM: сохраняем hover/focus и источник tooltip.
+        const wanted = new Set(wantedRows);
+        this.$Content.FlyingFleets.List.children().each((_, row) => {
+            if (wanted.has(row)) return;
+            if (row.contains(ToolTip.parent)) this.hideFlyingFleetTooltip();
+            $(row).remove();
+        });
+        const list = this.$Content.FlyingFleets.List[0];
+        let next = list.firstChild;
+        for (const row of wantedRows) {
+            if (row !== next) this.placeElement(list, row, next);
+            next = row.nextSibling;
+        }
         this.updateFlyingFleetsClock();
     }
 
@@ -253,7 +291,17 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
             );
         }
 
-        if (!this.pageActive || this.flyingFleetRows.size === 0) return;
+        const $contacts = this.$Content.FlyingFleets.List.find(".SensorContactRow");
+        $contacts.each((_, row) => {
+            const $row = $(row), data = $row.data();
+            const wasStale = $row.hasClass("Stale");
+            $row.toggle(Number(data.retainUntil) > now).toggleClass("Stale", !data.fresh || Number(data.freshUntil) <= now);
+            $row.find(".OverviewFleetEventStatus").text($row.hasClass("Stale") ? "Отметка" : "Обнаружен");
+            if (wasStale !== $row.hasClass("Stale")) $row.find(".OverviewFleetEventTitle")
+                .ToolTip(this.createSensorContactCard(data.contact).prop("outerHTML"), { "max-width": "min(320px, calc(100vw - 24px))" });
+            if (Number(data.retainUntil) <= now && row.contains(ToolTip.parent)) ToolTip.hide();
+        });
+        if (!this.pageActive || (this.flyingFleetRows.size === 0 && $contacts.length === 0)) return;
         this.flyingFleetsTimer = this.setPageTimeout(() => this.updateFlyingFleetsClock(), 1000);
     }
 
@@ -264,8 +312,18 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         this.$Content.Planet["Name"] = $("<div>", { id: "PlanetName" }).addClass("box");
         this.$Content.Planet["Info"] = $("<div>", { id: "PlanetInfo" }).addClass("box");
         this.$Content.Planet["Image"] = $("<div>", { id: "PlanetImage" });
+        this.$Content.Planet["Moon"] = $("<button>", { type: "button", class: "OverviewMoon" }).hide()
+            .append($("<span>", { class: "OverviewMoonImage", "aria-hidden": "true" }));
         this.$Content.Planet["Debris"] = $("<div>", { id: "PlanetDebris" }).hide();
-        this.$Content.Planet["DebrisNoSel"] = $("<div>", { id: "PlanetDebrisNoSel" });
+        this.$Content.Planet.Debris.attr({ role: "button", tabindex: 0 });
+        // Нормированная кольцевая hit-area: поверхность планеты остаётся свободной.
+        this.$Content.Planet.Debris.append(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false">' +
+            '<defs><clipPath id="OverviewDebrisRingClip" clipPathUnits="objectBoundingBox">' +
+            '<path clip-rule="evenodd" d="M .5 0 A .5 .5 0 1 1 .5 1 A .5 .5 0 1 1 .5 0 Z ' +
+            'M .5 .083333 A .416667 .416667 0 1 1 .5 .916667 A .416667 .416667 0 1 1 .5 .083333 Z"/>' +
+            '</clipPath></defs></svg>'
+        );
 
 
         this.$Content.Planet.Info["LDiameter"] = $("<span>", { id: "PlanetInfoLDiameter" });
@@ -285,8 +343,9 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         this.$Content.Planet.append(this.$Content.Planet.Name);
         this.$Content.Planet.append(this.$Content.Planet.Info);
         this.$Content.Planet.append(this.$Content.Planet.Image);
-        this.$Content.Planet.append(this.$Content.Planet.Debris);
-        this.$Content.Planet.append(this.$Content.Planet.DebrisNoSel);
+        this.$Content.Planet.append(this.$Content.Planet.Moon);
+        // Планета и обломки масштабируются в одной системе координат.
+        this.$Content.Planet.Image.append(this.$Content.Planet.Debris);
 
         this.$Content.append(this.$Content.Name);
         this.$Content.append(this.$Content.Planet);
@@ -388,7 +447,8 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         this.$Content.Name.text(this.messageData.data.Page?.UserName);
         this.$Content.Planet.Name.text(this.messageData.data.Page?.PlanetName);
 
-        this.$Content.Planet.Debris.ToolTip("tooltip");
+        this.renderDebris();
+        this.renderMoon();
 
         this.$Content.Planet.Info.LDiameter.text(Lang.Diameter);
         this.$Content.Planet.Info.LTemperature.text(Lang.Temperature);
@@ -399,7 +459,109 @@ window.OverViewPageClass = class OverViewPageClass extends BasePageClass {
         this.$Content.Planet.Info.Position.text('[' + this.messageData.data.Page?.galaxy + ':' + this.messageData.data.Page?.system + ':' + this.messageData.data.Page?.planet + ']');
 
 
-        this.$Content.Planet.Image.attr("style", "background:url('/images/planets/overview/" + this.messageData.data.Page?.PlanetImage + ".png') no-repeat;background-size:100%");
+        const image = this.messageData.data.Page?.PlanetImage;
+        // Для большого обзора используем детальный спрайт без широких прозрачных полей.
+        // Небольшая иконка moon в галактике остаётся прежней.
+        const overviewImage = image === "moon" ? "moon-overview-v3" : image;
+        this.$Content.Planet.Image.toggleClass("OverviewMoonSurface", image === "moon");
+        this.$Content.Planet.Image.attr("style", `background:url('/images/planets/overview/${overviewImage}.png') no-repeat 0 0;background-size:100%`);
+    }
+
+    renderMoon() {
+        const list = this.messageData.data?.PlanetList;
+        const planets = Object.values(list?.Planets || {});
+        const current = planets.find(planet => Number(planet.id) === Number(list?.current_planet));
+        // Луна привязана к той же орбите. На самой луне второй спутник не рисуем.
+        const moon = Number(current?.planet_type) === 1 ? planets.find(planet =>
+            Number(planet.planet_type) === 3 && Number(planet.galaxy) === Number(current.galaxy)
+            && Number(planet.system) === Number(current.system) && Number(planet.planet) === Number(current.planet)
+        ) : null;
+        const $moon = this.$Content.Planet.Moon;
+        $moon.toggle(Boolean(moon)).off(".overview-moon");
+        if (!moon) {
+            if (ToolTip?.parent === $moon[0]) ToolTip.hide();
+            $moon.removeData("tooltip").removeAttr("data-planet-id aria-label");
+            return;
+        }
+
+        const name = moon.name || Lang.planetSelector.Moon;
+        const coordinate = `[${moon.galaxy}:${moon.system}:${moon.planet}]`;
+        $moon.attr({ "data-planet-id": moon.id, "aria-label": `${Lang.planetSelector.Moon}: ${name} ${coordinate}` });
+        $moon.find(".OverviewMoonImage").css({
+            backgroundImage: `url('/images/planets/galaxy/${moon.image}.png')`,
+            backgroundSize: moon.image === "moon" ? "220%" : "100%"
+        });
+        $moon.ToolTip($("<div>").append($("<strong>").text(name),
+            $("<div>").text(`${Lang.planetSelector.Moon} ${coordinate}`)), { "pointer-events": "none" });
+
+        const chooseMoon = () => {
+            ToolTip.hide();
+            if (Dialog) Dialog.close();
+            Overlay.Show(null, 250, () => {
+                this.$Content.stop(true, true).fadeOut(250, () => {
+                    this.$Content.Show = false;
+                    GameEvents.emit("SendServer", { mode: "overview", action: "planetselect",
+                        hide: "ActualData", data: { planetId: Number(moon.id) } });
+                });
+            });
+        };
+        $moon.on(isTouch ? "confirmed-click.overview-moon" : "click.overview-moon", chooseMoon)
+            .on("keydown.overview-moon", event => {
+                if (!["Enter", " "].includes(event.key)) return;
+                event.preventDefault();
+                chooseMoon();
+            });
+    }
+
+    renderDebris() {
+        const page = this.messageData.data.Page || {};
+        const field = page.Debris;
+        const counts = [901, 902].map(id => {
+            const value = Number(field?.[id === 901 ? "metal" : "crystal"]);
+            return Number.isFinite(value) ? Math.max(0, value) : 0;
+        });
+        const visible = counts.some(count => count > 0);
+        const $planet = this.$Content.Planet;
+        const $targets = $planet.Debris;
+        $planet.toggleClass("has-debris", visible);
+        $targets.toggle(visible).off("click.debris confirmed-click.debris keydown.debris");
+        if (!visible) {
+            $targets.removeData("tooltip");
+            if ($targets.toArray().includes(ToolTip?.parent)) ToolTip.hide();
+            return;
+        }
+
+        const coordinate = `[${page.galaxy}:${page.system}:${page.planet}]`;
+        const $tooltip = $("<div>").addClass("DebrisTooltip").append(
+            $("<div>").addClass("DebrisTooltipTitle").text(`${Lang.debris.Title} ${coordinate}`)
+        );
+        [901, 902].forEach((id, index) => {
+            $tooltip.append($("<div>").addClass(`ResBox icon${id}`)
+                .text(`${Lang.tech[id]}: ${humanNumber(counts[index], true, 3)}`));
+        });
+        $tooltip.append($("<div>").addClass("DebrisTooltipHint").text(Lang.debris.TargetHint));
+        const chooseTarget = () => {
+            ToolTip.hide();
+            Overlay.Show(null, 250, () => {
+                this.$Content.stop(true, true).fadeOut(250, () => {
+                    this.$Content.Show = false;
+                    GameEvents.emit("SendServer", {
+                        mode: "fleets",
+                        data: { target: { type: 1, galaxy: Number(page.galaxy), system: Number(page.system),
+                            orbit: Number(page.planet), objectType: 2 } }
+                    });
+                });
+            });
+        };
+        // Информационный tooltip не должен перехватывать курсор и вызывать mouseleave.
+        $targets.attr("aria-label", `${Lang.debris.ChooseTarget} ${coordinate}`)
+            .ToolTip($tooltip, { "max-width": "280px", "pointer-events": "none" });
+        $targets.on(isTouch ? "confirmed-click.debris" : "click.debris", chooseTarget)
+            .on("keydown.debris", event => {
+                if (!["Enter", " "].includes(event.key)) return;
+                event.preventDefault();
+                chooseTarget();
+            });
     }
 
     async render(generation = this.renderGeneration) {

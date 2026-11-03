@@ -13,6 +13,7 @@ class DialogClass {
 
         this.handleEsc = this.handleEsc.bind(this);
         this.escEnabled = false;
+        this.showFrame = null;
 
         window.addEventListener('resize', () => {
             if (this.dialogDiv.style.display !== "none") this.centerDialog();
@@ -282,7 +283,19 @@ class DialogClass {
         return { top, left };
     }
 
+    stopAnimations() {
+        if (this.showFrame !== null) {
+            cancelAnimationFrame(this.showFrame);
+            this.showFrame = null;
+            this.dialogDiv.style.transitionProperty = this.transitionProperty;
+        }
+        // Старые fadeOut/показ не должны менять уже следующее окно.
+        $(this.dialogDiv).stop(true, true);
+        $(this.overlay).stop(true, true);
+    }
+
     show() {
+        this.stopAnimations();
         // 1) prepare: make visible for layout but hidden to user
         this.transitionProperty = this.dialogDiv.style.transitionProperty;
         this.dialogDiv.style.transitionProperty = 'none';
@@ -322,7 +335,8 @@ class DialogClass {
         // this.dialogDiv.style.height = Math.max(parseFloat(getComputedStyle(this.dialogDiv).height), this.minHeight) + 'px';
 
         // 4) wait next frame to ensure new width is applied, then measure final dialog rect
-        requestAnimationFrame(() => {
+        this.showFrame = requestAnimationFrame(() => {
+            this.showFrame = null;
             // force style recalc
             void this.dialogDiv.offsetWidth;
 
@@ -341,13 +355,14 @@ class DialogClass {
                     this.dialogDiv.style.transitionProperty = this.transitionProperty;
                 });
 
-            if (this.ShowOverlay) $(this.overlay).stop(true, true).show();
+            $(this.overlay).toggle(Boolean(this.ShowOverlay));
             document.addEventListener('keydown', this.handleEsc);
         });
     }
 
 
     close() {
+        this.stopAnimations();
         $(this.dialogDiv).fadeOut(250);
         $(this.overlay).fadeOut(250);
         document.removeEventListener('keydown', this.handleEsc);

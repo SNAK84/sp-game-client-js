@@ -137,21 +137,31 @@ window.BuildsPageClass = class BuildsPageClass extends BasePageClass {
 	}
 
 	/**
-	 * Обновляет данные существующих строений
+	 * Синхронизирует набор карточек и обновляет данные строений
 	 * 
 	 * Обновляет свойство data для каждого строения, добавляя информацию о
 	 * очереди и занятых полях
 	 */
 	renderBuilds() {
-		if (!this.$Content?.Builds || this.$Content.Builds.length === 0) {
+		const page = this.messageData.data.Page;
+		const BuildList = page?.BuildList || {};
+		const ids = Object.keys(BuildList);
+		const existing = this.$Content.Builds;
+		// Планета и луна имеют разные наборы построек. Пересоздаём карточки
+		// только при изменении набора, сохраняя серверный порядок внутри групп.
+		if (!existing || Object.keys(existing).length !== ids.length || ids.some(id => !existing[id])) {
+			$.each(existing || {}, (id, build) => build.remove());
+			this.$Content.Builds = {};
 			this.CreateBuilds();
 		}
-		$.each(this.messageData.data.Page?.BuildList, (id, buid) => {
-			buid.CountQueue = this.messageData.data.Page?.CountQueue ?? 0;
-			buid.MaxQueue = this.messageData.data.Page?.MaxQueue ?? 0;
-			buid.CurrentFields = this.messageData.data.Page?.field_used ?? 0;
-			buid.MaxFields = this.messageData.data.Page?.field_current ?? 0;
-			this.$Content.Builds[id][0].data = buid;
+		$.each(BuildList, (id, buid) => {
+			this.$Content.Builds[id][0].data = {
+				...buid,
+				CountQueue: page?.CountQueue ?? 0,
+				MaxQueue: page?.MaxQueue ?? 0,
+				CurrentFields: page?.field_used ?? 0,
+				MaxFields: page?.field_current ?? 0
+			};
 		});
 	}
 

@@ -162,13 +162,19 @@ class GameBuild extends HTMLElement {
         return tooltip;
     }
 
+    getImageUrl() {
+        return (this._images === "techs" && globalThis.ResearchImagesLink?.[this._data.name])
+            || (this._images === "fleets" && globalThis.FleetImagesLink?.[this._data.name])
+            || `/images/${this._images}/${this._data.name}.gif`;
+    }
+
     create() {
         if (this._type === 'queues') this.queues = true;
 
         this.id = this._type + this._data.id;
         this.Image = this.createElement("div", "image")
             .css({
-                'background': `url("/images/${this._images}/${this._data.name}.gif") no-repeat`,
+                'background': `url("${this.getImageUrl()}") no-repeat`,
                 'background-size': 'contain'
             });
 
@@ -215,9 +221,7 @@ class GameBuild extends HTMLElement {
                         this._data.planet.name + " [" + this._data.planet.galaxy + ":" + this._data.planet.system + "]")
                         .ToolTip(this._data.planet.name + " [" + this._data.planet.galaxy + ":" + this._data.planet.system + "]")
                 );
-            } else if (this._images == 'fleets' || this._images == 'defenses') {
-                this.Header.container.append(this.Header.Number);
-            } else {
+            } else if (this._images == 'builds') {
                 this.Header.container.prepend(this.Header.Label).append(
                     this.createElement("div")
                 );
@@ -393,29 +397,20 @@ class GameBuild extends HTMLElement {
 
             this.ToolTipDismantle.QueueFull = $(this.ToolTipBuild.QueueFull[0].cloneNode(true)).hide();
             this.ToolTipDismantle.IsBusy = $(this.ToolTipBuild.IsBusy[0].cloneNode(true)).hide();
+            this.ToolTipDismantle.SiloBlocked = this.createElement("div", "red_text").hide();
 
-            this.ToolTipDismantle.append(this.ToolTipDismantle.IsBusy, this.ToolTipDismantle.QueueFull, this.ToolTipDismantle.Build);
+            this.ToolTipDismantle.append(this.ToolTipDismantle.IsBusy, this.ToolTipDismantle.SiloBlocked,
+                this.ToolTipDismantle.QueueFull, this.ToolTipDismantle.Build);
 
             this.ToolTipInfo = this.createElement("div", this._type);
             this.ToolTipInfo.append(this.createElement("div", "head yellow_text", Lang.fcm_info));
 
-            if (this._data.requirements && Object.keys(this._data.requirements).length > 0) {
-                this.ToolTip.requirements = this.createElement("div", "requirements", Lang.build.requirements + ":");
-                this.ToolTip.requirementsTable = this.createElement("div", "requirementsTable");
-                this.ToolTip.requirementsTableItems = {};
-
-                $.each(this._data.requirements, (id, value) => {
-                    const row = this.createElement("div");
-                    row.append(
-                        this.createElement("span", "", Lang.tech?.[id] || value.name),
-                        this.createElement("span", "", ` ${value.own} ${Lang.from} ${value.count}`)
-                    );
-                    this.ToolTip.requirementsTableItems[id] = row;
-                    this.ToolTip.requirementsTable.append(row);
-                });
-
-                this.ToolTipInfo.append(this.createElement("div", "tooltip-empty"), this.ToolTip.requirements, this.ToolTip.requirementsTable);
-            }
+            // Контейнер существует и для доступного объекта: после смены планеты
+            // требования могут появиться, исчезнуть или получить другой own.
+            this.ToolTip.requirementsGap = this.createElement("div", "tooltip-empty");
+            this.ToolTip.requirements = this.createElement("div", "requirements");
+            this.ToolTip.requirementsTable = this.createElement("div", "requirementsTable");
+            this.ToolTipInfo.append(this.ToolTip.requirementsGap, this.ToolTip.requirements, this.ToolTip.requirementsTable);
 
             this.Buttons.Up.ToolTip(this.ToolTipBuild, { 'max-width': '350px' });
             this.Buttons.Down.ToolTip(this.ToolTipDismantle, { 'max-width': '350px' });
@@ -515,8 +510,20 @@ class GameBuild extends HTMLElement {
 
                 let progress = 0;
                 let progress1 = 0;
-                if (totalTime > 0) {
-                    progress = Math.round((elapsed / totalTime) * 100);
+                if (this._images === 'fleets' || this._images === 'defenses') {
+                    // start_time сдвигается после выпуска единиц. Прогресс партии
+                    // включает уже учтённые сервером единицы, а не только остаток.
+                    const snapshotCount = Math.max(0, Number(this._data.count) || 0);
+                    const totalCount = Math.max(snapshotCount, Number(this._data.total_count) || 0);
+                    const remainingPart = totalTime > 0
+                        ? Math.max(0, Math.min(1, (this._data.end_time - now) / totalTime))
+                        : (now < this._data.end_time ? 1 : 0);
+                    progress = totalCount > 0
+                        ? Math.max(0, Math.min(100, (1 - snapshotCount * remainingPart / totalCount) * 100))
+                        : 0;
+                    progress1 = Math.round(progress);
+                } else if (totalTime > 0) {
+                    progress = (elapsed / totalTime) * 100;
                     progress = Math.min(progress, 100); // не больше 100%
                     progress1 = Math.round((elapsed1 / (totalTime - 1)) * 100);
                     progress1 = Math.min(progress1, 100); // не больше 100%
@@ -526,7 +533,7 @@ class GameBuild extends HTMLElement {
                 this.Header.Progress.ToolTip(progress1 + "%");
 
                 this.ToolTipCancel.Progress.show();
-                this.ToolTipCancel.ProgressNum.text(100 - progress);
+                this.ToolTipCancel.ProgressNum.text(100 - Math.round(progress));
 
                 remaining = Math.max(0, Math.round(this._data.end_time - GameServerTime.now()));
 
@@ -541,7 +548,7 @@ class GameBuild extends HTMLElement {
         } else if (this._type === 'over_queues') {
 
             this.Image.css({
-                'background': `url("/images/${this._images}/${this._data.name}.gif") no-repeat`,
+                'background': `url("${this.getImageUrl()}") no-repeat`,
                 'background-size': 'contain'
             });
 
@@ -611,6 +618,7 @@ class GameBuild extends HTMLElement {
 
 
             if (!$resDest && !this._data.CountQueue) this.Buttons.Down.Dis = true;
+            if (this._data.demolitionBlocked) this.Buttons.Down.Dis = true;
             if (this._data.levelToBuild >= this._data.maxLevel) this.Buttons.Up.Dis = true;
 
             this.ToolTipBuild.Build.toggle(!(this._data.levelToBuild >= this._data.maxLevel));
@@ -618,9 +626,13 @@ class GameBuild extends HTMLElement {
             this.ToolTipBuild.QueueFull.toggle(this._data.CountQueue >= this._data.MaxQueue);
             this.ToolTipBuild.FieldsFull.toggle(this._data.CurrentFields >= this._data.MaxFields);
             this.ToolTipBuild.IsBusy.toggle(this._data.working);
+            this.ToolTipBuild.IsBusy.children().first().text(this._data.siloDismantling
+                ? Lang.build.siloDismantling
+                : (this._images === 'builds' ? Lang.build.IsBusyReseach : Lang.build.IsBuildReseach));
 
             this.ToolTipDismantle.QueueFull.toggle(this._data.CountQueue >= this._data.MaxQueue);
             this.ToolTipDismantle.IsBusy.toggle(this._data.working);
+            this.ToolTipDismantle.SiloBlocked.text(Lang.build.siloHasMissiles).toggle(Boolean(this._data.demolitionBlocked));
 
 
             this.Buttons.Up.attr('disabled', this.Buttons.Up.Dis);
@@ -628,20 +640,31 @@ class GameBuild extends HTMLElement {
             this.Buttons.Max.attr('disabled', this.Buttons.Max.Dis);
             this.Input.attr('disabled', this.Input.Dis);
 
-            if (this._data.requirements && this.ToolTip?.requirementsTableItems) {
-                $.each(this._data.requirements, (id, value) => {
-                    if (!this.ToolTip?.requirementsTableItems[id]) return;
-                    const row = this.ToolTip?.requirementsTableItems[id];
-                    if (!row) return;
-
-                    // Обновляем текст
-                    const spans = row.children("span");
-                    spans.eq(0).text(Lang.tech?.[id] || value.name);           // название
-                    spans.eq(1).text(` ${value.own} из ${value.count}`);      // уровень / количество
-
-                    // Цвет: lime если достаточно, orange если не хватает
-                    row.toggleClass("lime_text", value.own >= value.count)
+            const requirements = this._data.requirements || {};
+            const requirementsKey = JSON.stringify([requirements, Lang.build.requirements, Lang.of,
+                Object.keys(requirements).map(id => Lang.tech?.[id])]);
+            if (this._requirementsKey !== requirementsKey) {
+                this._requirementsKey = requirementsKey;
+                const hasRequirements = Object.keys(requirements).length > 0;
+                this.ToolTip.requirementsGap.toggle(hasRequirements);
+                this.ToolTip.requirements.text(Lang.build.requirements + ":").toggle(hasRequirements);
+                this.ToolTip.requirementsTable.toggle(hasRequirements);
+                this.ToolTip.requirementsTableItems ||= {};
+                const items = this.ToolTip.requirementsTableItems;
+                Object.keys(items).forEach(id => {
+                    if (!Object.hasOwn(requirements, id)) { items[id].remove(); delete items[id]; }
+                });
+                $.each(requirements, (id, value) => {
+                    let row = items[id];
+                    if (!row) {
+                        row = items[id] = this.createElement("div").append(this.createElement("span"), this.createElement("span"));
+                        this.ToolTip.requirementsTable.append(row);
+                    }
+                    row
+                        .toggleClass("lime_text", value.own >= value.count)
                         .toggleClass("orange_text", value.own < value.count);
+                    row.children().eq(0).text(Lang.tech?.[id] || value.name);
+                    row.children().eq(1).text(` ${value.own} ${Lang.of} ${value.count}`);
                 });
             }
         }

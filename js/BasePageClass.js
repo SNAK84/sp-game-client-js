@@ -80,15 +80,12 @@ window.BasePageClass = class BasePageClass {
             $("#MenuBtn").ToolTip('Показать Меню');
 
             if (Dialog) Dialog.close();
-            Overlay.Show(null, 250, () => {
-                this.$Content.stop(true, true).fadeOut(250, () => {
-                    this.$Content.Show = false;
-                    GameEvents.emit("SendServer", {
-                        mode: mode,
-                        //action: "list",
-                        //data: {}
-                    });
-                });
+            // Фоновый render может прервать Overlay. Переход отправляется
+            // сразу, без callback анимации и повторного ожидания в SendServer.
+            Overlay.Show(null, 250);
+            GameEvents.emit("SendServer", {
+                mode: mode,
+                NotOverlay: true
             });
         }
 
@@ -104,7 +101,10 @@ window.BasePageClass = class BasePageClass {
         }
         this.$Content.Show = false;
 
-        this.$Content.empty().removeClass();
+        // Общий #Content уже принадлежит новой странице. Завершение анимации
+        // прежней страницы не должно очищать или скрывать новое содержимое.
+        this.$Content.data("pageOwner", this);
+        this.$Content.stop(true, true).empty().removeClass();
     }
 
     initTopNav() {
@@ -116,9 +116,10 @@ window.BasePageClass = class BasePageClass {
 
         const $MenuBtn = $("#MenuBtn");
 
-        this.$TopNav.empty().hide().append($MenuBtn);
+        this.$TopNav.hide();
+        if ($MenuBtn.length && $MenuBtn.parent()[0] !== this.$TopNav[0]) this.$TopNav.prepend($MenuBtn);
 
-        $MenuBtn.off("click").on("click", () => {
+        $MenuBtn.off("click.base").on("click.base", () => {
             this.$LeftMenu.toggleClass("menu_open");
 
             if (this.$LeftMenu.hasClass("menu_open")) {
@@ -138,11 +139,11 @@ window.BasePageClass = class BasePageClass {
     initPlanetsList() {
         this.$PlanetsList = $("#PlanetsList");
         if (this.$PlanetsList.length === 0) {
-            console.loh("GeneretPlanetsList");
             this.$PlanetsList = $("<div>", { id: "PlanetsList" });
             this.$LeftMenu.append(this.$PlanetsList);
         }
-        this.$PlanetsList.html("PlanetsList").hide();;
+        // Общий селектор не принадлежит конкретной странице: сохраняем его
+        // widget, раскрытый список и option также при переходе между страницами.
     }
 
     RenderLeftMenu() {
@@ -214,29 +215,22 @@ window.BasePageClass = class BasePageClass {
         });
 
 
-        if (!this.$TopNav["Messages"]) {
-            this.$TopNav["Messages"] = this.createDiv("", "Messages", "ResBox iconMessages",
-                () => {
-                    Overlay.Show(null, 250, () => {
-                        this.$Content.stop(true, true).fadeOut(250, () => {
-                            this.$Content.Show = false;
-                            GameEvents.emit("SendServer", {
-                                mode: "messages"
-                            });
-                        });
-                    });
-                }
-            );
-
+        if (!this.$TopNav["Messages"]) this.$TopNav["Messages"] = this.$TopNav.children("#Messages");
+        if (!this.$TopNav["Messages"].length) {
+            this.$TopNav["Messages"] = this.createDiv("", "Messages", "ResBox iconMessages");
             this.$TopNav.append(this.$TopNav["Messages"]);
         }
+        this.$TopNav["Messages"].off("click.base").on("click.base", () => {
+            this.setActiveMode("messages");
+        });
 
         this.$TopNav["Messages"].text(mData.NewMessages);
     }
 
     // Вспомогательная функция: создаём или возвращаем элемент TopNav
     getOrCreateTopNavItem(res) {
-        if (!this.$TopNav["Res_" + res]) {
+        if (!this.$TopNav["Res_" + res]) this.$TopNav["Res_" + res] = this.$TopNav.children("#Res_" + res);
+        if (!this.$TopNav["Res_" + res].length) {
             this.$TopNav["Res_" + res] = $("<div>", {
                 id: "Res_" + res,
                 class: `ResBox icon${res}`
@@ -333,105 +327,202 @@ window.BasePageClass = class BasePageClass {
     }
 
     RenderPlanetsList(Data) {
-        //return;
         if (this.$PlanetsList.length === 0) this.initPlanetsList();
 
-        this.$PlanetsList.empty().show();
+        const planets = Object.values(Data.Planets || {});
+        // Угол, ресурсы и время snapshot не меняют содержимое селектора.
+        const optionsKey = JSON.stringify([Data.main_planet, Lang.planetSelector.Select,
+            Lang.planetSelector.Planet, Lang.planetSelector.Moon, Lang.planetSelector.Main,
+            planets.map(p => [p.id, p.name, p.galaxy, p.system, p.planet, p.planet_type, p.image])]);
+        let $select = this.$PlanetsList.find("#planets-select");
+        const widget = $select.length && $.custom?.planetselectmenu
+            ? $select.planetselectmenu("instance") : null;
+        const optionsChanged = this.planetListOptionsKey !== optionsKey || !$select.length;
+        if (!optionsChanged && widget && $select.val() === String(Data.current_planet)) return;
 
-        const $select = $("<select>").attr("id", "planets-select");
-        $.each(Data.Planets, (index, planet) => {
-            const ptype = (planet.planet_type == 1) ? "П" : "М";
-            const optionText = `${planet.name} [${planet.galaxy}:${planet.system}:${planet.planet}] (${ptype})`;
-            const $option = $("<option>")
+        const wasOpen = Boolean(widget?.isOpen);
+        const scrollTop = widget?.menu.scrollTop() || 0;
+        const focusedValue = widget?.menuInstance.active?.data("ui-selectmenu-item")?.value;
+        this.$PlanetsList.show();
+        if (!$select.length) {
+            $select = $("<select>").attr({ id: "planets-select", "aria-label": Lang.planetSelector.Select });
+            this.$PlanetsList.empty().append($select);
+        }
+        if (optionsChanged) {
+            $select.attr("aria-label", Lang.planetSelector.Select);
+            const existing = new Map($select.children().get()
+                .map(option => [option.value, option]));
+            $.each(planets, (index, planet) => {
+            const ptype = (planet.planet_type == 1) ? Lang.planetSelector.Planet : Lang.planetSelector.Moon;
+            const coordinates = `[${planet.galaxy}:${planet.system}:${planet.planet}]`;
+            const optionText = `${planet.name} ${coordinates} · ${ptype}`;
+            const option = existing.get(String(planet.id));
+            const $option = option ? $(option) : $("<option>");
+            $option
                 .val(planet.id)
                 .text(optionText)
-                .attr("data-class", "planet-icon") // css-класс для иконки
-                .attr("data-style", `background-image: url('/images/planets/galaxy/${planet.image}.png');`);
+                .attr({
+                    "data-name": planet.name,
+                    "data-coordinates": coordinates,
+                    "data-type": ptype,
+                    "data-main": String(planet.id == Data.main_planet),
+                    "data-style": `background-image: url('/images/planets/galaxy/${planet.image}.png');`
+                });
 
-            // Если это выбранная планета
-            if (planet.id == Data.current_planet) {
-                $option.attr("selected", "selected");
+            if ($select[0].children[index] !== $option[0]) {
+                $select[0].insertBefore($option[0], $select[0].children[index] || null);
             }
-            $select.append($option);
-        });
-        // Добавляем select в контейнер
-        this.$PlanetsList.append($select);
+            existing.delete(String(planet.id));
+            });
+            existing.forEach(option => option.remove());
+        }
+        $select.val(String(Data.current_planet));
 
-
-
-        // Применяем кастомный selectmenu с иконками
-        $.widget("custom.planetselectmenu", $.ui.selectmenu, {
+        // Регистрируем оформление один раз; snapshot обновляет существующий widget.
+        if (!$.custom?.planetselectmenu) $.widget("custom.planetselectmenu", $.ui.selectmenu, {
+            _renderPlanet: function (item, wrapper = $("<div>").addClass("planet-wrapper")) {
+                if (!wrapper.children().length) wrapper.append(
+                    $("<span>", { class: "planet-icon", "aria-hidden": "true" }),
+                    $("<span>").addClass("PlanetSelectorText").append(
+                        $("<span>").addClass("PlanetSelectorName"),
+                        $("<span>").addClass("PlanetSelectorMeta").append(
+                            $("<span>").addClass("PlanetSelectorCoordinates"),
+                            $("<span>").addClass("PlanetSelectorType"),
+                            $("<span>").addClass("PlanetSelectorHome").text("⌂")
+                        )));
+                wrapper.find(".planet-icon").attr("style", item.element.attr("data-style"));
+                wrapper.find(".PlanetSelectorName").text(item.element.attr("data-name"));
+                wrapper.find(".PlanetSelectorCoordinates").text(item.element.attr("data-coordinates"));
+                wrapper.find(".PlanetSelectorType").text(item.element.attr("data-type"));
+                wrapper.find(".PlanetSelectorHome").attr("aria-label", Lang.planetSelector.Main)
+                    .toggle(item.element.attr("data-main") === "true");
+                return wrapper;
+            },
             _renderItem: function (ul, item) {
                 const li = $("<li>");
                 if (item.disabled) li.addClass("ui-state-disabled");
-
-                const wrapper = $("<div>").addClass("planet-wrapper");
-
-
-                $("<span>", {
-                    style: item.element.attr("data-style"),
-                    "class": "ui-icon " + item.element.attr("data-class")
-                }).appendTo(wrapper);
-
-                // Если пункт выбран (active)
-                if (item.element.attr("selected")) {
-                    wrapper.addClass("planet-select");
-                }
-
-                // Текст
-                $("<span>", {
-                    text: item.label
-                }).appendTo(wrapper);
-
+                const selected = item.element.prop("selected");
+                const wrapper = this._renderPlanet(item).toggleClass("planet-select", selected);
+                wrapper.append($("<span>").addClass("PlanetSelectorCheck").attr("aria-hidden", "true")
+                    .text(selected ? "✓" : ""));
                 return li.append(wrapper).appendTo(ul);
             },
             // Метод для отображения выбранного элемента
             _renderButtonItem: function (item) {
-                const wrapper = $("<div>").addClass("planet-wrapper");
-
-                // Иконка для выбранного пункта
-                $("<span>", {
-                    style: item.element.attr("data-style"),
-                    "class": "ui-icon " + item.element.attr("data-class")
-                }).appendTo(wrapper);
-
-                // Текст выбранного пункта
-                $("<span>", { text: item.label }).appendTo(wrapper);
-
-                return wrapper;
+                return this._renderPlanet(item);
+            },
+            // Штатный selectmenu.refresh() очищает все li и заменяет подпись
+            // кнопки. Здесь сохраняем сами option/li/подпись и их focus/hover.
+            _refreshMenu: function () {
+                const existing = new Map(this.menu.children().get().map(li =>
+                    [$(li).data("ui-selectmenu-item")?.value, li]));
+                this._parseOptions(this.element.find("option"));
+                this.items.forEach((item, index) => {
+                    const li = existing.get(item.value);
+                    const $li = li ? $(li) : this._renderItem(this.menu, item);
+                    $li.data("ui-selectmenu-item", item).toggleClass("ui-state-disabled", item.disabled);
+                    this._renderPlanet(item, $li.children().first()).toggleClass("planet-select", item.element.prop("selected"));
+                    $li.find(".PlanetSelectorCheck").text(item.element.prop("selected") ? "✓" : "");
+                    if (this.menu[0].children[index] !== $li[0]) this.menu[0].insertBefore($li[0], this.menu[0].children[index] || null);
+                    existing.delete(item.value);
+                });
+                existing.forEach(li => $(li).remove());
+                this.menuInstance.refresh();
+                this.menuItems = this.menu.find(".ui-menu-item-wrapper");
+                this._rendered = true;
+                if (this.items.length) {
+                    const $selected = this._getSelectedItem();
+                    this.menuInstance.focus(null, $selected);
+                    this._setAria($selected.data("ui-selectmenu-item"));
+                }
+                this._setOption("disabled", this.element.prop("disabled"));
+            },
+            refresh: function () {
+                this._refreshMenu();
+                const item = this.items[this.element[0].selectedIndex];
+                if (item) this._renderPlanet(item, this.buttonItem);
+                this._resizeButton();
+            },
+            _select: function (item, event) {
+                const previous = this.element[0].selectedIndex;
+                this.element[0].selectedIndex = item.index;
+                this._renderPlanet(item, this.buttonItem);
+                this.menu.find(".planet-wrapper").removeClass("planet-select").find(".PlanetSelectorCheck").text("");
+                this.menuItems.eq(item.index).addClass("planet-select").find(".PlanetSelectorCheck").text("✓");
+                this._setAria(item);
+                this._trigger("select", event, { item });
+                if (previous !== item.index) this._trigger("change", event, { item });
+                this.close(event);
+            },
+            _resizeMenu: function () {
+                const width = Math.max(this.button.outerWidth(), Math.ceil(this.menu.css("width", "max-content").outerWidth()));
+                this.menu.outerWidth(Math.min(width, document.documentElement.clientWidth - 20));
             }
         });
 
 
-        $("#planets-select")
+        if (widget) {
+            $select.planetselectmenu("refresh");
+            if (wasOpen) {
+                if (!widget.isOpen) widget.open();
+                const $focused = widget.menu.children().filter((_, item) =>
+                    $(item).data("ui-selectmenu-item")?.value === focusedValue);
+                if ($focused.length) widget.menuInstance.focus(null, $focused);
+                widget._resizeMenu();
+                widget._position();
+                widget.menu.scrollTop(scrollTop);
+            }
+        } else $select
             .planetselectmenu({
+                width: false,
+                position: { my: "left top", at: "left bottom+4", collision: "flipfit" },
                 change: (event, data) => {
+                    // Общий widget переживает экземпляры страниц. Обработчик
+                    // действует на текущую страницу, не на создавшую его старую.
+                    const page = Page;
+                    if (!page?.pageActive) return;
                     if (Dialog) Dialog.close();
-                    Overlay.Show(null, 250, () => {
-                        //this.$Content.html($Content);
-                        this.$Content.stop(true, true).fadeOut(250, () => {
-                            this.$Content.Show = false;
-                            GameEvents.emit("SendServer", {
-                                mode: Mode,
-                                action: "planetselect",
-                                hide: "ActualData",
-                                data: { 'planetId': data.item.value }
-                            });
-
-                            /*WS.send(new Message()
-                                .setMode(Mode)
-                                .setAction("planetselect")
-                                .setData("planetId", data.item.value)
-                            );*/
-                        });
-
-
+                    Overlay.Show(null, 250);
+                    GameEvents.emit("SendServer", {
+                        mode: Mode,
+                        action: "planetselect",
+                        NotOverlay: true,
+                        data: { 'planetId': data.item.value }
                     });
-
                 }
             })
             .planetselectmenu("menuWidget")
             .addClass("ui-menu-icons planet-icons");
+        $("#planets-select-button").attr("aria-label", Lang.planetSelector.Select + ": " + $select.find(":selected").text());
+        this.planetListOptionsKey = optionsKey;
+    }
+
+    // Обновление native select без замены option и потери раскрытого списка.
+    updateSelectOptions($select, items, selected = $select.val()) {
+        const existing = new Map($select.children().get().map(option => [option.value, option]));
+        items.forEach((item, index) => {
+            const value = String(item.value);
+            const $option = existing.has(value) ? $(existing.get(value)) : $("<option>");
+            $option.val(value).text(item.text).prop("disabled", Boolean(item.disabled));
+            if (item.data) $option.data(item.data);
+            if ($select[0].children[index] !== $option[0]) $select[0].insertBefore($option[0], $select[0].children[index] || null);
+            existing.delete(value);
+        });
+        existing.forEach(option => $(option).remove());
+        if (items.some(item => String(item.value) === String(selected))) $select.val(String(selected));
+    }
+
+    placeElement(parent, element, before = null) {
+        if (element === before) return;
+        // moveBefore сохраняет состояние DOM при сортировке. В старых браузерах
+        // возвращаем focus, если insertBefore переместил его вместе со строкой.
+        if (parent.moveBefore && parent.isConnected && element.isConnected) {
+            parent.moveBefore(element, before);
+            return;
+        }
+        const focused = element.contains(document.activeElement) ? document.activeElement : null;
+        parent.insertBefore(element, before);
+        if (focused?.isConnected && document.activeElement !== focused) focused.focus({ preventScroll: true });
     }
 
     getRequestOptions(options = {}) {
@@ -441,8 +532,12 @@ window.BasePageClass = class BasePageClass {
         };
     }
 
+    ownsContent() {
+        return this.$Content?.data("pageOwner") === this;
+    }
+
     isRenderCurrent(generation) {
-        return this.pageActive && generation === this.renderGeneration;
+        return this.pageActive && this.ownsContent() && generation === this.renderGeneration;
     }
 
     setPageTimeout(callback, delay) {
@@ -465,6 +560,8 @@ window.BasePageClass = class BasePageClass {
 
         if (!this.isRenderCurrent(generation)) return false;
 
+        queueMicrotask(() => window.BattleReportsUI?.openLinkedReport());
+
         const top = this.messageData.data?.TopNav;
         const planets = this.messageData.data?.PlanetList;
 
@@ -484,6 +581,7 @@ window.BasePageClass = class BasePageClass {
     }
 
     Show(mode = "", data = null) {
+        if (!this.ownsContent()) return;
         console.log("Show " + this.Name);
         this.pageActive = true;
         const generation = ++this.renderGeneration;
@@ -499,11 +597,12 @@ window.BasePageClass = class BasePageClass {
         }
 
         this.$Layer.stop(true, true).fadeIn(250, () => {
+            if (!this.isRenderCurrent(generation)) return;
             if (this.$Content.Show) {
                 Overlay.Hide();
             } else {
                 this.$Content.stop(true, true).fadeIn(250, () => {
-                    if (!this.pageActive) return;
+                    if (!this.isRenderCurrent(generation)) return;
                     this.$Content.Show = true;
                     Overlay.Hide();
                 });
@@ -513,7 +612,7 @@ window.BasePageClass = class BasePageClass {
 
     Hide() {
         this.pageActive = false;
-        ++this.renderGeneration;
+        const generation = ++this.renderGeneration;
 
         if (window.WS?.cancelScope) {
             window.WS.cancelScope(this.requestScope);
@@ -527,9 +626,11 @@ window.BasePageClass = class BasePageClass {
             this.stopTopNavTicker();
         }
 
+        if (!this.ownsContent()) return;
         if (Dialog) Dialog.close();
 
         this.$Content.stop(true, true).fadeOut(250, () => {
+            if (!this.ownsContent() || this.pageActive || generation !== this.renderGeneration) return;
             this.$Content.Show = false;
             Overlay.Hide();
             this.$Content.empty();
@@ -777,6 +878,132 @@ window.BasePageClass = class BasePageClass {
         });
 
         return $form;
+    }
+
+    formatFleetDuration(seconds) {
+        const total = Math.max(0, Math.ceil(Number(seconds) || 0));
+        return [Math.floor(total / 3600), Math.floor((total % 3600) / 60), total % 60]
+            .map(value => String(value).padStart(2, "0")).join(":");
+    }
+
+    // Общая подсказка обзора и фаланги. Неизвестные значения не означают ноль.
+    // Поле карточки создаётся один раз, контейнеры не заменяются при snapshot.
+    cardField($parent, key, tag = "div", className = "", text = undefined) {
+        let $field = $parent.children().filter((_, element) => element.dataset.cardField === String(key));
+        if (!$field.length) $parent.append($field = $(`<${tag}>`).attr("data-card-field", key));
+        $field.attr("class", className);
+        if (text !== undefined && $field.text() !== String(text)) $field.text(text);
+        return $field;
+    }
+
+    createFleetCompositionTooltip(fleet, $tooltip = null) {
+        $tooltip ||= $("<div>").addClass("OverviewFleetTooltip");
+        this.cardField($tooltip, "shipsTitle", "strong", "OverviewFleetTooltipTitle", "Состав флота");
+        const ships = Object.values(fleet.ships || {})
+            .filter(ship => ship && (ship.count === null || Number(ship.count) > 0))
+            .sort((left, right) => Number(left.id) - Number(right.id));
+        const disclosed = fleet.ships && typeof fleet.ships === "object";
+        this.cardField($tooltip, "shipsEmpty", "span", "OverviewFleetTooltipEmpty", disclosed ? "Кораблей нет" : "Состав флота не раскрыт").toggle(!disclosed || !ships.length);
+        const $ships = this.cardField($tooltip, "ships", "div", "OverviewFleetTooltipShips").toggle(Boolean(disclosed && ships.length));
+        const shipIds = new Set();
+        for (const ship of ships) {
+            shipIds.add(String(ship.id));
+            const $ship = this.cardField($ships, ship.id, "div", "OverviewFleetTooltipShip");
+            this.cardField($ship, "name", "span", "", Lang.tech?.[ship.id] || ship.name || `Корабль #${ship.id}`);
+            this.cardField($ship, "count", "b", "", ship.count === null ? "—" : number_format(Number(ship.count)));
+        }
+        $ships.children().each((_, row) => { if (!shipIds.has(row.dataset.cardField)) $(row).remove(); });
+        const $total = this.cardField($tooltip, "total", "div", "OverviewFleetTooltipTotal").toggle(Boolean(disclosed && ships.length));
+            const total = ships.every(ship => ship.count !== null)
+                ? ships.reduce((sum, ship) => sum + Number(ship.count), 0)
+                : fleet.shipsCount;
+        this.cardField($total, "label", "span", "", "Всего кораблей");
+        this.cardField($total, "count", "b", "", total != null && Number.isFinite(Number(total)) ? number_format(Number(total)) : "—");
+        this.cardField($tooltip, "cargoTitle", "strong", "OverviewFleetTooltipTitle", "Груз");
+        const $cargo = this.cardField($tooltip, "cargo", "div", "OverviewFleetTooltipCargo");
+        const resourceIds = new Set(["empty"]);
+        const resourcesDisclosed = fleet.resources && typeof fleet.resources === "object";
+        if (resourcesDisclosed) {
+            // Обзор передаёт resource DTO, фаланга — численные значения по ID.
+            const resources = Object.entries(fleet.resources).map(([id, value]) => ({
+                id: Number(value?.id ?? id),
+                name: value?.name,
+                count: value !== null && typeof value === "object" ? value.count : value
+            })).sort((left, right) => left.id - right.id);
+            for (const resource of resources) {
+                if (resource.count == null || !Number.isFinite(Number(resource.count))) {
+                    resourceIds.add(String(resource.id));
+                    const $resource = this.cardField($cargo, resource.id, "div", "OverviewFleetTooltipResource");
+                    this.cardField($resource, "name", "span", "", Lang.tech?.[resource.id] || resource.name || `Ресурс #${resource.id}`);
+                    this.cardField($resource, "count", "b", "", "не раскрыто");
+                } else if (Number(resource.count) > 0) {
+                    resourceIds.add(String(resource.id));
+                    const $resource = this.cardField($cargo, resource.id, "div", "OverviewFleetTooltipResource");
+                    this.cardField($resource, "name", "span", "", Lang.tech?.[resource.id] || resource.name || `Ресурс #${resource.id}`);
+                    this.cardField($resource, "count", "b", "", number_format(Number(resource.count)));
+                }
+            }
+        }
+        this.cardField($cargo, "empty", "span", "OverviewFleetTooltipEmpty", resourcesDisclosed ? "Пусто" : "Груз не раскрыт").toggle(resourceIds.size === 1);
+        $cargo.children().each((_, row) => { if (!resourceIds.has(row.dataset.cardField)) $(row).remove(); });
+        return $tooltip.prop("outerHTML");
+    }
+
+    sensorContactFresh(contact) {
+        return Boolean(contact.fresh) && Number(contact.freshUntil) > GameServerTime.now();
+    }
+
+    sensorContactRoute(contact) {
+        const route = contact.route;
+        return Number(contact.tier) >= 3 && route?.motionStart && route?.motionEnd
+            && Number.isFinite(Number(route.startsAt)) && Number(route.endsAt) > Number(route.startsAt)
+            ? route : null;
+    }
+
+    sensorEndpointLabel(coordinate) {
+        if (Number(coordinate?.type) !== 1) return `[${coordinate.galaxy}:${coordinate.system}] ${number_format(coordinate.distance)} / ${number_format(coordinate.angle, 1)}°`;
+        const type = ({ 1: "Планета", 2: "Обломки", 3: "Луна", 4: "Гигант", 5: "Сектор пояса" })[coordinate.objectType] || "Орбита";
+        return `[${coordinate.galaxy}:${coordinate.system}:${coordinate.orbit}] ${type}${coordinate.siteId ? ` #${coordinate.siteId}` : ""}`;
+    }
+
+    createSensorContactCard(contact, $card = null) {
+        const point = contact.position;
+        const route = this.sensorContactRoute(contact);
+        $card ||= $("<div>").addClass("OverviewFleetTooltip SensorContactCard");
+        this.cardField($card, "title", "strong", "OverviewFleetTooltipTitle", `Контакт #${contact.id}`);
+        this.cardField($card, "fresh", "span", "", this.sensorContactFresh(contact) ? "Сенсорное обнаружение" : "Последняя известная отметка");
+        this.cardField($card, "position", "span", "", `[${point.galaxy}:${point.system}] ${number_format(point.distance)} / ${number_format(point.angle, 1)}°`);
+        this.cardField($card, "time", "span", "", `Наблюдение: ${formatTimestamp(contact.observedAt, "timedate")}`);
+        this.cardField($card, "routeTitle", "strong", "OverviewFleetTooltipTitle", "Обнаруженный участок").toggle(Boolean(route));
+        this.cardField($card, "from", "span", "", route ? `Откуда: ${this.sensorEndpointLabel(route.start)}` : "").toggle(Boolean(route));
+        this.cardField($card, "to", "span", "", route ? `Куда: ${this.sensorEndpointLabel(route.end)}` : "").toggle(Boolean(route));
+        this.cardField($card, "course", "span", "", `Курс: ${number_format(contact.course || 0, 1)}° · линия не обозначает цель`)
+            .toggle(!route && typeof contact.course === "number" && Number.isFinite(contact.course));
+        this.cardField($card, "owner", "span", "", contact.owner_name || "").toggle(Boolean(contact.owner_name));
+        this.cardField($card, "range", "span", "", contact.countRange ? `Кораблей: ${number_format(contact.countRange[0])}–${number_format(contact.countRange[1])}` : "")
+            .toggle(Boolean(contact.countRange && !contact.ships));
+        this.createFleetCompositionTooltip(contact, this.cardField($card, "composition", "div", "OverviewFleetTooltip"));
+        return $card;
+    }
+
+    createSensorContactRow(contact, $row = null) {
+        if (!$row) $row = $("<article>").addClass("OverviewFleetEvent SensorContactRow").append(
+                $("<span>").addClass("OverviewFleetEventTime").attr("aria-label", "Сенсорный контакт")
+                    .append($("<i>", { class: "mdi mdi-radar", "aria-hidden": "true" })),
+                $("<span>").addClass("OverviewFleetEventBody").append(
+                    $("<span>").addClass("OverviewFleetEventTitle"),
+                    $("<span>").addClass("OverviewFleetEventRoute")
+                ),
+                $("<span>").addClass("OverviewFleetEventStatus")
+            );
+        $row.data({ freshUntil: contact.freshUntil, retainUntil: contact.retainUntil, fresh: contact.fresh, contact })
+            .toggleClass("Stale", !this.sensorContactFresh(contact));
+        $row.find(".OverviewFleetEventTitle")
+            .text(`Контакт #${contact.id}${contact.owner_name ? ` · ${contact.owner_name}` : ""}`)
+            .ToolTip(this.createSensorContactCard(contact).prop("outerHTML"), { "max-width": "min(320px, calc(100vw - 24px))" });
+        $row.find(".OverviewFleetEventRoute").text(`[${contact.position.galaxy}:${contact.position.system}] ${number_format(contact.position.distance)}`);
+        $row.find(".OverviewFleetEventStatus").text(this.sensorContactFresh(contact) ? "Обнаружен" : "Отметка");
+        return $row;
     }
 
     createDiv(text, id = null, nameclass = null, onClick = null) {

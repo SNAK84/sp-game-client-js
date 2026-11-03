@@ -61,13 +61,48 @@ class ToolTipClass {
 
 	RenderText(newContent) {
 		if (newContent instanceof jQuery || newContent instanceof HTMLElement) {
-			this.$Tip.empty().append(newContent);
+			const element = newContent instanceof jQuery ? newContent[0] : newContent;
+			if (this.$Tip.children().first()[0] !== element) this.$Tip.empty().append(newContent);
+			this.renderedText = null;
 		} else {
-			this.$Tip.html(newContent.replace(/\n/g, '<br>') ?? "");
+			const html = String(newContent ?? "").replace(/\n/g, '<br>');
+			if (this.renderedText !== html || this.renderedParent !== this.parent) {
+				const template = document.createElement("template");
+				template.innerHTML = html;
+				if (this.renderedParent !== this.parent || this.renderedText === null) this.$Tip.empty();
+				this.updateTextNodes(this.$Tip[0], template.content);
+				this.renderedText = html;
+			}
 		}
+		this.renderedParent = this.parent;
 
 		this.setCss();
 		//this.setPosition();
+	}
+
+	// HTML-подсказки содержат данные, а не обработчики. Меняем значения и
+	// структуру только изменившихся полей; существующие узлы остаются на месте.
+	updateTextNodes(parent, source) {
+		const key = node => node.nodeType === Node.ELEMENT_NODE
+			? `${node.tagName}:${node.getAttribute('data-card-field') ?? node.id}` : null;
+		const old = Array.from(parent.childNodes);
+		const used = new Set();
+		Array.from(source.childNodes).forEach((next, index) => {
+			const wanted = key(next);
+			let current = old.find(node => !used.has(node) && node.nodeType === next.nodeType
+				&& (wanted !== null ? key(node) === wanted : node === old[index]));
+			if (!current) current = next.cloneNode(true);
+			else if (next.nodeType === Node.TEXT_NODE) {
+				if (current.nodeValue !== next.nodeValue) current.nodeValue = next.nodeValue;
+			} else if (next.nodeType === Node.ELEMENT_NODE) {
+				for (const attr of Array.from(current.attributes)) if (!next.hasAttribute(attr.name)) current.removeAttribute(attr.name);
+				for (const attr of Array.from(next.attributes)) if (current.getAttribute(attr.name) !== attr.value) current.setAttribute(attr.name, attr.value);
+				this.updateTextNodes(current, next);
+			}
+			used.add(current);
+			if (parent.childNodes[index] !== current) parent.insertBefore(current, parent.childNodes[index] || null);
+		});
+		for (const node of old) if (!used.has(node)) $(node).remove();
 	}
 
 	Render(parent, fast = false, e = null) {
@@ -92,10 +127,7 @@ class ToolTipClass {
 			changed = currentEl !== newEl;
 		} else if (typeof newContent === "string") {
 			const normalizedNew = newContent.replace(/\n/g, '<br>').trim();
-			const normalizedOld = ($tip.html() || '').trim();
-
-			// Сравнение без учёта мелких HTML-разниц
-			changed = $('<div>').html(normalizedOld).text().trim() !== $('<div>').html(normalizedNew).text().trim();
+			changed = this.renderedParent !== parent || this.renderedText?.trim() !== normalizedNew;
 		}
 
 		if (!changed) {
@@ -104,7 +136,7 @@ class ToolTipClass {
 			return true;
 		}
 
-		if (fast || !this.$Tip.is(":visible")) {
+		if (fast || this.renderedParent === parent || !this.$Tip.is(":visible")) {
 			this.RenderText(newContent);
 		} else {
 			// Плавно меняем содержимое только уже открытого tooltip.
@@ -286,6 +318,9 @@ class ToolTipClass {
 			const { interactive, placement, ...styles } = this.css;
 			this.$Tip.css(styles);
 		}
+		// Подсказка может перекрыть источник у края экрана. Не отнимаем
+		// у него hover, если внутри tooltip нет интерактивных действий.
+		this.$Tip.css("pointer-events", this.css?.interactive ? "auto" : "none");
 	}
 
 	// --- Автопозиция при resize ---

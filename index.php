@@ -8,7 +8,7 @@ ini_set('display_errors', 1);
 define('ROOT_DIR', str_replace('\\', '/', dirname(__FILE__)) . '/');
 
 
-$StyleSheet = array('style', 'jquery-ui/jquery-ui.min', 'materialdesignicons.min');
+$StyleSheet = array('style', 'jquery-ui/jquery-ui.min', 'materialdesignicons.min', 'battle-reports');
 $Themes = array('light' => 'css/theme-light.css', 'dark' => 'css/theme-dark.css');
 $Theme = 'dark';
 
@@ -22,8 +22,10 @@ $JavaScripts = array(
     'websocket',
     'LangManager',
     'BasePageClass',
+    'BattleReports',
     'GameBuildElement',
-    'IconSelector'
+    'IconSelector',
+    'pages/InformationPageClass'
 );
 $PagesDir = 'js/pages/';
 $Pages = array(
@@ -36,6 +38,7 @@ $Pages = array(
     'galaxy' => 'GalaxyPageClass',
     'fleets' => 'FleetsPageClass',
     'messages' => 'MessagesPageClass',
+    'friends' => 'FriendsPageClass',
 );
 
 $LangsDir = 'lang/';
@@ -83,6 +86,7 @@ $tpl = <<<HTML
             </div>
             <div id="menu">Обсерватория</div>
             <div id="submenu">
+                <div mode="friends">Друзья</div>
                 <div mode="messages">Сообщения</div>
                 <div mode="chat">Чат</div>
                 <div mode="ally">Альянс</div>
@@ -247,6 +251,19 @@ function GetHeads()
     SetAjaxThemeLink();
     SetAjaxPagesLink();
     SetAjaxLangsLink();
+    // Обновляемые GIF исследований и кораблей сбрасывают кэш так же, как JS/CSS.
+    $researchImages = [];
+    foreach (['computer_tech', 'fleet_logistics_tech', 'sensor_tech', 'extraterrestrial_mining_tech'] as $name) {
+        $path = 'images/techs/' . $name . '.gif';
+        $researchImages[$name] = '/' . $path . '?v=' . getFileVersion(ROOT_DIR . $path);
+    }
+    AddAjax('ResearchImagesLink', $researchImages);
+    $fleetImages = [];
+    foreach (['ev_transporter', 'giga_recykler', 'sensor_scout', 'geological_surveyor', 'asteroid_miner', 'gas_extractor'] as $name) {
+        $path = 'images/fleets/' . $name . '.gif';
+        $fleetImages[$name] = '/' . $path . '?v=' . getFileVersion(ROOT_DIR . $path);
+    }
+    AddAjax('FleetImagesLink', $fleetImages);
     $Header .= GetAjaxArray();
 
     $Header .= "</head>\n<body>\n";

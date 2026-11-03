@@ -1,5 +1,107 @@
 @import "https://fonts.fontstorage.com/import/ubuntumono.css";
 
+.FleetGroupAttackOptions { min-width: 0; text-align: left; }
+.FleetGroupAttackOptions label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; margin: 6px 0; text-align: left; }
+.FleetGroupAttackOptions select, .FleetGroupAttackOptions input { width: 100%; min-width: 0; max-width: 100%; margin: 0; box-sizing: border-box; }
+.FleetGroupAttackOptions small { display: block; opacity: .75; }
+.FleetGroupAttackMembers { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+.FleetGroupAttackMembers > * { margin: 0; }
+.FleetGroupAttackMember { padding: 3px 7px; border: 1px solid var(--color-border); border-radius: 4px; }
+.FleetGroupInviteError { color: var(--color-danger-text, #ff7777); text-align: left; }
+dialog-main:has(.FleetGroupInviteForm) {
+    min-width: 0 !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 40px);
+}
+dialog-main:has(.FleetGroupInviteForm) > dialog-content {
+    height: auto;
+    min-height: 0;
+    margin: 28px 10px 64px !important;
+    max-height: calc(100dvh - 150px);
+}
+.FleetGroupInviteForm { margin: 0; }
+.FleetGroupInviteForm > p, .FleetGroupInviteForm small { margin: 6px 0; text-align: left; }
+
+#Content.FriendsPage { min-width: 0; }
+.FriendsPanel { width: min(680px, calc(100% - 20px)); margin: 12px auto; padding: 12px; }
+.FriendsPanel h2, .FriendsPanel h3, .FriendsPanel p { margin: 8px 0; }
+.FriendsHeader, .FriendsInfo, .FriendsActions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0; }
+.FriendsHeader { justify-content: space-between; }
+.FriendsHeader h2, .FriendsSection h3, .FriendName { font-weight: bold; }
+.FriendsHint { text-align: left; line-height: 1.5; opacity: .8; }
+.FriendsSection { margin: 12px 0 0; }
+.FriendsSection h3 { display: flex; justify-content: space-between; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--color-border); }
+.FriendsCount { margin: 0; opacity: .6; }
+.FriendsRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; margin: 6px 0; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px; }
+.FriendsInfo { min-width: 0; }
+.FriendName { overflow-wrap: anywhere; text-align: left; margin: 0; }
+.FriendsInfo span, .FriendsInfo time { margin: 0; }
+.FriendsRow button, .FriendsHeader button { padding: 5px 8px; margin: 0; }
+.FriendCoordinates { color: var(--color-info, #75c9ff); }
+.FriendRequestDate, .FriendOnline { font-size: .9em; opacity: .8; }
+.FriendOnline-online { color: #7cda94; }
+.FriendOnline-recent { color: #e7c374; }
+.FriendRequestText { grid-column: 1 / -1; margin: 0; padding: 4px 8px; border-left: 2px solid var(--color-border); text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.FriendsEmpty { opacity: .65; }
+dialog-main:has(.FriendRequestForm) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 40px);
+}
+dialog-main:has(.FriendRequestForm)[style*="display: block"] { display: flex !important; }
+dialog-main:has(.FriendRequestForm) > dialog-content {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    max-height: calc(100dvh - 84px);
+    margin: 28px 14px 14px;
+    overflow: hidden;
+}
+.FriendRequestForm { display: flex; flex-direction: column; width: 100%; min-width: 0; min-height: 0; margin: 0; }
+.FriendRequestForm > *, .FriendRequestBody > * { margin: 0; }
+.FriendRequestBody { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
+.FriendRequestRecipient { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-input-bg); }
+.FriendRequestRecipient > * { margin: 0; overflow-wrap: anywhere; }
+.FriendRequestRecipient strong { font-weight: bold; text-align: left; }
+.FriendRequestCoordinates { color: var(--color-info-text); font-variant-numeric: tabular-nums; }
+.FriendRequestForm label { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; margin-top: 6px; text-align: left; }
+.FriendRequestForm label span { margin: 0; color: var(--color-text-secondary); }
+.FriendRequestForm textarea {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 112px;
+    max-height: min(240px, 35dvh);
+    resize: vertical;
+    padding: 10px;
+    border: 1px solid var(--color-input-border);
+    border-radius: 6px;
+    background: var(--color-input-bg);
+    color: var(--color-input-text);
+    text-align: left;
+    text-shadow: none;
+    line-height: 1.5;
+}
+.FriendRequestForm textarea::placeholder { color: var(--color-text-secondary); text-shadow: none; }
+.FriendRequestForm textarea:focus { border-color: var(--color-info-text); }
+.FriendRequestCounter { text-align: right; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+.FriendRequestFeedback { text-align: left; line-height: 1.5; overflow-wrap: anywhere; }
+.FriendRequestButtons { display: flex; flex: 0 0 auto; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.FriendRequestButtons button { margin: 0; padding: 8px 12px; }
+@media (max-width: 540px) {
+    .FriendsRow { grid-template-columns: minmax(0, 1fr); }
+    .FriendsActions { justify-content: flex-end; }
+}
+.FleetDefendOptions { width: 100%; padding: 6px; }
+.FleetDefendOptions p { margin: 5px 0; opacity: .8; }
+.FleetDefendOptions select { padding: 4px 8px; }
+.FleetMiningOptions { display: grid; gap: 6px; box-sizing: border-box; }
+.FleetMiningOptions > label { display: grid; grid-template-columns: minmax(90px, .7fr) minmax(0, 1fr); gap: 6px; align-items: center; }
+.FleetMiningOptions select { min-width: 0; width: 100%; max-width: 100%; }
+
 
 * {
     box-sizing: border-box;
@@ -94,6 +196,216 @@ overlay {
     /* backdrop-filter: blur(2px); */
 }
 
+
+dialog-main:has(.InformationPage) {
+    min-width: 0;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 48px);
+}
+
+/* Dialog.show задаёт block; не перекрываем display:none при закрытии. */
+dialog-main:has(.InformationPage)[style*="display: block"] {
+    display: flex !important;
+}
+
+dialog-main:has(.InformationPage) > dialog-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    min-width: 0;
+    margin: 26px 10px 64px !important;
+    max-height: calc(100dvh - 160px);
+}
+
+.InformationPage,
+.InformationPage * {
+    margin: 0;
+}
+
+.InformationPage {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    width: 100%;
+}
+
+.InformationHero {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.InformationHero > img {
+    flex: 0 0 auto;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.InformationIntro {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+}
+
+.InformationIntro > * {
+    text-align: left;
+}
+
+.InformationIntro > h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-info-text);
+}
+
+.InformationContext,
+.InformationNote {
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    line-height: 1.5;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.InformationDescription {
+    white-space: pre-line;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.InformationSection {
+    width: 100%;
+    min-width: 0;
+}
+
+.InformationSection > h3 {
+    padding: 5px 0;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-info-text);
+    font-size: 12px;
+    text-align: left;
+}
+
+.InformationCost {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.InformationCost > .InformationNote {
+    flex-basis: 100%;
+}
+
+.InformationTableScroll {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+    overflow-x: auto;
+}
+
+.InformationTable {
+    width: auto;
+    border-collapse: collapse;
+}
+
+.InformationTable th,
+.InformationTable td {
+    padding: 2px 5px;
+    line-height: 1.25;
+    letter-spacing: normal;
+    border-radius: 0;
+    border-bottom: 1px solid var(--color-border);
+    font-variant-numeric: tabular-nums;
+}
+
+.InformationTable th {
+    min-width: 0;
+    color: var(--color-text-secondary);
+    font-size: 10px;
+}
+
+.InformationTable td {
+    white-space: nowrap;
+}
+
+.InformationTable td:first-child {
+    text-align: left;
+}
+
+.InformationCurrentRow {
+    background: var(--color-info-bg);
+}
+
+.InformationLink {
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-info-text);
+    text-align: left;
+    white-space: normal;
+}
+
+.InformationLink:hover {
+    text-decoration: underline;
+}
+
+.InformationTable .InformationLink {
+    min-height: 0;
+    padding: 1px 0;
+    line-height: 1.25;
+    letter-spacing: normal;
+}
+
+@media (pointer: coarse) {
+    .InformationTable .InformationLink {
+        min-height: 24px;
+    }
+}
+
+.InformationNote {
+    padding-top: 5px;
+}
+
+.InformationNotice {
+    padding: 16px;
+}
+
+.InformationBonuses {
+    list-style: none;
+    line-height: 1.6;
+}
+
+.InformationBonuses > li {
+    text-align: left;
+}
+
+@media (max-width: 480px) {
+    .InformationHero {
+        display: flow-root;
+    }
+
+    .InformationHero > img {
+        width: 80px;
+        height: 80px;
+        float: left;
+        margin: 0 8px 4px 0;
+    }
+
+    .InformationIntro {
+        display: block;
+    }
+
+    .InformationIntro > :not(:first-child) {
+        margin-top: 5px;
+    }
+
+    .InformationIntro > h2 {
+        font-size: 12px;
+    }
+}
 
 dialog-overlay {
     position: fixed;
@@ -430,80 +742,200 @@ dialog-close-button:focus {
 
 .PlanetsList {
     position: relative;
-    /*grid-column: 2;
-    grid-row: 2;*/
+    width: calc(100% - 8px);
+    margin: 0 4px 6px;
 }
 
-.PlanetsList .ui-selectmenu-button {
-    width: 140px;
+.PlanetsList .ui-selectmenu-button.ui-button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 10px;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-height: 42px;
+    margin: 0;
+    padding: 4px;
     color: var(--color-text);
-    background: var(--color-input-bg) !important;
-    border: 1px solid var(--color-border) !important;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
     text-decoration: none;
+    box-shadow: none;
+    text-align: left;
+    white-space: normal;
+}
 
+.PlanetsList .ui-selectmenu-button:hover,
+.PlanetsList .ui-selectmenu-button-open {
+    border-color: var(--color-info-text);
+    background: var(--color-input-bg);
+    color: var(--color-text);
+    transform: none;
+}
+
+.PlanetsList .ui-selectmenu-button:focus-visible {
+    outline: 2px solid var(--color-info-text);
+    outline-offset: 2px;
+}
+
+#planets-select-button .ui-selectmenu-icon {
+    grid-column: 2;
+    grid-row: 1;
+    float: none;
+    width: 10px;
+    height: 14px;
+    margin: 0;
+    background: none;
+    text-indent: 0;
+}
+
+.PlanetsList .ui-selectmenu-icon::after {
+    content: "⌄";
+    display: block;
+    color: var(--color-info-text);
+    font-size: 13px;
+    line-height: 14px;
+    transform: rotate(0deg);
+    transition: transform 0.2s ease;
+}
+
+.PlanetsList .ui-selectmenu-button-open .ui-selectmenu-icon::after {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .PlanetsList .ui-selectmenu-icon::after {
+        transition: none;
+    }
+}
+
+.PlanetsList .planet-wrapper {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.ui-selectmenu-menu:has(.planet-icons) {
+    z-index: 120;
 }
 
 #planets-select-menu {
-    border: 1px solid var(--color-border) !important;
-    background: var(--color-input-bg) !important;
-    margin-left: 16px !important;
-    padding: 2px;
-}
-
-
-
-
-.PlanetsList .ui-icon-triangle-1-s {
-    display: none !important;
-}
-
-/* Основной контейнер меню selectmenu с иконками */
-.ui-selectmenu-menu .ui-menu.planet-icons .ui-menu-item-wrapper {
-    margin: 2px;
-    padding: 6px 6px 6px 20px;
-    border-radius: 6px;
-    background: var(--color-input-bg);
-    color: var(--color-text);
-    text-shadow: 0 1px 2px var(--color-shadow);
+    max-width: calc(100vw - 20px);
+    max-height: min(340px, calc(100dvh - 100px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0;
+    padding: 4px;
     border: 1px solid var(--color-border);
-    /*transition: background 0.12s, color 0.12s;*/
+    border-radius: 8px;
+    background: var(--color-bg-ng);
+    box-shadow: 0 8px 24px var(--color-box-shadow);
+}
+
+#planets-select-menu > .ui-menu-item {
+    margin: 0;
+    padding: 0;
+}
+
+#planets-select-menu .ui-menu-item-wrapper {
+    min-height: 38px;
+    margin: 0;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--color-text);
     cursor: pointer;
-    text-align: center;
+}
+
+#planets-select-menu .ui-menu-item-wrapper:hover,
+#planets-select-menu .ui-state-active,
+#planets-select-menu .planet-select {
+    border-color: color-mix(in srgb, var(--color-info-text) 55%, var(--color-border));
+    background: var(--color-info-bg);
+    color: var(--color-text);
+}
+
+.planet-wrapper {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    width: 100%;
+}
+
+.planet-wrapper,
+.planet-wrapper * {
+    margin: 0;
+}
+
+.planet-wrapper .planet-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-info-text) 15%, transparent);
+}
+
+.PlanetSelectorText {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.PlanetSelectorName {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    color: var(--color-text);
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+#planets-select-menu .PlanetSelectorName {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.PlanetSelectorMeta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    min-width: 0;
+}
+
+.PlanetSelectorCoordinates {
+    color: var(--color-info-text);
+    font-size: 10px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.PlanetSelectorType {
+    color: var(--color-text-secondary);
+    font-size: 9px;
+}
+
+.PlanetsList .PlanetSelectorType {
+    display: none;
+}
+
+.PlanetSelectorHome,
+.PlanetSelectorCheck {
+    color: var(--color-info-text);
+    font-size: 13px;
     line-height: 1;
-    transition: all 0.2s ease;
-    /* отступ слева для иконки */
 }
 
-.ui-selectmenu-menu .ui-menu.planet-icons .ui-menu-item-wrapper:hover {
-    margin: 2px;
-    box-shadow: 0 0 4px var(--color-info-box-shadow-inset) inset;
-    color: var(--color-text-hover) !important;
-    font-weight: bold !important;
-    transform: scale(1.05);
-}
-
-/* Иконка планеты в пункте меню */
-.ui-selectmenu-menu .ui-menu.planet-icons .planet-icon {
-    height: 20px;
-    width: 20px;
-    background-repeat: no-repeat;
-    background-size: cover;
-    margin-right: 20px;
-}
-
-/* Иконка в самом select (выбранная планета) */
-.PlanetsList .planet-icon {
-    height: 20px;
-    width: 20px;
-    background-repeat: no-repeat;
-    background-size: cover;
-    margin-right: 0.5em;
-}
-
-.planet-select {
-    color: var(--color-info-text) !important;
-    box-shadow: 0 0 4px var(--color-info-box-shadow-inset) inset !important;
-    transform: scale(0.95);
+.PlanetSelectorCheck {
+    width: 14px;
+    text-align: right;
 }
 
 #LeftMenu {
@@ -2360,21 +2792,38 @@ icon-selector[vertical] {
 }
 
 /* Позиция в спрайте + цвет */
-.FleetMissionPanel .Mission_ATTACK       { --mission-pos:   0px; --mission-color: #ff5252; } /* атака */
-.FleetMissionPanel .Mission_GROUP_ATTACK { --mission-pos: -40px; --mission-color: #ff1744; } /* групповая атака */
-.FleetMissionPanel .Mission_DEFEND       { --mission-pos: -80px; --mission-color: #4079ff; } /* оборона */
-.FleetMissionPanel .Mission_DESTROY      { --mission-pos:-120px; --mission-color: #ff3d00; } /* уничтожение */
+.FleetMissionPanel .Mission_ATTACK,
+.GalaxyPlanetTooltipMission.Mission_ATTACK       { --mission-pos:   0px; --mission-color: #ff5252; } /* атака */
+.FleetMissionPanel .Mission_GROUP_ATTACK,
+.GalaxyPlanetTooltipMission.Mission_GROUP_ATTACK { --mission-pos: -40px; --mission-color: #ff1744; } /* групповая атака */
+.FleetMissionPanel .Mission_DEFEND,
+.GalaxyPlanetTooltipMission.Mission_DEFEND       { --mission-pos: -80px; --mission-color: #4079ff; } /* оборона */
+.FleetMissionPanel .Mission_DESTROY,
+.GalaxyPlanetTooltipMission.Mission_DESTROY      { --mission-pos:-120px; --mission-color: #ff3d00; } /* уничтожение */
 
-.FleetMissionPanel .Mission_TRANSPORT    { --mission-pos:-160px; --mission-color: #ffca28; } /* транспорт */
-.FleetMissionPanel .Mission_RELOCATE     { --mission-pos:-200px; --mission-color: #ff8a65; } /* передислокация */
-.FleetMissionPanel .Mission_RECYCLE      { --mission-pos:-239px; --mission-color: #ffab00; } /* переработка */
-.FleetMissionPanel .Mission_COLONIZE     { --mission-pos:-280px; --mission-color: #66bb6a; } /* колонизация */
+.FleetMissionPanel .Mission_TRANSPORT,
+.GalaxyPlanetTooltipMission.Mission_TRANSPORT    { --mission-pos:-160px; --mission-color: #ffca28; } /* транспорт */
+.FleetMissionPanel .Mission_RELOCATE,
+.GalaxyPlanetTooltipMission.Mission_RELOCATE     { --mission-pos:-200px; --mission-color: #ff8a65; } /* передислокация */
+.FleetMissionPanel .Mission_RECYCLE,
+.GalaxyPlanetTooltipMission.Mission_RECYCLE      { --mission-pos:-239px; --mission-color: #ffab00; } /* переработка */
+.FleetMissionPanel .Mission_COLONIZE,
+.GalaxyPlanetTooltipMission.Mission_COLONIZE     { --mission-pos:-280px; --mission-color: #66bb6a; } /* колонизация */
 
-.FleetMissionPanel .Mission_SPY          { --mission-pos:-320px; --mission-color: #90a4ae; } /* шпионаж */
-.FleetMissionPanel .Mission_RESEARCH     { --mission-pos:-360px; --mission-color: #b388ff; } /* исследование */
-.FleetMissionPanel .Mission_OBSERVE      { --mission-pos:-400px; --mission-color: #26c6da; } /* наблюдение */
-.FleetMissionPanel .Mission_MERGE        { --mission-pos:-440px; --mission-color: #b0bec5; } /* объединение */
-.FleetMissionPanel .Mission_EXPEDITION   { --mission-pos:-480px; --mission-color: #26a69a; } /* экспедиция */
+.FleetMissionPanel .Mission_SPY,
+.GalaxyPlanetTooltipMission.Mission_SPY          { --mission-pos:-320px; --mission-color: #90a4ae; } /* шпионаж */
+.FleetMissionPanel .Mission_RESEARCH,
+.GalaxyPlanetTooltipMission.Mission_RESEARCH     { --mission-pos:-360px; --mission-color: #b388ff; } /* исследование */
+.FleetMissionPanel .Mission_OBSERVE,
+.GalaxyPlanetTooltipMission.Mission_OBSERVE      { --mission-pos:-400px; --mission-color: #26c6da; } /* наблюдение */
+.FleetMissionPanel .Mission_MERGE,
+.GalaxyPlanetTooltipMission.Mission_MERGE        { --mission-pos:-440px; --mission-color: #b0bec5; } /* объединение */
+.FleetMissionPanel .Mission_EXPEDITION,
+.GalaxyPlanetTooltipMission.Mission_EXPEDITION   { --mission-pos:-480px; --mission-color: #26a69a; } /* экспедиция */
+.FleetMissionPanel .Mission_MINING,
+.GalaxyPlanetTooltipMission.Mission_MINING      { --mission-pos:-239px; --mission-color: #37d9a2; } /* добыча */
+.FleetMissionPanel .Mission_CAPTURE,
+.GalaxyPlanetTooltipMission.Mission_CAPTURE     { --mission-pos:   0px; --mission-color: #ff8a65; } /* захват объекта */
 
 
 /* выбранная миссия */
@@ -2396,6 +2845,9 @@ icon-selector[vertical] {
     -moz-appearance: textfield;
     appearance: none;
 }
+
+#Content.OverView,
+#Content.Galaxy { min-width: 0; }
 
 .OverView #UserName {
     width: auto;
@@ -2457,49 +2909,87 @@ icon-selector[vertical] {
 .OverView #Planet #PlanetImage {
     position: absolute;
     max-width: 735px;
-    width: 735px;
-    height: 735px;
+    width: 122.5%;
+    height: auto;
+    aspect-ratio: 1;
     border-radius: 384px;
     box-shadow: 0 0 50px #fff;
-    left: 50px;
+    left: 8.333333%;
     top: 150px;
     z-index: 0;
 }
 
+.OverView #Planet #PlanetImage.OverviewMoonSurface {
+    border-radius: 50%;
+    /* У луны нет атмосферы: не применяем свечение обычных планет. */
+    box-shadow: none;
+}
+
 .OverView #Planet #PlanetDebris {
     position: absolute;
-    background: url("/images/planets/overview/debris.png") 50px 0 no-repeat;
+    background: url("/images/planets/galaxy/debris-ring-v2.png") center / 100% 100% no-repeat;
     cursor: pointer;
-    border-radius: 100%;
-    width: 830px;
-    height: 830px;
-    left: -20px;
-    top: 85px;
+    /* Размеры и смещения относительно изображения планеты, не viewport. */
+    width: 120%;
+    aspect-ratio: 1;
+    left: -10%;
+    top: -10%;
     z-index: 5;
-    -webkit-transition: all 0.5s linear;
-    -moz-transition: all 0.5s linear;
-    -o-transition: all 0.5s linear;
-    transition: all 0.5s linear;
-    opacity: 0.65;
+    transition: opacity 0.2s, filter 0.2s;
+    opacity: 0.9;
+    /* Вырезаем центр: обломки не перекрывают планету и её события мыши. */
+    clip-path: url("#OverviewDebrisRingClip");
 }
 
-.OverView #Planet #PlanetDebris:hover {
-    background: url("/images/planets/overview/debris_h.png") 50px 0 no-repeat;
-
-    opacity: 1;
-}
-
-.OverView #Planet #PlanetDebrisNoSel {
+.OverView #Planet .OverviewMoon {
     position: absolute;
-    border-radius: 100%;
-    width: 600px;
-    height: 620px;
-    left: 120px;
-    top: 180px;
-    content: "";
-    z-index: 7;
+    top: 78px;
+    left: 18px;
+    width: clamp(76px, 20%, 112px);
+    aspect-ratio: 1;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    box-shadow: none;
+    cursor: pointer;
+    z-index: 6;
 }
 
+.OverView #Planet .OverviewMoonImage {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 0 14px rgba(205, 220, 240, .3);
+    transition: filter .15s, box-shadow .15s;
+}
+
+.OverView #Planet .OverviewMoon:hover .OverviewMoonImage,
+.OverView #Planet .OverviewMoon:focus-visible .OverviewMoonImage {
+    filter: brightness(1.15);
+    box-shadow: 0 0 18px rgba(100, 210, 255, .65);
+}
+
+.OverView #Planet .OverviewMoon:focus-visible {
+    outline: 2px solid var(--color-info-text);
+    outline-offset: 4px;
+}
+
+.OverView #Planet #PlanetDebris:hover,
+.OverView #Planet #PlanetDebris:focus-visible {
+    opacity: 1;
+    filter: brightness(1.2);
+}
+
+.DebrisTooltip { display: grid; gap: 6px; min-width: 160px; }
+.DebrisTooltipTitle { color: #d7ba92; }
+.DebrisTooltip .ResBox { justify-content: flex-start; }
+.DebrisTooltipHint { font-size: 11px; opacity: 0.75; white-space: normal; }
 .OverView .Queues {
     display: flex;
     flex-direction: row;
@@ -2545,7 +3035,7 @@ icon-selector[vertical] {
 
 .OverviewFleetEvent {
     display: grid;
-    grid-template-columns: 82px minmax(0, 1fr) 50px;
+    grid-template-columns: 82px minmax(0, 1fr) max-content;
     gap: 7px;
     align-items: center;
     width: calc(100% - 8px);
@@ -2579,6 +3069,7 @@ icon-selector[vertical] {
 
 .OverviewFleetEventBody {
     display: flex;
+    width: 100%;
     gap: 8px;
     align-items: baseline;
     justify-content: center;
@@ -2626,10 +3117,32 @@ icon-selector[vertical] {
 
 .OverviewFleetEventTitle {
     color: var(--color-info-text);
+    cursor: help;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
 }
 
+.OverviewFleetTooltip, .OverviewFleetTooltip * { margin: 0; text-align: left; }
+.OverviewFleetTooltip { display: grid; gap: 7px; min-width: min(200px, calc(100vw - 40px)); }
+.OverviewFleetTooltipTitle { color: var(--color-info-text); font-weight: 600; }
+.OverviewFleetTooltipShips, .OverviewFleetTooltipCargo { display: grid; gap: 4px; }
+.OverviewFleetTooltipShip, .OverviewFleetTooltipResource, .OverviewFleetTooltipTotal {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: baseline;
+}
+.OverviewFleetTooltipShip span, .OverviewFleetTooltipResource span { min-width: 0; overflow-wrap: anywhere; }
+.OverviewFleetTooltipShip b, .OverviewFleetTooltipResource b, .OverviewFleetTooltipTotal b {
+    color: var(--color-success-text); font-weight: 600; white-space: nowrap;
+}
+.OverviewFleetTooltipTotal { border-top: 1px solid var(--color-border); padding-top: 6px; }
+.OverviewFleetTooltipEmpty { color: var(--color-text-secondary); }
+.SensorContactRow { cursor: default; grid-template-columns: 20px minmax(0, 1fr) max-content; }
+.SensorContactRow .OverviewFleetEventBody { flex-direction: column; gap: 2px; align-items: center; }
+.SensorContactRow .OverviewFleetEventTitle, .SensorContactRow .OverviewFleetEventRoute { max-width: 100%; }
+.SensorContactRow.Stale { opacity: .6; }
+.SensorContactCard { max-width: 100%; overflow-wrap: anywhere; }
+
 .OverviewFleetEventsEmpty {
-    padding: 9px;
+    padding-bottom: 4px;
     text-align: center;
     opacity: 0.72;
 }
@@ -2641,7 +3154,7 @@ icon-selector[vertical] {
     }
 
     .OverviewFleetEvent {
-        grid-template-columns: 68px minmax(0, 1fr) 42px;
+        grid-template-columns: 68px minmax(0, 1fr) max-content;
         gap: 4px;
         padding: 3px 5px;
     }
@@ -2663,7 +3176,233 @@ icon-selector[vertical] {
 .ShipyardPage {
     display: flex;
     flex-direction: column;
+    gap: 8px;
     align-items: center;
+}
+
+#Content.BuildsPage,
+#Content.ResearchsPage,
+#Content.ShipyardPage {
+    min-width: 0;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .TypeBox {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    width: min(680px, calc(100% - 8px));
+    margin: 0;
+    padding: 6px;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .TypeBox > .header {
+    flex: 0 0 100%;
+    width: 100%;
+    margin: 0 0 2px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-info-text);
+    font-size: 11px;
+    font-weight: 400;
+    text-align: left;
+}
+
+/* Очереди страниц развития; миниатюры в обзоре остаются прежними. */
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues {
+    order: -1;
+    flex: 0 0 auto;
+    width: min(680px, calc(100% - 8px));
+    margin: 0;
+    padding: 6px;
+    gap: 6px;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueuesHeader {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    width: 100%;
+    margin: 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueuesHeader > *,
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueuesHeader span {
+    margin: 0;
+    font-size: 10px;
+    text-align: left;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueuesHeader > .header {
+    flex: 1 1 auto;
+    color: var(--color-info-text);
+    font-size: 11px;
+    font-weight: 400;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueueStatus {
+    padding: 1px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    white-space: nowrap;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .FieldsInfo,
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueueTimer {
+    flex: 1 0 100%;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueueTimer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 4px;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues .QueueTimer > span {
+    white-space: nowrap;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues > .Queued {
+    width: 100%;
+    margin: 0;
+    gap: 4px;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: auto;
+    min-height: 58px;
+    margin: 0;
+    padding: 6px;
+    background: var(--color-box-bg);
+    box-shadow: none;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues.active {
+    border-color: color-mix(in srgb, var(--color-info-text) 55%, var(--color-border));
+    background: color-mix(in srgb, var(--color-info-text) 5%, var(--color-box-bg));
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues > .image {
+    grid-column: 1;
+    grid-row: 1;
+    position: static;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues > .head {
+    grid-column: 2;
+    grid-row: 1;
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 3px 8px;
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0 28px 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues > .head > * {
+    min-width: 0;
+    margin: 0;
+    text-align: left;
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .head span {
+    font-size: inherit;
+    line-height: inherit;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .name {
+    grid-column: 1;
+    grid-row: 1;
+    color: var(--color-text);
+    font-size: 11px;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .level {
+    grid-column: 2;
+    grid-row: 1;
+    white-space: nowrap;
+    text-align: right;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .label {
+    grid-column: 1;
+    grid-row: 2;
+    color: var(--color-text-secondary);
+    font-size: 9px;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .LastTime {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .LastTimeText {
+    display: none;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .Planet {
+    grid-column: 1;
+    grid-row: 3;
+    max-width: 100%;
+    color: var(--color-text-secondary);
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .EndTime {
+    grid-column: 2;
+    grid-row: 3;
+    color: var(--color-text-secondary);
+    font-size: 9px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .head > .tooltip-progress {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    width: 100%;
+    height: 8px;
+    margin: 2px 0 0;
+    border-radius: 4px;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues .head > div:empty {
+    display: none;
+}
+
+:is(.BuildsPage, .ResearchsPage, .ShipyardPage) > .Queues game-build.queues > .btn-box-cancel {
+    --btn-size: 24px;
+    top: 6px;
+    right: 6px;
+    margin: 0;
+    box-shadow: none;
 }
 
 .FleetsPage {
@@ -2671,6 +3410,10 @@ icon-selector[vertical] {
     flex-direction: column;
     gap: 8px;
     align-items: center;
+}
+
+#Content.FleetsPage {
+    min-width: 0;
 }
 
 .FleetFlights {
@@ -2799,6 +3542,64 @@ icon-selector[vertical] {
     font-style: italic;
 }
 
+.FleetFlightProgressTooltip, .FleetFlightProgressTooltip * {
+    box-sizing: border-box;
+    margin: 0;
+    text-align: left;
+    text-shadow: none;
+}
+
+.FleetFlightProgressTooltip {
+    --flight-tooltip-accent: var(--color-success-text);
+    display: grid;
+    gap: 9px;
+    min-width: 0;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.FleetFlightProgressTooltip.Returning,
+.FleetFlightProgressTooltip.Blocked { --flight-tooltip-accent: var(--color-warning-text); }
+.FleetFlightProgressTooltipHeader,
+.FleetFlightProgressTooltipCommand {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+    min-width: 0;
+}
+.FleetFlightProgressTooltipHeader > strong {
+    flex: 1 1 auto;
+    color: var(--color-info-text);
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.FleetFlightProgressTooltipHeader > span { color: var(--flight-tooltip-accent); }
+.FleetFlightProgressTooltipCommand > span {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--flight-tooltip-accent);
+    font-size: 10px;
+}
+.FleetFlightProgressTooltipCommand > strong { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.FleetFlightProgressTooltipRoute {
+    display: grid;
+    gap: 6px;
+    padding: 8px 0;
+    border-block: 1px solid var(--color-border);
+}
+.FleetFlightProgressTooltipRoute > div { position: relative; display: grid; gap: 2px; min-width: 0; padding-left: 18px; }
+.FleetFlightProgressTooltipRoute > div::before { content: ""; position: absolute; top: 4px; left: 2px; width: 6px; height: 6px; border: 1px solid var(--flight-tooltip-accent); border-radius: 50%; background: var(--color-bg); }
+.FleetFlightProgressTooltipRoute > div:first-child::after { content: ""; position: absolute; top: 13px; bottom: -7px; left: 5px; border-left: 1px solid var(--color-border); }
+.FleetFlightProgressTooltipRoute dt,
+.FleetFlightProgressTooltipArrival > span { color: var(--color-text-secondary); font-size: 10px; }
+.FleetFlightProgressTooltipRoute dd { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; }
+.FleetFlightProgressTooltipArrival { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3px 8px; }
+.FleetFlightProgressTooltipArrival > time { color: var(--flight-tooltip-accent); font-variant-numeric: tabular-nums; }
+
 .FleetFlightIdentity {
     display: flex;
     gap: 6px;
@@ -2837,15 +3638,6 @@ icon-selector[vertical] {
     max-width: 100%;
     min-width: 0;
     overflow: hidden;
-    white-space: nowrap;
-}
-
-.FleetFlightTiming > span {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--color-text-secondary);
-    font-size: 9px;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -2893,8 +3685,12 @@ icon-selector[vertical] {
 }
 
 .Returning .FleetFlightTrackFill {
-    inset: 0 0 0 auto;
     background: var(--color-warning-bg);
+}
+
+/* Справа налево заполняется только старый прогресс участка, не всего маршрута. */
+.FleetFlightCard.Returning:not(.WholeRouteProgress) .FleetFlightTrackFill {
+    inset: 0 0 0 auto;
 }
 
 .FleetFlightTrackBoundaries {
@@ -2936,6 +3732,10 @@ icon-selector[vertical] {
     text-shadow: 0 0 6px var(--color-warning-text);
 }
 
+.Holding .FleetFlightMarker {
+    font-size: 12px;
+}
+
 .FleetFlightMissionFinish {
     display: grid;
     grid-template-columns: minmax(0, max-content) auto minmax(0, max-content);
@@ -2961,7 +3761,19 @@ icon-selector[vertical] {
     text-align: right;
 }
 
-.FleetFlightCommandsButton {
+.FleetFlightActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px 5px;
+    min-width: 0;
+    margin: 0;
+}
+
+.FleetFlightCommandsButton,
+.FleetFlightGroupButton,
+.FleetFlightResumeButton,
+.FleetFlightRecallButton {
     justify-self: center;
     max-width: 100%;
     margin: 0;
@@ -2978,13 +3790,61 @@ icon-selector[vertical] {
     cursor: pointer;
 }
 
+.FleetFlightRecallButton {
+    color: var(--color-warning-text);
+}
+
+.FleetFlightRecallButton:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 .FleetFlightCommandsButton[aria-expanded="true"] {
     border-color: var(--color-info-text);
     background: var(--color-input-bg-ng);
 }
 
+dialog-main:has(.FleetResumeForm) {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 32px);
+}
+dialog-main:has(.FleetResumeForm)[style*="display: block"] { display: flex !important; }
+dialog-main:has(.FleetResumeForm) > dialog-title { max-width: calc(100% - 64px); overflow: hidden; text-overflow: ellipsis; }
+dialog-main:has(.FleetResumeForm) > dialog-content {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
+    margin: 26px 10px 10px !important;
+    overflow-x: hidden;
+}
+dialog-main:has(.FleetResumeForm) > dialog-buttons {
+    position: static;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 8px 10px;
+    border-top: 1px solid var(--color-border);
+}
+dialog-main:has(.FleetResumeForm) > dialog-close-button { top: 2px; right: 4px; z-index: 20; }
+.FleetResumeForm, .FleetResumeForm * { box-sizing: border-box; min-width: 0; margin: 0; }
+.FleetResumeForm { display: grid; gap: 8px; text-align: left; }
+.FleetResumeSummary { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--color-info-text); font-size: 11px; }
+.FleetResumeOption { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; gap: 8px; padding: 9px; border: 1px solid var(--color-border); border-radius: 5px; cursor: pointer; }
+.FleetResumeOption:has(input:checked) { border-color: var(--color-info-text); background: var(--color-input-bg-ng); }
+.FleetResumeOption:has(input:disabled) { opacity: .5; cursor: default; }
+.FleetResumeOption input { width: 16px; height: 16px; min-height: 0; padding: 0; accent-color: var(--color-info-text); }
+.FleetResumeOption strong { display: block; margin-bottom: 4px; font-size: 12px; }
+.FleetResumeOption small, .FleetResumeHint { display: block; font-size: 11px; line-height: 1.4; color: var(--color-text-secondary); }
+.FleetResumeOption > span, .FleetResumeOption strong, .FleetResumeOption small, .FleetResumeHint { text-align: left; }
+.FleetResumeError { color: var(--color-danger-text); font-size: 11px; }
+
 .FleetFlightCommands {
     display: grid;
+    box-sizing: border-box;
+    width: 100%;
+    margin-inline: 0;
     gap: 2px;
     margin-top: 5px;
     padding-top: 5px;
@@ -2993,15 +3853,22 @@ icon-selector[vertical] {
 
 .FleetFlightCommandRow {
     display: grid;
-    grid-template-columns: 18px minmax(90px, 1fr) minmax(100px, 1.2fr) auto auto;
+    box-sizing: border-box;
+    width: 100%;
+    margin-inline: 0;
+    grid-template-columns: 20px minmax(0, 1.1fr) minmax(0, 1fr) 66px;
     gap: 6px;
     align-items: center;
     min-width: 0;
-    padding: 2px 4px;
+    padding: 2px 6px;
     border-radius: 3px;
     color: var(--color-text-secondary);
-    font-size: 9px;
+    font-size: 10px;
+    line-height: 1.4;
+    text-align: left;
 }
+.FleetFlightCommandRow > * { min-width: 0; margin: 0; justify-self: stretch; }
+.FleetFlightCommandName > * { margin: 0; }
 
 .FleetFlightCommandRow.Active {
     background: var(--color-input-bg-ng);
@@ -3015,27 +3882,36 @@ icon-selector[vertical] {
 .FleetFlightCommandRow.Completed .FleetFlightCommandPosition {
     color: var(--color-success-text);
 }
+.FleetFlightCommandRow.Paused { color: var(--color-warning-text); }
 
 .FleetFlightCommandPosition {
     color: var(--color-info-text);
     text-align: center;
 }
 
-.FleetFlightCommandName,
+.FleetFlightCommandName { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.FleetFlightCommandNameText,
 .FleetFlightCommandTarget {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: left;
 }
+.FleetFlightCommandNameText { flex: 0 1 auto; }
 
 .FleetFlightCommandTime,
 .FleetFlightCommandReturn {
     white-space: nowrap;
 }
+.FleetFlightCommandTime { min-width: 0; font-variant-numeric: tabular-nums; }
+.FleetFlightCommandTime > * { display: block; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.FleetFlightCommandTime > time { font-size: 9px; }
 
 .FleetFlightCommandReturn {
+    flex: 0 0 auto;
     color: var(--color-warning-text);
+    font-size: 9px;
 }
 
 .FleetFlightCommandsEmpty {
@@ -3045,7 +3921,7 @@ icon-selector[vertical] {
 }
 
 .FleetFlightsEmpty {
-    padding: 10px;
+    padding: 4px;
     color: var(--color-text-secondary);
     font-size: 11px;
     text-align: center;
@@ -3065,14 +3941,8 @@ icon-selector[vertical] {
         gap: 4px;
     }
 
-    .FleetFlightCommandRow {
-        grid-template-columns: 16px minmax(75px, 1fr) minmax(80px, 1fr) auto;
-        gap: 4px;
-    }
-
-    .FleetFlightCommandReturn {
-        display: none;
-    }
+    .FleetFlightCommandRow { grid-template-columns: 16px minmax(0, 1.1fr) minmax(0, 1fr) 58px; gap: 4px; padding-inline: 2px; }
+    .FleetFlightCommandTarget { font-size: 9px; }
 
 }
 
@@ -3083,48 +3953,338 @@ icon-selector[vertical] {
         max-width: none;
     }
 
-    .FleetFlightCommandRow {
-        grid-template-columns: 16px minmax(0, 1fr) auto;
+    .FleetFlightSummary {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+        gap: 2px 4px;
+        align-items: center;
     }
 
-    .FleetFlightSummary {
-        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-        gap: 2px 4px;
+    .FleetFlightFleet {
+        width: 100%;
+    }
+
+    .FleetFlightIdentity {
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+    }
+
+    .FleetFlightIdentity strong,
+    .FleetFlightMissionName {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .FleetFlightMissionFinish {
         gap: 3px 7px;
     }
 
-    .FleetFlightTiming > span {
-        font-size: 8px;
-    }
+}
 
-    .FleetFlightCommandTarget {
-        display: none;
-    }
+.FleetsPage .FleetsPlanet {
+    width: min(480px, calc(100% - 8px));
+}
+
+.FleetOrbitSectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-info-text);
+}
+
+.FleetOrbitSectionHeader > *,
+.FleetOrbitHeader > *,
+.FleetOrbitBadge > * {
+    margin: 0;
+}
+
+.FleetOrbitSlots {
+    padding: 1px 7px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.FleetsPage .FleetResourceBases { width: min(480px, calc(100% - 8px)); min-width: 0; }
+.FleetResourceBase { padding: 7px; border-bottom: 1px solid var(--color-border); }
+.FleetResourceBaseTitle { color: var(--color-info-text); overflow-wrap: anywhere; }
+.FleetResourceBaseNote { display: block; margin: 3px 0 6px; color: var(--color-text-secondary); }
+.FleetResourceStanding { color: var(--color-text-secondary); font-size: .9em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.FleetOrbitCards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    padding: 5px;
 }
 
 .FleetsPage .InfoFleet {
-    display: grid;
-    grid-template-columns: auto auto;
-    align-items: end;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: 6px;
+    gap: 5px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-info-text) 5%, transparent), transparent), var(--color-box-bg);
+    box-shadow: none;
+}
+
+.FleetsPage .InfoFleet > * {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+}
+
+.FleetOrbitHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    column-gap: 8px;
-    margin: 4px;
-    padding: 4px;
+    gap: 4px;
+}
+
+.FleetOrbitHeader .Name {
+    color: var(--color-info-text);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.FleetOrbitIdentity {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.FleetOrbitIdentity > * {
+    margin: 0;
+}
+
+.FleetOrbitRename {
+    flex: 0 0 auto;
+    min-width: 22px;
+    min-height: 22px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+.FleetOrbitRename:hover {
+    color: var(--color-info-text);
+}
+
+.FleetRenameForm {
+    display: grid;
+    gap: 8px;
+}
+
+.FleetRenameForm > * {
+    width: 100%;
+    margin: 0;
+}
+
+.FleetNameInput {
+    min-width: 0;
+    padding: 6px;
+}
+
+.FleetRenameForm > div {
+    color: var(--color-text-secondary);
+}
+
+.FleetOrbitSummary,
+.FleetOrbitBadge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.FleetOrbitBadge {
+    padding: 0 3px;
+}
+
+.FleetOrbitBadge > span:first-child {
+    color: var(--color-text-secondary);
+    font-size: 9px;
+}
+
+.FleetOrbitBadge > span:last-child {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.FleetOrbitStats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 14px;
+}
+
+.FleetOrbitMetric {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.FleetOrbitMetric > * {
+    max-width: 100%;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.FleetOrbitMetricLabel {
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    line-height: 15px;
+    text-align: left;
+}
+
+.FleetOrbitMetricValue {
+    font-size: 11px;
+    line-height: 15px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.FleetsPage .InfoFleet .Buttons {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(96px, 1fr);
+    gap: 5px;
+    padding-top: 5px;
+    border-top: 1px solid var(--color-border);
+}
+
+.FleetsPage .InfoFleet .Buttons > * {
+    width: 100%;
+    min-width: 0;
+    min-height: 24px;
+    margin: 0;
+    padding: 2px;
+    font-size: 10px;
+}
+
+.FleetsPage .InfoFleet .FleetOrbitTask {
+    border-color: var(--color-info-text);
+}
+
+.FleetsPage .InfoFleet .btn-danger {
+    background: transparent;
 }
 
 .FleetsPage .InfoFleet .FleetMoreDetails {
-    grid-column: 1 / span 3;
-    margin: 4px;
-    padding: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.FleetsPage .InfoFleet .FleetMoreDetails > * {
+    margin: 0;
+}
+
+.FleetOrbitCards > .InfoFleet.ui-droppable-hover {
+    border-color: var(--color-info-text);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-info-text) 25%, transparent);
+}
+
+.FleetOrbitEmpty {
+    padding: 2px 10px 10px;
+    color: var(--color-text-secondary);
 }
 
 .FleetsPage .NewFleetBlock {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 6px;
+    width: min(340px, calc(100vw - 40px));
+}
+
+.FleetsPage .FleetOrbitPreview {
+    width: 100%;
+}
+
+.FleetOrbitPreview .FleetOrbitHeader {
+    justify-content: center;
+}
+
+.FleetOrbitPreview .FleetOrbitIdentity {
+    display: none;
+}
+
+.FleetsPage .ShipsBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: min(680px, calc(100% - 8px));
+    padding: 6px;
+}
+
+.FleetPlanetShipsHeader {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    margin: 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-info-text);
+}
+
+.FleetPlanetShipsHeader > * {
+    margin: 0;
+}
+
+.FleetPlanetShipsHeader > button {
+    margin-left: auto;
+    min-height: 26px;
+    padding: 2px 6px;
+    font-size: 10px;
+}
+
+.FleetsPage .ShipsPlanet {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.FleetPlanetShipsEmpty {
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    color: var(--color-text-secondary);
+}
+
+@media (max-width: 620px) {
+    .FleetsPage .InfoFleet .Buttons > * {
+        min-height: 28px;
+    }
 }
 
 .CargoTable {
@@ -3134,89 +4294,115 @@ icon-selector[vertical] {
     flex-wrap: wrap;
 }
 
-.InfoFleet .Name {
-    grid-column: span 2;
+/* Окно отправки: собственная сетка, без влияния общих margin:auto и dialog-height. */
+dialog-main:has(.FleetTaskPanel) {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 32px);
 }
 
-.InfoFleet .Buttons {
-    display: flex;
-    flex-direction: column;
-    grid-column: 3;
-    grid-row: 1 / span 5;
-    height: 100%;
-    justify-content: space-between;
+dialog-main:has(.FleetTaskPanel) > dialog-title {
+    max-width: calc(100% - 64px);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.InfoFleet .Buttons>* {
-    margin: 0px;
-    padding: 2px;
-    min-height: 0px;
-}
-
-#sendPanel>div {
-    margin: 6px;
-}
-
-#sendPanel>.FleetMissionDataPanel {
-    margin: 0;
-}
-
-.FleetMissionDataPanel {
-    position: relative;
-}
-
-.FleetMissionDataPanel>*:not(overlay) {
-    margin: 6px;
-}
-
-.FleetMissionDataPanel>overlay {
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    padding-top: 102px;
-    border-radius: 5px;
-}
-
-.FleetInfoPanel {
+dialog-main:has(.FleetTaskPanel) > dialog-close-button {
     display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 8px;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    top: 0;
+    right: 2px;
+    z-index: 20;
+}
+
+dialog-main:has(.FleetTaskPanel) > dialog-content {
+    flex: 1 1 auto;
+    width: auto;
+    min-height: 0;
+    height: auto;
+    max-height: calc(100dvh - 130px);
+    margin: 28px 10px 8px !important;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+dialog-main:has(.FleetTaskPanel) > dialog-buttons {
+    position: static;
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
     align-items: center;
-}
-
-.FleetInfoPanel .FleetInfoLabel {
-    white-space: nowrap;
-}
-
-/* === Стили для диалога управления флотом === */
-.FleetTaskPanel {
-    display: flex;
-    flex-direction: column;
     gap: 8px;
+    width: auto;
+    margin: 0 !important;
+    padding: 10px;
+    border-top: 1px solid var(--color-border);
 }
 
-.FleetCoordsPanel {
+dialog-main:has(.FleetTaskPanel) > dialog-buttons > * {
+    min-height: 34px;
+    margin: 0 !important;
+    padding: 6px 14px;
+}
+
+dialog-main:has(.FleetTaskPanel) .FleetMissionSendButton { flex: 1; }
+
+.FleetTaskPanel,
+.FleetTaskPanel #sendPanel,
+.FleetTaskPanel .FleetMissionDataPanel {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    /*gap: 8px;*/
-    align-items: start;
-}
-
-.FleetCoordsPanel>div:first-child,
-.FleetCoordsPanel>icon-selector {
-    grid-column: 1 / -1;
-}
-
-.FleetCoordinateTypeSelector {
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
-    margin: 6px 0 10px;
+    min-width: 0;
+    gap: 10px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.FleetTaskPanel *:not(overlay) { min-width: 0; margin: 0; }
+.FleetTaskPanel .box { display: grid; gap: 8px; padding: 10px; width: 100%; box-shadow: none; }
+.FleetTaskPanel .FleetSectionTitle { margin: 0; font-size: 12px; font-weight: 600; color: var(--color-info-text);}
+.FleetTaskPanel label, .FleetTaskPanel p, .FleetTaskPanel small, .FleetTaskPanel .FleetInfoLabel,
+.FleetTaskPanel .FleetOwnPlanetPanel > span, .FleetTaskPanel .FleetCoordinateSubTitle,
+.FleetTaskPanel .FleetLoadStatus { text-align: left; }
+.FleetTaskPanel input:not([type=range]):not([type=checkbox]),
+.FleetTaskPanel select { min-height: 30px; padding: 5px 8px; font-size: inherit; }
+.FleetTaskPanel :is(button, input, select):focus-visible,
+dialog-main:has(.FleetTaskPanel) > dialog-buttons > :focus-visible { outline: 1px solid var(--color-info-text); outline-offset: 2px; }
+.FleetTaskPanel .FleetMissionDataPanel { position: relative; }
+.FleetTaskPanel .FleetMissionDataPanel > overlay { inset: 0; width: 100%; height: 100%; padding: 40px 12px 0; border-radius: 6px; }
+
+.FleetTaskPanel .FleetInfoPanel { align-content: start; }
+.FleetInfoRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.FleetInfoRow .FleetInfoLabel { color: var(--color-text-secondary, var(--color-text)); }
+.FleetInfoRow .FleetInfo { text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.FleetTaskPanel .FleetFlightParameters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px; }
+
+.FleetTaskPanel .FleetCoordsPanel { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.FleetQuickTargets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 8px; }
+.FleetQuickTargets > .FleetOwnPlanetPanel:first-child { grid-column: 1 / -1; }
+.FleetCoordinateFields { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.FleetCoordinateField { grid-column: span 2; display: grid; gap: 4px; }
+.FleetCoordinateField input { width: 100%; text-align: center; }
+.FleetCoordinateFields[data-coordinate-type="2"] > label { grid-column: span 3; }
+.FleetCoordinateFields > .FleetTargetBlock { grid-column: 1 / -1; }
+
+.FleetTaskPanel .FleetCoordinateTypeSelector {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
     gap: 6px;
 }
 
-.FleetCoordinateTypeSelector .NavType {
-    width: 82px;
-    min-height: 58px;
+.FleetTaskPanel .FleetCoordinateTypeSelector .NavType {
+    width: 100%;
+    min-height: 54px;
     padding: 5px 4px;
     align-items: center;
     color: var(--color-text);
@@ -3233,38 +4419,55 @@ icon-selector[vertical] {
     filter: brightness(1.15) contrast(1);
 }
 
-.FleetCoordinateTypeIcon {
-    width: 44px;
-    height: 36px;
+.FleetTaskPanel .FleetCoordinateTypeIcon {
+    width: 36px;
+    height: 30px;
     color: var(--color-info-text);
-    font-size: 32px;
-    line-height: 36px;
+    font-size: 28px;
+    line-height: 30px;
 }
 
-.FleetObjectTypePanel {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 5px;
+.FleetTaskPanel .FleetObjectTypePanel {
+    display: grid;
+    gap: 4px;
+    padding-top: 8px;
     border-top: 1px solid var(--color-input-border);
 }
 
-.FleetObjectTypePanel icon-selector {
-    margin: 3px 0 7px;
+.FleetTaskPanel .FleetObjectTypePanel icon-selector {
+    display: grid;
+    /*grid-template-columns: repeat(3, minmax(0, 1fr));*/
+    gap: 6px;
+    width: 100%;
+    grid-auto-flow: column;
 }
 
-.FleetObjectTypePanel .NavType {
-    width: 70px;
+.FleetTaskPanel .FleetObjectTypePanel .NavType {
+    width: 100%;
+    padding: 4px;
     align-items: center;
+    filter: none;
+    border: 1px solid transparent;
+    border-radius: 5px;
 }
+
+.FleetTaskPanel .FleetObjectTypePanel .NavType[selected] { color: var(--color-info-text); border-color: var(--color-info-border); background: var(--color-info-bg); }
+.FleetTaskPanel .FleetObjectTypePanel .NavTypeImg {
+    background: var(--color-text-secondary);
+    -webkit-mask: url("/images/icons/types.png") var(--fleet-object-icon-pos, 0px) 0 / 264px 36px no-repeat;
+    mask: url("/images/icons/types.png") var(--fleet-object-icon-pos, 0px) 0 / 264px 36px no-repeat;
+}
+.FleetTaskPanel .FleetObjectTypePanel .NavTypeMoon { --fleet-object-icon-pos: -44px; }
+.FleetTaskPanel .FleetObjectTypePanel .NavTypeDedris { --fleet-object-icon-pos: -88px; }
+.FleetTaskPanel .FleetObjectTypePanel .NavTypeGasGiant { --fleet-object-icon-pos: -176px; }
+.FleetTaskPanel .FleetObjectTypePanel .NavTypeAsteroidBelt { --fleet-object-icon-pos: -220px; }
+.FleetTaskPanel .FleetObjectTypePanel .NavType[selected] .NavTypeImg { background: var(--color-info-text); }
 
 .FleetCoordinateSubTitle {
     align-self: flex-start;
 }
 
-.FleetOwnPlanetPanel {
-    grid-column: 1 / -1;
+.FleetTaskPanel .FleetOwnPlanetPanel {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
@@ -3272,27 +4475,73 @@ icon-selector[vertical] {
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    padding: 6px 0;
 }
 
 .FleetOwnPlanetPanel>span {
     white-space: nowrap;
 }
 
-.FleetOwnPlanetSelect {
-    width: calc(100% - 20px);
+.FleetTaskPanel .FleetOwnPlanetSelect {
+    width: 100%;
     min-width: 0;
-    max-width: calc(100% - 20px);
+    max-width: 100%;
     margin: 0;
     box-sizing: border-box;
+    text-align: left;
+    text-align-last: left;
+    text-overflow: ellipsis;
 }
 
-.FleetCoordsPanel>.OrbitBlock {
-    grid-column: 1 / -1;
+.FleetTargetPicker {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    width: 100%;
 }
 
-.FleetCoordsPanel>.FleetTargetBlock {
-    grid-column: 1 / -1;
+.FleetTargetPicker>input,
+.FleetTargetPicker>select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.FleetTargetStatus {
+    color: var(--color-text);
+    opacity: .8;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.FleetTaskPanel .FleetMissionPanel icon-selector {  padding: 0; gap: 6px; }
+.FleetTaskPanel .FleetMissionPanel .NavType { min-height: 46px; padding: 3px 6px; border-radius: 5px; }
+.FleetTaskPanel .FleetFlightSettingsPanel { align-content: start; }
+.FleetTaskPanel .FleetFuelHeader { margin-top: 4px; padding-top: 8px; }
+.FleetTaskPanel .FleetRangeValue { min-width: 0; font-variant-numeric: tabular-nums; }
+.FleetTaskPanel .FleetRangeInput { height: 24px; }
+.FleetTaskPanel .FleetResourcesGrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.FleetTaskPanel .FleetResRow { grid-template-columns: minmax(0, 1fr) minmax(160px, 1fr); align-items: center; }
+.FleetTaskPanel .FleetResControls { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; gap: 4px; }
+.FleetTaskPanel .FleetResInput { width: 100%; }
+.FleetTaskPanel .FleetResBtn { --btn-size: 30px; padding: 0; }
+.FleetTaskPanel .FleetResourcesFooter { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding-top: 8px; }
+.FleetTaskPanel .FleetRemainingWrap { flex-wrap: wrap; gap: 4px; }
+.FleetTaskPanel .FleetRemainingValue { min-width: 0; }
+.FleetTaskPanel .FleetAllResBtn { min-width: 0; width: auto; }
+.FleetTaskPanel .FleetRefuelOption { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 6px; }
+.FleetTaskPanel .FleetGroupAttackOptions { display: grid; gap: 6px; }
+.FleetTaskPanel .FleetGroupAttackOptions label { margin: 0; }
+.FleetTaskPanel .FleetDefendOptions { padding: 8px 0 0; border-top: 1px solid var(--color-border); }
+.FleetTaskPanel .FleetDefendOptions label { display: grid; gap: 4px; }
+.FleetTaskPanel .FleetDefendOptions select { width: 100%; }
+.FleetTaskPanel .FleetDefendOptions p { margin-top: 6px; }
+.FleetTaskPanel .FleetHoldNotice, .FleetTaskPanel .FleetRefuelOption { font-size: 11px; line-height: 1.5; }
+
+@media (max-width: 420px) {
+    .FleetTaskPanel .box { padding: 8px; }
+    .FleetTaskPanel .FleetCoordinateTypeSelector .NavType { min-height: 50px; }
 }
 
 .FleetMainView,
@@ -3659,33 +4908,95 @@ icon-selector[vertical] {
     color: var(--color-info-text-hover);
 }
 
+.Galaxy { --galaxy-nav-height: 64px; }
+
 .Galaxy .system {
     overflow: hidden;
     position: absolute;
     bottom: 0px;
     left: 0px;
     right: 0px;
-    top: 30px;
+    top: var(--galaxy-nav-height);
+    border-color: color-mix(in srgb, var(--color-border) 65%, transparent);
+    border-radius: 12px;
 }
 
 .Galaxy .Navigation {
-    display: inline-flex;
-    width: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+    max-width: 100%;
+    height: var(--galaxy-nav-height);
+    margin: 0 auto;
+    padding: 6px 8px;
+    box-sizing: border-box;
 }
 
 .Galaxy .Navigation>* {
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: 28px 36px 28px;
+    grid-template-rows: 12px 28px;
+    gap: 3px;
+    align-items: center;
 }
 
 .Galaxy .Navigation>*>* {
-    margin: 2px;
+    margin: 0;
 }
 
+.GalaxyNavLabel {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--color-text);
+    opacity: 0.65;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+}
+
+.Galaxy .Navigation .ButtonsBlock {
+    grid-template-columns: repeat(2, 28px);
+}
+
+.Galaxy .Navigation button {
+    width: 28px;
+    height: 28px;
+    min-width: 0;
+    padding: 0;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.Galaxy .Navigation button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.Galaxy .Navigation button:focus-visible,
+.Galaxy summary:focus-visible {
+    outline: 2px solid var(--color-info-text);
+    outline-offset: 2px;
+}
+
+.GalaxyMapFit {
+    color: var(--color-info-text);
+}
+
+.GalaxyMapFit::before { content: "\F01A4"; color: var(--color-info-text); }
+.Galaxy .Navigation button::before { font-size: 20px; }
+
 .Galaxy .Navigation .InputNumber {
-    width: calc(3ch + 10px);
+    width: 100%;
+    min-width: 0;
     -moz-appearance: textfield;
     appearance: none;
     display: inline-block;
+    height: 28px;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 12px;
+    border-radius: 7px;
 }
 
 .Galaxy .Navigation .InputNumber::-webkit-inner-spin-button,
@@ -3711,24 +5022,65 @@ icon-selector[vertical] {
     z-index: 60;
     display: grid;
     gap: 4px;
-    padding: 8px 10px;
-    pointer-events: none;
-    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-    backdrop-filter: blur(3px);
+    padding: 0;
+    pointer-events: auto;
+    background: color-mix(in srgb, var(--color-bg) 90%, transparent);
+    border-color: color-mix(in srgb, var(--color-border) 65%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    border-radius: 10px;
+}
+
+.GalaxySystemInfo summary,
+.GalaxyLegend summary {
+    position: relative;
+    padding: 9px 28px 9px 12px;
+    list-style: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.GalaxySystemInfo summary::-webkit-details-marker,
+.GalaxyLegend summary::-webkit-details-marker { display: none; }
+
+.GalaxySystemInfo summary::after,
+.GalaxyLegend summary::after {
+    content: "⌄";
+    position: absolute;
+    right: 11px;
+    top: 10px;
+    color: var(--color-info-text);
+    transition: transform 0.15s ease;
+}
+
+.GalaxySystemInfo[open] summary::after,
+.GalaxyLegend[open] summary::after { transform: rotate(180deg); }
+
+.GalaxySystemInfoBody,
+.GalaxyLegendBody {
+    display: grid;
+    gap: 6px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--color-border);
 }
 
 .GalaxySystemInfo {
     top: 10px;
     left: 10px;
-    min-width: 190px;
+    min-width: 175px;
 }
 
 .GalaxySystemInfoTitle {
-    padding-bottom: 4px;
     color: var(--color-info-text);
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
-    border-bottom: 1px solid var(--color-border);
+}
+
+.GalaxySystemInfoSubtitle {
+    margin-top: 3px;
+    color: var(--color-text);
+    opacity: 0.65;
+    font-size: 10px;
 }
 
 .GalaxySystemInfoRow {
@@ -3753,6 +5105,13 @@ icon-selector[vertical] {
 .GalaxyLegend {
     right: 10px;
     bottom: 10px;
+    max-width: calc(100% - 20px);
+    font-size: 11px;
+}
+
+.GalaxyLegendBody {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 14px;
 }
 
 .GalaxyLegendItem {
@@ -3786,15 +5145,18 @@ icon-selector[vertical] {
 }
 
 .GalaxyLegendGas {
-    border: 3px solid rgba(70, 110, 255, 0.8);
+    border: 2px solid rgba(104, 151, 207, 0.8);
 }
 
-.GalaxyLegendFleet {
+.GalaxyLegendFleet,
+.GalaxyLegendIncomingFleet {
     border-radius: 2px;
     background: rgb(70, 225, 255);
     box-shadow: 0 0 7px rgba(70, 225, 255, 0.9);
     clip-path: polygon(100% 50%, 0 100%, 24% 50%, 0 0);
 }
+
+.GalaxyLegendIncomingFleet { background: #ff7272; box-shadow: 0 0 7px rgba(255, 114, 114, 0.4); }
 
 .GalaxyLegendEdge {
     border: 2px dashed rgba(90, 180, 255, 0.85);
@@ -3804,62 +5166,277 @@ icon-selector[vertical] {
     border: 2px dotted rgba(190, 110, 255, 0.95);
 }
 
+.GalaxyFreeOrbits {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 60;
+    max-width: calc(100% - 20px);
+}
+
+.GalaxyFreeOrbitsToggle {
+    display: block;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #9fdaa2;
+    border-color: color-mix(in srgb, #66bb6a 40%, var(--color-border));
+    background: color-mix(in srgb, var(--color-bg) 90%, transparent);
+}
+
+.GalaxyFreeOrbitsToggle[aria-expanded="true"] { border-color: #66bb6a; }
+
+.GalaxyFreeOrbitsBody {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    display: grid;
+    gap: 9px;
+    width: 220px;
+    max-width: calc(100vw - 40px);
+    max-height: min(320px, 55vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+    font-size: 11px;
+}
+
+.GalaxyFreeOrbitList {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+    gap: 6px;
+}
+
+.GalaxyFreeOrbitList:empty { display: none; }
+
+.GalaxyFreeOrbitButton {
+    margin: 0;
+    min-width: 0;
+    min-height: 36px;
+    padding: 4px;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: #9fdaa2;
+    cursor: pointer;
+}
+
+.GalaxyFreeOrbitButton.selected {
+    color: #c9ffcc;
+    border-color: #66bb6a;
+    background: color-mix(in srgb, #66bb6a 22%, var(--color-bg));
+}
+
+.GalaxyFreeOrbits button:focus-visible {
+    outline: 2px solid #66bb6a;
+    outline-offset: 2px;
+}
+
+.GalaxyFreeOrbitSelection { display: grid; gap: 8px; }
+.GalaxyFreeOrbitTitle { color: #9fdaa2; overflow-wrap: anywhere; }
+.GalaxyFreeOrbitHint { opacity: 0.65; font-size: 10px; line-height: 1.4; }
+
 .Galaxy .PlanetName {
     position: absolute;
     z-index: 50;
     cursor: pointer;
     transition: transform 0.05s linear;
-    padding: 2px;
+    padding: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.GalaxyPlanetCaption {
+    display: flex;
+    flex-direction: column;
+    width: max-content;
+    max-width: 170px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(3px);
     pointer-events: auto;
+    cursor: default;
+    overflow: hidden;
 }
 
 .Galaxy .GalaxyPlayerName {
-    color: var(--color-info-text);
-    font-size: 11px;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 400;
     line-height: 1.2;
     white-space: nowrap;
-    padding: 2px 5px;
-    border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--color-bg) 84%, transparent);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.34);
-    backdrop-filter: blur(2px);
+    width: 100%;
+    margin: 0;
+    padding: 3px 6px;
+    max-width: 100%;
+    border-top: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
 }
+
+.GalaxyPlayerIcon { font-size: 11px; opacity: 0.5; flex-shrink: 0; margin: 0; }
+.Galaxy .GalaxyPlayerName .GalaxyPlayerLabel { min-width: 0; font-size: inherit; margin: 0; }
+.Galaxy .GalaxyPlayerName .GalaxyPlayerUsername { font-size: inherit; }
+
+.GalaxyPlayerLabel {
+    --galaxy-player-color: #ddd;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    color: var(--galaxy-player-color);
+}
+
+.GalaxyPlayerUsername { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.GalaxyPlayerStatus { flex-shrink: 0; white-space: nowrap; }
+.GalaxyPlayerStatus span { color: var(--galaxy-player-color); }
+
+/* Цвета и обозначения статусов игроков из Nova. */
+.GalaxyPlayer-noob { --galaxy-player-color: #a0ffa0; }
+.GalaxyPlayer-strong { --galaxy-player-color: #ffa0a0; }
+.GalaxyPlayer-vacation { --galaxy-player-color: #659ec7; }
+.GalaxyPlayer-inactive { --galaxy-player-color: #ccc; }
+.GalaxyPlayer-longinactive { --galaxy-player-color: #999; }
+.GalaxyPlayerStatus .GalaxyPlayer-banned { text-decoration: line-through; }
 
 .Galaxy .GalaxyPlanetName {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     color: var(--color-text);
-    font-size: 12px;
     line-height: 1.2;
     white-space: nowrap;
-    padding: 3px 6px;
-    border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
-    backdrop-filter: blur(2px);
+    padding: 2px 4px;
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
 }
 
-.Galaxy .PlanetName:hover .GalaxyPlayerName,
-.Galaxy .PlanetName:hover .GalaxyPlanetName {
-    border-color: var(--color-info-text);
-    filter: brightness(1.12);
+.GalaxyPlanetOrbit {
+    color: var(--color-info-text);
+    font-size: 10px;
+    padding-right: 5px;
+    border-right: 1px solid var(--color-border);
 }
 
-.Galaxy .PlanetName.OwnPlanet .GalaxyPlayerName,
-.Galaxy .PlanetName.OwnPlanet .GalaxyPlanetName {
-    border-color: rgba(100, 225, 255, 0.72);
-    box-shadow: 0 0 9px rgba(65, 190, 255, 0.28), 0 2px 8px rgba(0, 0, 0, 0.38);
+.GalaxyPlanetLabel { max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+
+.GalaxyPlanetActive::after,
+.GalaxyPlanetRecent::after {
+    content: "";
+    flex: 0 0 5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-success-text);
 }
+
+.GalaxyPlanetRecent::after { background: var(--color-warning-text); }
+
+.Galaxy .GalaxyPlanetName:hover,
+.Galaxy .GalaxyPlanetName.GalaxyPlanetSelected {
+    background: color-mix(in srgb, var(--color-info-text) 13%, transparent);
+}
+
+.Galaxy .PlanetName.OwnPlanet .GalaxyPlanetCaption {
+    border-color: rgba(100, 225, 255, 0.55);
+    box-shadow: 0 0 7px rgba(65, 190, 255, 0.16), 0 2px 7px rgba(0, 0, 0, 0.3);
+}
+
+.GalaxyObjectMenu {
+    position: absolute;
+    z-index: 90;
+    width: 280px;
+    max-width: calc(100vw - 40px);
+    flex-direction: column;
+    border-radius: 10px;
+    border-color: color-mix(in srgb, var(--color-info-text) 30%, var(--color-border));
+    background: color-mix(in srgb, var(--color-bg) 96%, transparent);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.GalaxyObjectMenu, .GalaxyObjectMenu * { margin: 0; }
+.GalaxyObjectMenuBody { padding: 12px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.GalaxyObjectMenuBody > .GalaxyPlanetTooltip { min-width: 0; max-width: 100%; padding: 0; }
+.GalaxyObjectMenu .GalaxyPlanetTooltipHeader { padding-right: 28px; }
+.GalaxyObjectMenu .GalaxyPlanetTooltipDetails { grid-template-columns: auto minmax(0, 1fr); }
+.GalaxyObjectMenu .GalaxyPlanetTooltipDetailValue { min-width: 0; }
+.GalaxyObjectMenuClose {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 1;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: 0;
+    text-shadow: none;
+    transform: none;
+    cursor: pointer;
+}
+.GalaxyObjectMenuClose:hover { background: color-mix(in srgb, var(--color-info-text) 13%, transparent); }
+.GalaxyObjectMenuClose:hover,
+.GalaxyObjectMenuClose:active { transform: none; }
+.GalaxyObjectCard { display: grid; gap: 9px; min-width: 0; }
+.GalaxyObjectCard > * { max-width: 100%; overflow-wrap: anywhere; }
+.GalaxyObjectCardType { padding-right: 24px; font-size: 10px; opacity: 0.65; text-align: left; }
+.GalaxyObjectCardTitle { font-size: 13px; color: var(--color-info-text); text-align: left; }
+.GalaxyObjectCardNote { line-height: 1.5; opacity: 0.65; text-align: left; }
+.GalaxyObjectCardRoute { font-variant-numeric: tabular-nums; }
+.Galaxy .GalaxyPlanetName:focus-visible,
+.GalaxyObjectMenu button:focus-visible { outline: 2px solid var(--color-info-text); outline-offset: -2px; }
 
 .GalaxyPlanetTooltip {
     display: grid;
-    gap: 6px;
-    min-width: 180px;
+    gap: 9px;
+    min-width: 210px;
+    max-width: 270px;
+    padding: 6px;
+    font-size: 12px;
+    text-align: left;
 }
+
+.GalaxyPlanetTooltipHeader { display: flex; align-items: center; gap: 10px; }
+.GalaxyPlanetTooltipHeading { display: grid; gap: 3px; min-width: 0; }
+.GalaxyPlanetTooltipImage { width: 48px; height: 48px; object-fit: contain; }
+.GalaxyPlanetTooltipType,
+.GalaxyPlanetTooltipSection { font-size: 10px; color: var(--color-text); opacity: 0.65; }
+.GalaxyPlanetTooltipCoordinates { color: var(--color-info-text); font-size: 11px; font-variant-numeric: tabular-nums; }
 
 .GalaxyPlanetTooltipTitle {
     color: var(--color-info-text);
     font-weight: 600;
+    font-size: 13px;
+    overflow-wrap: anywhere;
 }
 
 .GalaxyPlanetTooltipOwner {
@@ -3886,6 +5463,8 @@ icon-selector[vertical] {
     white-space: nowrap;
 }
 
+.GalaxyPlanetTooltipStatus { text-align: right; font-size: 11px; }
+
 .GalaxyPlayerActive {
     color: var(--color-success-text);
 }
@@ -3894,33 +5473,55 @@ icon-selector[vertical] {
     color: var(--color-warning-text);
 }
 
-.GalaxyPlanetTooltipMissions {
+.GalaxyPlanetTooltipMissions,
+.GalaxyPlanetTooltipPlayerActions {
     display: grid;
-    /*grid-template-columns: repeat(2, minmax(0, 1fr));*/
-    gap: 3px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    /*width: 100%;*/
+    justify-self: stretch;
 }
 
-.GalaxyPlanetTooltipMission {
-    color: var(--color-success-text);
+.GalaxyPlanetTooltipMission,
+.GalaxyPlanetTooltipPlayerAction {
+    color: var(--mission-color, var(--color-info-text));
+    border: 1px solid color-mix(in srgb, var(--mission-color, var(--color-info-text)) 35%, transparent);
+    background: color-mix(in srgb, var(--mission-color, var(--color-info-text)) 10%, var(--color-bg));
+    border-radius: 5px;
+    font-size: 11px;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    text-align: center;
+    padding: 6px 8px;
+    margin: 0;
 }
 
-.GalaxyPlanetTooltipAction {
-    color: var(--color-warning-text);
+.GalaxyPlanetTooltipMission:hover,
+.GalaxyPlanetTooltipPlayerAction:hover {
+    border-color: var(--mission-color, var(--color-info-text));
+    background: color-mix(in srgb, var(--mission-color, var(--color-info-text)) 20%, var(--color-bg));
 }
 
 @media (max-width: 720px) {
     .GalaxySystemInfo {
         max-width: calc(100% - 20px);
-        min-width: 160px;
-    }
-
-    .GalaxySystemInfoRow:nth-child(n + 6) {
-        display: none;
+        min-width: 0;
     }
 
     .GalaxyLegend {
-        display: none;
+        max-width: calc(100% - 20px);
     }
+
+    .GalaxyPlanetLabel { max-width: 105px; }
+    .GalaxyPlanetCaption { max-width: 135px; }
+    .GalaxyObjectMenu button { min-height: 36px; }
+    .GalaxyObjectMenuClose { width: 36px; height: 36px; }
+    .Galaxy .Navigation { gap: 6px; padding-left: 2px; padding-right: 2px; }
+    .GalaxyFreeOrbitList { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
+    .GalaxyFreeOrbitsToggle,
+    .GalaxyFreeOrbitButton,
+    .GalaxyFreeOrbitColonize { min-height: 40px; }
 }
 
 
@@ -3943,9 +5544,152 @@ icon-selector[vertical] {
     flex-direction: column;
 }
 
-.ShipyardPage .Buttons {
-    margin: 2px;
-    margin-top: 10px;
+.ShipyardPage > .HangarOrderPanel {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    order: 1;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: min(680px, calc(100% - 8px));
+    margin: auto 0 0;
+    padding: 8px;
+    background: var(--color-bg-ng);
+    box-shadow: 0 -4px 14px var(--color-box-shadow);
+}
+
+.HangarOrderPanel,
+.HangarOrderPanel * {
+    margin: 0;
+}
+
+.HangarOrderMain {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.HangarOrderInfo {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.HangarOrderSummary {
+    width: fit-content;
+    max-width: 100%;
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: left;
+    color: var(--color-info-text);
+    font-size: 11px;
+}
+
+.HangarOrderSummary::after {
+    content: "⌃";
+    display: inline-block;
+    margin-left: 6px;
+}
+
+.HangarOrderSummary[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+}
+
+.HangarOrderSummary:disabled {
+    background: transparent;
+    box-shadow: none;
+}
+
+.HangarOrderCosts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-height: 18px;
+}
+
+.HangarOrderCosts .ResBox {
+    gap: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.HangarOrderCosts .ResBox::before {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+.HangarOrderActions {
+    display: flex;
+    gap: 6px;
+}
+
+.HangarOrderActions > input {
+    min-height: 32px;
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+.HangarOrderDetails {
+    width: 100%;
+    max-height: min(160px, 25dvh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.HangarOrderList {
+    display: grid;
+    gap: 4px;
+}
+
+.HangarOrderItem {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+}
+
+.HangarOrderItem > span {
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.HangarOrderItem > span:last-child {
+    color: var(--color-success-text);
+    white-space: nowrap;
+}
+
+.HangarOrderPanel button:focus-visible,
+.HangarOrderActions > input:focus-visible {
+    outline: 2px solid var(--color-info-text);
+    outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    .HangarOrderMain {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .HangarOrderActions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .HangarOrderActions > input {
+        width: 100%;
+        min-width: 0;
+        min-height: 36px;
+    }
 }
 
 
@@ -4364,33 +6108,302 @@ game-build .btn-box {
     cursor: auto;
 }
 
-.MessageTypesBox {
+#Content.Messages { display: block; min-width: 0; }
+
+.MessagesPanel {
+    width: min(900px, calc(100% - 8px));
+    margin: 4px auto;
+    padding: 10px;
+}
+
+.MessagesPanel *,
+.MessagesDeleteConfirm { margin: 0; }
+
+.MessagesHeading {
     display: flex;
-    /*grid-template-columns: repeat(5, 90px);*/
-    /* 4 элемента на строку */
-    justify-content: center;
-    gap: 2px;
-    margin-bottom: 4px;
+    align-items: center;
     flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 2px 0 12px;
 }
 
-.MessageTypeBox {
+.MessagesHeading h2 { margin-right: auto; color: var(--color-info-text); font-size: 14px; }
+.MessagesHeadingCount,
+.MessagesSelectionCount { font-size: 10px; color: var(--color-text-secondary); }
+
+.MessagesPanel .MessagesSavedReports {
+    display: inline-flex;
+    gap: 6px;
+    min-height: 30px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.3;
+    letter-spacing: 0;
+    white-space: nowrap;
+    transform: none;
+    box-shadow: none;
+}
+
+.MessagesSavedReports::before {
+    content: "\F0E16";
+    font-family: "Material Design Icons";
+    font-size: 15px;
+    line-height: 1;
+}
+
+.MessagesPanel .MessagesSavedReports:hover {
+    border-color: var(--color-info-text);
+    box-shadow: none;
+    transform: none;
+}
+
+.MessageTypesBox {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+    gap: 6px;
+    padding-bottom: 10px;
+}
+
+.MessagesPanel .MessageTypeBox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-input-bg-ng);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    font-size: 11px;
+    line-height: 1.3;
+    letter-spacing: 0;
+    text-shadow: none;
+    box-shadow: none;
+    transform: none;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.MessageTypeBox > span { font-size: inherit; }
+.MessageTypeBox > .MessageTypeCount {
+    flex: 0 0 auto;
+    min-width: 30px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-text-secondary) 10%, transparent);
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.MessagesPanel .MessageTypeHasUnread { color: var(--color-text); }
+.MessageTypeHasUnread > .MessageTypeCount { color: var(--color-info-text); background: var(--color-info-bg); }
+.MessagesPanel .MessageTypeBox:hover {
+    border-color: color-mix(in srgb, var(--color-info-text) 55%, var(--color-border));
+    color: var(--color-info-text-hover);
+    box-shadow: none;
+    transform: none;
+}
+
+.MessagesPanel .MessageTypeActive,
+.MessagesPanel .MessageTypeActive:hover {
+    border-color: var(--color-info-text);
+    background: var(--color-info-bg);
+    color: var(--color-info-text);
+    box-shadow: inset 0 -2px 0 var(--color-info-text);
+}
+
+.MessagesToolbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.MessagesSelectAll { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.MessagesSelectAll > span { font-size: 10px; text-align: left; }
+.MessagesSelectionCount { text-align: right; }
+.MessagesPanel .MessagesDeleteSelected {
+    min-height: 30px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    letter-spacing: 0;
+    box-shadow: none;
+    transform: none;
+}
+
+.MessagesPanel input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--color-info-text);
+    box-shadow: none;
     cursor: pointer;
-    min-width: 80px;
 }
 
+.MessagesBox { display: grid; gap: 10px; }
 .Message {
-    display: block;
-    margin: 2px;
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--color-border) 80%, var(--color-text) 20%);
+    border-left-width: 3px;
+    border-radius: 8px;
+    background: var(--color-bg-ng);
+    box-shadow: 0 2px 6px var(--color-box-shadow);
+    overflow: hidden;
+}
+.MessageUnread {
+    border-left-color: var(--color-info-text);
+    background: linear-gradient(var(--color-info-bg), var(--color-info-bg)), var(--color-bg-ng);
+}
+.MessageDeleting { opacity: 0.5; }
+
+.MessageHead {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
 }
 
-.Message span {
-    margin: 0 2px;
+.MessagesPanel .MessageOpen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 10px;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
+    width: 100%;
+    padding: 2px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-text);
+    text-align: left;
+    transform: none;
 }
+
+.MessagesPanel .MessageOpen:hover { color: var(--color-info-text); }
+.MessageOpen::after { content: "⌄"; grid-column: 2; grid-row: 1 / 3; transition: transform 0.2s ease; }
+.MessageOpen[aria-expanded="true"]::after { transform: rotate(180deg); }
+.MessageSubject { grid-column: 1; text-align: left; overflow-wrap: anywhere; line-height: 1.4; }
+.MessageUnread .MessageSubject { color: var(--color-info-text); font-weight: bold; }
+.MessageUnread .MessageSubject::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border-radius: 50%;
+    background: var(--color-info-text);
+}
+
+.MessageMeta { grid-column: 1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3px 10px; }
+.MessageFrom,
+.MessageDate { color: var(--color-text-secondary); font-size: 9px; text-align: left; overflow-wrap: anywhere; }
+.MessageDate { font-variant-numeric: tabular-nums; }
+.MessagesPanel .MessageDelete { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; }
+.MessageDelete::before { font-size: 16px; }
+.MessagesPanel .MessageDelete:hover { color: var(--color-danger-text); border-color: var(--color-danger-text); }
 
 .MessageText {
+    padding: 10px;
+    border-top: 1px solid var(--color-border);
     white-space: pre-line;
-    margin: 4px;
+    overflow-wrap: anywhere;
+    text-align: left;
+    line-height: 1.6;
+}
+
+.MessageText > [class*="MessageResources"] { display: flex; flex-wrap: wrap; justify-content: space-evenly; gap: 6px 12px; margin: 6px 0; }
+.MessageText .ResBox { white-space: nowrap; }
+.ExpeditionReport { display: grid; gap: 10px; white-space: normal; }
+.ExpeditionReport :where(p, div, section) { text-align: left; }
+.ExpeditionReport p { margin: 0; }
+.ExpeditionReportIntro { color: var(--color-info-text); }
+.ExpeditionReportRepeat { color: var(--color-text-secondary); white-space: nowrap; }
+.ExpeditionReportFinds { min-width: 0; padding: 8px 10px; border-left: 2px solid var(--color-info-text); background: var(--color-info-bg); border-radius: 0 6px 6px 0; }
+.ExpeditionReportLabel { margin-bottom: 4px; color: var(--color-text-secondary); }
+.ExpeditionReportResources { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.ExpeditionReportState { padding-top: 8px; border-top: 1px solid var(--color-border); }
+.ExpeditionReportLost { color: var(--color-danger-text); }
+.MessagesEmpty { padding: 28px 10px; color: var(--color-text-secondary); }
+.MessagesPagination { display: flex; justify-content: center; align-items: center; gap: 12px; padding-top: 10px; }
+.MessagesPagination button { min-height: 28px; padding: 4px 8px; }
+.MessagesDeleteConfirm { padding: 6px; line-height: 1.6; text-align: left; }
+.MessagesPanel button:focus-visible { outline: 2px solid var(--color-info-text); outline-offset: -2px; }
+
+@media (max-width: 480px) {
+    .MessagesPanel { padding: 8px; }
+    .MessagesHeadingCount { order: 1; flex-basis: 100%; text-align: left; }
+    .MessageTypesBox {
+        display: flex;
+        overflow-x: auto;
+        gap: 6px;
+        padding: 2px 0 8px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-scrollbar-thumb-bg) var(--color-scrollbar-track-bg);
+    }
+    .MessagesPanel .MessageTypeBox { flex: 0 0 auto; min-width: 120px; }
+    .MessagesToolbar { grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+    .MessagesSelectionCount { grid-column: 1 / -1; grid-row: 2; text-align: left; }
+    .MessagesDeleteSelected { grid-column: 2; grid-row: 1; }
+    .MessageHead { gap: 6px; padding: 6px; }
+    .MessageText { padding: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .MessageOpen::after,
+    .MessagesPanel .MessageTypeBox { transition: none; }
+}
+
+.SpyReport {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 6px;
+    white-space: normal;
+}
+
+.SpyReportSection { padding: 6px; }
+.SpyReport > div:last-child { grid-column: 1 / -1; }
+.SpyReportDebris { grid-column: 1 / -1; padding: 6px; }
+.SpyReportHeading { color: var(--color-info-text); margin-bottom: 4px; }
+.SpyReportValues {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 12px;
+}
+.SpyReportValues > span:nth-child(even) { text-align: right; }
+.SpyReportValues > span:nth-child(odd) { text-align: left; }
+.Galaxy .GalaxyDebris {
+    width: 28px;
+    height: 28px;
+    padding: 3px;
+    border: 1px solid rgba(200, 168, 117, 0.35);
+    border-radius: 50%;
+    background: rgba(16, 22, 30, 0.65);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(196, 158, 106, 0.18);
+}
+.GalaxyDebrisSymbol,
+.GalaxyLegendDebris {
+    display: block;
+    background: url("/images/planets/galaxy/debris.svg") center / contain no-repeat;
+}
+.GalaxyDebrisSymbol { width: 100%; height: 100%; }
+.Galaxy .GalaxyDebris:hover,
+.Galaxy .GalaxyDebris:focus-visible { border-color: #e2c291; filter: brightness(1.3); }
+@media (pointer: coarse) {
+    .Galaxy .GalaxyDebris { width: 36px; height: 36px; }
 }
 
 @media screen and (max-width: 760px) {
@@ -4441,3 +6454,84 @@ game-build .btn-box {
         display: flex;
     }
 }
+/* Редактор будущих команд Fleet: локальная форма, без глобальных стилей диалогов. */
+.FleetPlanEditor { min-width: 0; }
+.FleetPlanLayout { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 12px; align-items: start; }
+.FleetPlanSidebar { display: grid; gap: 8px; position: sticky; top: 0; min-width: 0; }
+.FleetPlanSidebarHeader { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--color-info-text); }
+.FleetPlanCount { padding: 1px 6px; border: 1px solid var(--color-border); border-radius: 10px; font-size: 10px; font-variant-numeric: tabular-nums; }
+.FleetPlanSteps, .FleetPlanDetails, .FleetPlanStep, .FleetPlanLoading { display: grid; gap: 8px; min-width: 0; width: 100%; }
+.FleetPlanStop {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-box-bg);
+    text-align: left;
+    letter-spacing: normal;
+    box-shadow: none;
+}
+.FleetPlanStop:hover, .FleetPlanStop:active { transform: none; }
+.FleetPlanStopActive { border-color: var(--color-info-text); background: var(--color-info-bg); }
+.FleetPlanStopNumber { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-info-text); font-size: 12px; }
+.FleetPlanStopText { display: grid; gap: 3px; min-width: 0; }
+.FleetPlanStopText > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.FleetPlanStopText strong { font-size: 11px; font-weight: 600; }
+.FleetPlanStopText small { font-size: 10px; opacity: .7; }
+.FleetPlanLoadButton { margin-bottom: 4px; }
+.FleetPlanAdd { width: 100%; min-height: 32px; padding: 6px 8px; }
+.FleetPlanStepHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.FleetPlanStepHeading { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--color-info-text); }
+.FleetPlanStepControls { display: flex; gap: 4px; flex-shrink: 0; }
+.FleetPlanStepControls button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; font-size: 16px; letter-spacing: 0; }
+.FleetPlanModeSelector { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 5px; width: 100%; }
+.FleetPlanModeSelector .NavType { width: 100%; min-height: 44px; padding: 5px 2px; border: 1px solid var(--color-border); border-radius: 5px; }
+.FleetPlanModeSelector .NavType[selected] { border-color: var(--color-info-text); background: var(--color-info-bg); }
+.FleetPlanModeSelector .mdi { font-size: 19px; line-height: 22px; color: var(--color-info-text); }
+.FleetPlanModeSelector .label { font-size: 10px; }
+.FleetPlanEditor .FleetCoordinateTypeSelector .NavType { min-height: 46px; }
+.FleetPlanEditor .FleetCoordinateTypeIcon { height: 26px; font-size: 24px; line-height: 26px; }
+.FleetPlanMissionSelector { display: flex; flex-wrap: wrap; justify-content: center; width: 100%; }
+.FleetPlanEditor .FleetPlanNumber { width: 110px; max-width: 40%; text-align: right; }
+.FleetPlanEditor label { display: grid; gap: 4px; text-align: left; }
+.FleetPlanEditor .FleetRefuelOption { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 8px; }
+.FleetPlanEditor select, .FleetPlanEditor input:not([type=checkbox]):not([type=range]) { box-sizing: border-box; max-width: 100%; }
+.FleetPlanHint { font-size: 11px; line-height: 1.5; opacity: .75; text-align: left; }
+.FleetPlanFuelNotice { display: grid; gap: 3px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 5px; font-size: 11px; line-height: 1.4; text-align: left; }
+.FleetPlanFuelNotice[data-level="warning"] { color: var(--color-warning-text, #ffc85a); border-color: var(--color-warning-text, #ffc85a); background: var(--color-warning-bg); }
+.FleetPlanFuelNotice strong { font-size: inherit; }
+.FleetPlanError { padding: 8px; color: var(--color-danger-text, #ff7070); border: 1px solid var(--color-danger-border, #853c3c); border-radius: 5px; background: var(--color-warning-bg); }
+dialog-main:has(.FleetPlanEditor) .FleetPlanSubmit { flex: 1; }
+@media (max-width: 620px) {
+    .FleetPlanLayout { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .FleetPlanSidebar { position: static; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+    .FleetPlanSidebarHeader { grid-column: 1 / -1; }
+    .FleetPlanLoadButton { min-height: 46px; margin: 0; }
+    .FleetPlanSteps { grid-column: 1 / -1; display: flex; overflow-x: auto; padding-bottom: 4px; overscroll-behavior-x: contain; }
+    .FleetPlanSteps .FleetPlanStop { flex: 0 0 145px; }
+    .FleetPlanAdd { grid-column: 2; grid-row: 2; width: auto; min-height: 46px; }
+    .FleetPlanSidebar > .FleetPlanHint { grid-column: 1; }
+}
+.FleetRefuelOption { display: flex; align-items: center; gap: 6px; font-size: 12px; text-align: left; }
+.FleetRefuelOption input { width: auto; margin: 0; flex: none; }
+.FleetHoldNotice { margin: 5px 0; font-size: 12px; line-height: 1.4; }
+.PhalanxScan { min-width: 0; font-size: 12px; text-align: left; }
+.PhalanxScan h3 { margin: 4px 0 8px; font-size: 14px; overflow-wrap: anywhere; }
+.PhalanxScanNote { opacity: .75; line-height: 1.45; }
+.PhalanxFleet, .PhalanxFleet * { margin: 0; box-sizing: border-box; }
+.PhalanxFleet { width: 100%; padding: 7px 4px; cursor: default; }
+.PhalanxFleet .OverviewFleetEventBody { flex-direction: column; align-items: center; gap: 2px; }
+.PhalanxFleet .OverviewFleetEventTitle, .PhalanxFleetRoute { max-width: 100%; }
+.PhalanxFleet .OverviewFleetEventTime { gap: 2px; }
+.PhalanxFleet .OverviewFleetEventStatus { font-size: 10px; }
+.PhalanxIntercept { display: inline-flex; }
+.PhalanxInterceptButton { padding: 4px 7px; font-size: 11px; opacity: .5; cursor: not-allowed; pointer-events: none; }
+dialog-main:has(.PhalanxScan) { box-sizing: border-box; max-width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }
+dialog-main:has(.PhalanxScan)[style*="display: block"] { display: flex !important; flex-direction: column; }
+dialog-main:has(.PhalanxScan) > dialog-content { position: static; flex: 1 1 auto; min-height: 0; height: auto; max-height: calc(100dvh - 130px); overflow: auto; margin: 28px 10px 8px !important; }
+dialog-main:has(.PhalanxScan) > dialog-buttons { position: static; display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 6px; width: auto; margin: 0 !important; padding: 10px; }
+dialog-main:has(.PhalanxScan) > dialog-buttons > button { max-width: 100%; margin: 0 !important; white-space: normal; }

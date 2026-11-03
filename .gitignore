@@ -1,0 +1,26 @@
+# Локальные настройки и секреты.
+/.env
+/.env.*
+!/.env.example
+/.secrets/
+*.pem
+*.key
+
+# Окружение разработки, логи и результаты проверок.
+/.venv/
+/venv/
+/node_modules/
+/logs/
+/.cache/
+/test-results/
+/playwright-report/
+__pycache__/
+*.py[cod]
+*.log
+
+# Неотслеживаемые временные копии; уже сохранённую историю не изменяем.
+*.bak
+*.bak.*
+*.tmp
+*.swp
+*~

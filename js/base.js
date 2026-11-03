@@ -761,6 +761,12 @@ class Message {
         return obj;
     }
 
+    // В диагностику не передаются token, data, пароль, PIN и текст ошибки.
+    static toLog(message) {
+        return { requestId: message.requestId, mode: message.mode, action: message.action,
+            status: message.status, errorCode: message.error?.code || undefined };
+    }
+
     toString() {
         return JSON.stringify(this.toJSON());
     }
@@ -938,9 +944,9 @@ class WebSocketClass {
             let msg;
             try {
                 msg = new Message(JSON.parse(event.data));
-                //console.log("📩 Получены данные:", JSON.parse(event.data));
             } catch (err) {
-                console.error("Ошибка парсинга данных", event.data, err);
+                console.error("Ошибка парсинга данных", { type: err.name,
+                    length: typeof event.data === "string" ? event.data.length : null });
                 return;
             }
 
@@ -954,11 +960,11 @@ class WebSocketClass {
         };
 
         this.ws.onerror = (error) => {
-            console.error("❌ Ошибка WebSocket:", error && (error.message || error) || error);
+            console.error("❌ Ошибка WebSocket:", { type: error?.type || "error" });
         };
 
         this.ws.onclose = (event) => {
-            console.warn("⚠️ Соединение закрыто:", event.code, event.reason);
+            console.warn("⚠️ Соединение закрыто:", { code: event.code, wasClean: event.wasClean });
 
             clearInterval(this.heartbeatInterval);
             this.heartbeatInterval = null;
@@ -988,16 +994,13 @@ class WebSocketClass {
             msg.setToken(Data.token);
         }
 
-        if (msg.mode !== "connect" && msg.action !== "ping" && msg.action !== "handshake" && msg.action !== "reconnect")
-            console.log("send(msg) ", msg);
-
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             if (msg.mode !== "connect")
-                console.log("📤 Отправка:", msg.toJSON());
+                console.log("📤 Отправка:", Message.toLog(msg));
             this.ws.send(msg.toString());
         } else {
             if (msg.mode !== "connect")
-                console.log("📦 Добавлено в очередь:", msg.toJSON());
+                console.log("📦 Добавлено в очередь:", Message.toLog(msg));
             this.messageQueue.push(msg);
         }
 
@@ -1178,7 +1181,7 @@ class WebSocketClass {
             }
         }
 
-        console.log("handleMessage", msg);
+        console.log("handleMessage", Message.toLog(msg));
 
         if (msg.lang) {//} && msg.mode !== "login") {
             console.log("🌍 Установлен язык:", msg.lang);
@@ -1238,7 +1241,7 @@ class WebSocketClass {
         if (msg.status === "error") {
             try { Overlay.Hide(); } catch (e) { }
             if (msg.error?.code === "missing_token" || msg.error?.code === "108") {
-                console.warn("❌ Ошибка авторизации:", msg.error);
+                console.warn("❌ Ошибка авторизации:", { code: msg.error?.code });
                 msg.mode = "login";
             } else {
                 Dialog.ErrorLoad(String(msg.error?.code || "") + ": " + String(msg.error?.message || ""));
